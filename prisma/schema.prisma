@@ -1,0 +1,96 @@
+// Prisma schema for the Marsa/Rifqa backend.
+//
+// This is a direct translation of the original better-sqlite3 schema in
+// marsa-backend/src/db/index.js — same tables, same columns, same
+// relationships and constraints. Field names are camelCase on the Prisma
+// side and mapped back to the original snake_case column names via @map,
+// so a raw SQL migration from the old SQLite file would line up cleanly.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Merchant {
+  id           String   @id @default(cuid())
+  name         String
+  phone        String   @unique
+  passwordHash String   @map("password_hash")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  stores Store[]
+
+  @@map("merchants")
+}
+
+model Store {
+  id             String   @id @default(cuid())
+  merchantId     String   @map("merchant_id")
+  name           String
+  slug           String   @unique
+  theme          String   @default("souk")
+  courier        String   @default("vanex") // 'vanex' | 'sabil' | 'shaheen'
+  codEnabled     Boolean  @default(true) @map("cod_enabled")
+  walletProvider String?  @map("wallet_provider") // e.g. 'anis' (DPay aggregator merchant)
+  currency       String   @default("LYD")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  merchant Merchant  @relation(fields: [merchantId], references: [id])
+  products Product[]
+  orders   Order[]
+
+  @@map("stores")
+}
+
+model Product {
+  id         String   @id @default(cuid())
+  storeId    String   @map("store_id")
+  name       String
+  priceCents Int      @map("price_cents")
+  imageUrl   String?  @map("image_url")
+  active     Boolean  @default(true)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  store      Store       @relation(fields: [storeId], references: [id])
+  orderItems OrderItem[]
+
+  @@map("products")
+}
+
+model Order {
+  id                String   @id @default(cuid())
+  storeId           String   @map("store_id")
+  buyerName         String   @map("buyer_name")
+  buyerPhone        String   @map("buyer_phone")
+  buyerCity         String   @map("buyer_city")
+  buyerAddress      String   @map("buyer_address")
+  paymentMethod     String   @map("payment_method") // 'cod' | 'wallet'
+  paymentStatus     String   @map("payment_status") // 'pending' | 'paid' | 'failed'
+  courierTrackingId String?  @map("courier_tracking_id")
+  status            String   @default("pending") // pending -> confirmed -> shipped -> delivered -> cancelled
+  totalCents        Int      @map("total_cents")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  store Store       @relation(fields: [storeId], references: [id])
+  items OrderItem[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id             String @id @default(cuid())
+  orderId        String @map("order_id")
+  productId      String @map("product_id")
+  productName    String @map("product_name")
+  unitPriceCents Int    @map("unit_price_cents")
+  quantity       Int
+
+  order   Order   @relation(fields: [orderId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
+
+  @@map("order_items")
+}

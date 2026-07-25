@@ -1,0 +1,46 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-canvas text-ink font-body;
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-display;
+  }
+  /* Visible keyboard focus everywhere — not just on inputs. */
+  a:focus-visible,
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible {
+    outline: 2px solid theme("colors.brass");
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /* The "port stamp" — the signature circular badge used for the popular
+     pricing tier and order-status chips. A single recurring motif rather
+     than scattered decoration. */
+  .stamp {
+    @apply relative inline-flex items-center justify-center rounded-full border-2 border-dashed;
+  }
+
+  /* Shared form input style used across auth, onboarding, and checkout forms. */
+  .input {
+    @apply w-full rounded-xl border border-harbor/15 bg-white px-4 py-3 text-ink placeholder:text-rope/60;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
