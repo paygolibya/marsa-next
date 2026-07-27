@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { api, formatLYD, type Product, type Store } from "@/lib/api";
@@ -77,8 +78,14 @@ export default function StorefrontPage() {
               <div key={product.id} className="rounded-2xl border border-harbor/10 bg-white/50 overflow-hidden flex flex-col">
                 <div className="aspect-square bg-harbor/5 flex items-center justify-center text-rope text-sm">
                   {product.imageUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={product.imageUrl} alt={product.name} className="h-full w-full object-cover" />
+                    <Image
+                      src={product.imageUrl}
+                      alt={product.name}
+                      width={800}
+                      height={800}
+                      unoptimized
+                      className="h-full w-full object-cover"
+                    />
                   ) : (
                     "لا توجد صورة"
                   )}

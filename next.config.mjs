@@ -1,8 +1,11 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Marsa/Rifqa is Arabic-first — the html lang/dir attributes are set in
-  // the root layout, not here. This config is intentionally minimal so the
-  // API-route migration doesn't accidentally couple to frontend concerns.
+  outputFileTracingRoot: __dirname,
 };
 
 export default nextConfig;

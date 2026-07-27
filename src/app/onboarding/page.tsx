@@ -31,8 +31,16 @@ export default function OnboardingPage() {
   const [courier, setCourier] = useState("vanex");
   const [codEnabled, setCodEnabled] = useState(true);
   const [walletEnabled, setWalletEnabled] = useState(true);
+  const [selectedTheme, setSelectedTheme] = useState("modern");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const themes = [
+    { id: "modern", name: "Modern", description: "Clean & Professional" },
+    { id: "classic", name: "Classic", description: "Traditional Style" },
+    { id: "minimal", name: "Minimal", description: "Simple & Fast" },
+    { id: "professional", name: "Professional", description: "Business Look" },
+  ];
 
   useEffect(() => {
     if (ready && !token) router.replace("/login");
@@ -45,11 +53,12 @@ export default function OnboardingPage() {
     try {
       const store = await api.createStore(token, {
         name,
+        theme: selectedTheme,
         courier,
         codEnabled,
         walletProvider: walletEnabled ? "anis" : null,
       });
-      router.push(`/dashboard?storeId=${store.id}`);
+      router.push(`/subscription?storeId=${store.id}`);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "تعذّر إنشاء المتجر، حاول مجددًا");
     } finally {
@@ -105,6 +114,27 @@ export default function OnboardingPage() {
             <div>
               <h1 className="font-display text-2xl font-extrabold text-harbor">الشحن والدفع</h1>
               <p className="text-rope mt-1">اختر شركة الشحن وطرق الدفع المتاحة لعملائك — يمكنك تغييرها لاحقًا.</p>
+            </div>
+
+            <div className="mt-6">
+              <label className="block text-right text-lg font-bold mb-4">اختر نمط الموقع (Choose Website Style)</label>
+              <div className="grid grid-cols-2 gap-4">
+                {themes.map((theme) => (
+                  <button
+                    key={theme.id}
+                    type="button"
+                    onClick={() => setSelectedTheme(theme.id)}
+                    className={`rounded-lg border-2 p-4 text-center transition ${
+                      selectedTheme === theme.id
+                        ? "border-brass bg-brass/10"
+                        : "border-harbor/15 bg-white hover:border-brass/60"
+                    }`}
+                  >
+                    <div className="font-bold text-harbor">{theme.name}</div>
+                    <div className="text-sm text-rope">{theme.description}</div>
+                  </button>
+                ))}
+              </div>
             </div>
 
             <label className="block">

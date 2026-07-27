@@ -16,11 +16,13 @@ datasource db {
 }
 
 model Merchant {
-  id           String   @id @default(cuid())
-  name         String
-  phone        String   @unique
-  passwordHash String   @map("password_hash")
-  createdAt    DateTime @default(now()) @map("created_at")
+  id                   String    @id @default(cuid())
+  name                 String
+  phone                String    @unique
+  passwordHash         String    @map("password_hash")
+  createdAt            DateTime  @default(now()) @map("created_at")
+  subscriptionTier     String?   @default("starter") @map("subscription_tier")
+  subscriptionEndDate  DateTime? @map("subscription_end_date")
 
   stores Store[]
 

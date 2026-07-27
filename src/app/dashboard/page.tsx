@@ -7,7 +7,7 @@ import { api, formatLYD, type Order, type Product } from "@/lib/api";
 
 export default function DashboardOverviewPage() {
   const { token } = useAuth();
-  const { store } = useCurrentStore();
+  const { store, stores } = useCurrentStore();
   const [orders, setOrders] = useState<Order[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
 
@@ -44,7 +44,38 @@ export default function DashboardOverviewPage() {
         ))}
       </div>
 
-      <div className="rounded-2xl border border-harbor/10 bg-white/50 p-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+        {stores.map((storeItem) => {
+          const storeUrl = `${window.location.origin}/store/${storeItem.slug}`;
+          return (
+            <div key={storeItem.id} className="rounded-2xl border border-harbor/10 bg-white/50 p-6">
+              <h3 className="font-bold text-harbor mb-4 text-right">{storeItem.name}</h3>
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <a
+                  href={storeUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex-1 rounded-full bg-brass px-4 py-2 text-center font-bold text-canvas transition hover:bg-brass/90"
+                >
+                  👁️ عرض المتجر
+                </a>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(storeUrl);
+                    alert("تم نسخ الرابط!");
+                  }}
+                  className="flex-1 rounded-full border border-harbor/15 px-4 py-2 font-bold text-harbor transition hover:bg-harbor/5"
+                >
+                  🔗 نسخ الرابط
+                </button>
+              </div>
+              <p className="mt-3 break-all text-sm text-rope">{storeUrl}</p>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="rounded-2xl border border-harbor/10 bg-white/50 p-6 mt-8">
         <h2 className="font-bold text-harbor mb-4">أحدث الطلبات</h2>
         {orders.length === 0 ? (
           <p className="text-rope text-sm">لا توجد طلبات بعد.</p>
