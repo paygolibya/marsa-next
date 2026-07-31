@@ -81,6 +81,7 @@ function PaymentPageContent() {
 
       const response = await fetch("/api/payments/upload-receipt", {
         method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
         body: formData,
       });
 

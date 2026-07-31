@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useAuth } from "@/lib/auth-context";
 
 interface Merchant {
   id: string;
@@ -13,16 +14,19 @@ interface Merchant {
 }
 
 export default function MerchantsPage() {
+  const { token } = useAuth();
   const [merchants, setMerchants] = useState<Merchant[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     void fetchMerchants();
-  }, []);
+  }, [token]);
 
   async function fetchMerchants() {
     try {
-      const response = await fetch("/api/admin/merchants");
+      const response = await fetch("/api/admin/merchants", {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      });
       if (response.ok) {
         const data = await response.json();
         setMerchants(data.merchants || []);

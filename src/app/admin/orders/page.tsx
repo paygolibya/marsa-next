@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useAuth } from "@/lib/auth-context";
 
 interface Order {
   id: string;
@@ -14,16 +15,19 @@ interface Order {
 }
 
 export default function OrdersPage() {
+  const { token } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     void fetchOrders();
-  }, []);
+  }, [token]);
 
   async function fetchOrders() {
     try {
-      const response = await fetch("/api/admin/orders");
+      const response = await fetch("/api/admin/orders", {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      });
       if (response.ok) {
         const data = await response.json();
         setOrders(data.orders || []);

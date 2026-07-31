@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useAuth } from "@/lib/auth-context";
 
 interface Payment {
   id: string;
@@ -15,17 +16,20 @@ interface Payment {
 }
 
 export default function PaymentsPage() {
+  const { token } = useAuth();
   const [payments, setPayments] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("pending");
 
   useEffect(() => {
     fetchPayments();
-  }, [filter]);
+  }, [filter, token]);
 
   async function fetchPayments() {
     try {
-      const response = await fetch(`/api/admin/payments?status=${filter}`);
+      const response = await fetch(`/api/admin/payments?status=${filter}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      });
       if (response.ok) {
         const data = await response.json();
         setPayments(data.payments);
@@ -41,7 +45,10 @@ export default function PaymentsPage() {
     try {
       const response = await fetch("/api/admin/payments/approve", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({ paymentId }),
       });
 
@@ -61,7 +68,10 @@ export default function PaymentsPage() {
     try {
       const response = await fetch("/api/admin/payments/reject", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({ paymentId, reason }),
       });
 

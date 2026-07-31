@@ -22,7 +22,7 @@ export async function POST(req: Request) {
 
     const passwordHash = bcrypt.hashSync(password, 10);
     const merchant = await prisma.merchant.create({
-      data: { name, phone, passwordHash },
+      data: { name, phone, passwordHash, subscriptionStatus: "pending" },
     });
 
     const token = signMerchantToken(merchant.id);
