@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { useSearchParams, useParams } from "next/navigation";
 import Link from "next/link";
 import { formatLYD } from "@/lib/api";
@@ -11,6 +12,14 @@ const courierLabels: Record<string, string> = {
 };
 
 export default function ConfirmationPage() {
+  return (
+    <Suspense fallback={null}>
+      <ConfirmationPageContent />
+    </Suspense>
+  );
+}
+
+function ConfirmationPageContent() {
   const params = useParams<{ slug: string }>();
   const search = useSearchParams();
 

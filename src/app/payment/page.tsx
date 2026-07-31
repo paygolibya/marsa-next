@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { SiteNav } from "@/components/site-nav";
 import { useAuth } from "@/lib/auth-context";
@@ -19,6 +19,14 @@ const PAYMENT_INFO = {
 };
 
 export default function PaymentPage() {
+  return (
+    <Suspense fallback={null}>
+      <PaymentPageContent />
+    </Suspense>
+  );
+}
+
+function PaymentPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { token, ready } = useAuth();

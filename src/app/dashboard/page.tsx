@@ -1,12 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { useCurrentStore } from "@/lib/use-current-store";
 import { api, formatLYD, type Order, type Product } from "@/lib/api";
 
 export default function DashboardOverviewPage() {
+  return (
+    <Suspense fallback={null}>
+      <DashboardOverviewContent />
+    </Suspense>
+  );
+}
+
+function DashboardOverviewContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { token } = useAuth();
