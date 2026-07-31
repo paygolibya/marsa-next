@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getAuthMerchantId, isAdminMerchantId } from "@/lib/auth";
 
 export async function POST(req: Request) {
+  const merchantId = getAuthMerchantId(req);
+  if (!(await isAdminMerchantId(merchantId))) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
   try {
     const { paymentId, reason } = await req.json();
 

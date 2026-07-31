@@ -1,8 +1,22 @@
 import jwt from "jsonwebtoken";
+import { prisma } from "@/lib/prisma";
 
 // Same secret/env convention as the original Express middleware
 // (src/middleware/auth.js) — falls back to a dev secret only outside prod.
 const JWT_SECRET = process.env.JWT_SECRET || "dev_secret_change_me";
+
+function getAllowedAdminValues() {
+  const ids = (process.env.ADMIN_MERCHANT_IDS || process.env.ADMIN_MERCHANT_ID || "")
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
+  const phones = (process.env.ADMIN_MERCHANT_PHONES || process.env.ADMIN_MERCHANT_PHONE || "0910000000")
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
+
+  return { ids, phones };
+}
 
 export function signMerchantToken(merchantId: string) {
   return jwt.sign({ merchantId }, JWT_SECRET, { expiresIn: "30d" });
@@ -26,4 +40,28 @@ export function getAuthMerchantId(req: Request): string | null {
   } catch {
     return null;
   }
+}
+
+export function isAdminMerchant(merchant: { id?: string | null; phone?: string | null } | null | undefined) {
+  if (!merchant) return false;
+
+  const { ids, phones } = getAllowedAdminValues();
+  if (merchant.id && ids.includes(merchant.id)) return true;
+  if (merchant.phone && phones.includes(merchant.phone)) return true;
+
+  return false;
+}
+
+export async function isAdminMerchantId(merchantId: string | null | undefined) {
+  if (!merchantId) return false;
+
+  const { ids, phones } = getAllowedAdminValues();
+  if (ids.includes(merchantId)) return true;
+
+  const merchant = await prisma.merchant.findUnique({
+    where: { id: merchantId },
+    select: { phone: true },
+  });
+
+  return merchant?.phone ? phones.includes(merchant.phone) : false;
 }

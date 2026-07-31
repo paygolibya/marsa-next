@@ -8,18 +8,14 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
   try {
-    const url = new URL(req.url);
-    const status = url.searchParams.get("status") || "pending";
-
-    const payments = await prisma.payment.findMany({
-      where: { status },
-      include: { merchant: true },
+    const orders = await prisma.order.findMany({
+      include: { store: true },
       orderBy: { createdAt: "desc" },
     });
 
-    return NextResponse.json({ payments });
+    return NextResponse.json({ orders });
   } catch (error) {
-    console.error("Error fetching payments:", error);
-    return NextResponse.json({ error: "Failed to fetch payments" }, { status: 500 });
+    console.error("Error fetching orders:", error);
+    return NextResponse.json({ error: "Failed to fetch orders" }, { status: 500 });
   }
 }
