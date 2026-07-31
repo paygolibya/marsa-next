@@ -22,11 +22,35 @@ model Merchant {
   passwordHash         String    @map("password_hash")
   createdAt            DateTime  @default(now()) @map("created_at")
   subscriptionTier     String?   @default("starter") @map("subscription_tier")
+  subscriptionStatus   String    @default("inactive") @map("subscription_status")
+  subscriptionStartDate DateTime? @map("subscription_start_date")
   subscriptionEndDate  DateTime? @map("subscription_end_date")
 
   stores Store[]
+  payments Payment[]
 
   @@map("merchants")
+}
+
+model Payment {
+  id                String    @id @default(cuid())
+  merchantId        String    @map("merchant_id")
+  merchant          Merchant  @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+
+  tier              String
+  amount            Int
+  currency          String    @default("LYD")
+  status            String    @default("pending")
+  receiptFile       String?   @map("receipt_file")
+  receiptUploadedAt DateTime? @map("receipt_uploaded_at")
+  approvedAt        DateTime? @map("approved_at")
+  approvedBy        String?   @map("approved_by")
+  rejectionReason   String?   @map("rejection_reason")
+
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  @@map("payments")
 }
 
 model Store {

@@ -46,15 +46,7 @@ export default function SubscriptionPage() {
 
     setLoading(true);
     try {
-      const response = await fetch("/api/subscriptions/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tier: selectedTier }),
-      });
-
-      if (response.ok) {
-        router.push("/dashboard");
-      }
+      router.push(`/payment?tier=${selectedTier}`);
     } catch (error) {
       console.error("Subscription error:", error);
     } finally {
@@ -117,7 +109,7 @@ export default function SubscriptionPage() {
             disabled={loading}
             className="rounded-lg bg-brass px-12 py-4 text-lg font-bold text-white transition hover:bg-brass/90 disabled:opacity-60"
           >
-            {loading ? "جارٍ المتابعة..." : "متابعة للدفع"}
+            {loading ? "جارٍ المتابعة..." : "الذهاب للدفع"}
           </button>
         </div>
       </div>
