@@ -31,6 +31,68 @@ async function mockCreateShipment(courierName: string, order: ShipmentOrder): Pr
   };
 }
 
+async function createSabilShipment(order: ShipmentOrder): Promise<ShipmentResult> {
+  const apiKey = process.env.DAREEB_SABIL_API_KEY?.trim();
+  const apiBase = process.env.DAREEB_SABIL_API_BASE?.trim() || "https://v2.sabil.ly";
+  const accountId = process.env.DAREEB_SABIL_ACCOUNT_ID?.trim() || "6959a49d972d3cf3e9863704";
+  const serviceId = process.env.DAREEB_SABIL_SERVICE_ID?.trim();
+  const contactId = process.env.DAREEB_SABIL_CONTACT_ID?.trim();
+
+  if (!apiKey || !serviceId || !contactId) {
+    return mockCreateShipment("sabil", order);
+  }
+
+  try {
+    const response = await fetch(`${apiBase}/api/local/shipments`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `apikey ${apiKey}`,
+        "X-API-VERSION": "1.0.0",
+        "X-ACCOUNT-ID": accountId,
+      },
+      body: JSON.stringify({
+        service: serviceId,
+        contacts: [contactId],
+        paymentBy: "receiver",
+        to: {
+          countryCode: "LBY",
+          city: order.buyer.city || "Tripoli",
+          area: order.buyer.city || "Tripoli",
+          address: order.buyer.address || "Unknown address",
+        },
+        products: [
+          {
+            title: `Order ${order.id}`,
+            quantity: 1,
+            amount: Math.max(1, Math.round(order.totalCents / 100)),
+            currency: "LYD",
+            isChargeable: true,
+          },
+        ],
+        notes: `Order ${order.id} for ${order.buyer.name}`,
+      }),
+    });
+
+    if (!response.ok) {
+      const responseText = await response.text();
+      throw new Error(`Darb Assabil API error ${response.status}: ${responseText}`);
+    }
+
+    const data = (await response.json()) as Record<string, unknown>;
+    const reference = (data?.data as { reference?: string } | undefined)?.reference;
+    const id = (data?.data as { _id?: string } | undefined)?._id;
+
+    return {
+      trackingId: reference || id || `${"sabil".toUpperCase()}-${nanoid(8)}`,
+      raw: data,
+    };
+  } catch (error) {
+    console.error("Darb Assabil shipment creation failed:", error);
+    return mockCreateShipment("sabil", order);
+  }
+}
+
 const couriers: Record<string, (order: ShipmentOrder) => Promise<ShipmentResult>> = {
   vanex: async (order) => {
     if (!process.env.VANEX_API_KEY) return mockCreateShipment("vanex", order);
@@ -45,7 +107,7 @@ const couriers: Record<string, (order: ShipmentOrder) => Promise<ShipmentResult>
   },
   sabil: async (order) => {
     if (!process.env.DAREEB_SABIL_API_KEY) return mockCreateShipment("sabil", order);
-    return mockCreateShipment("sabil", order); // same pattern as above once you have real creds
+    return createSabilShipment(order);
   },
   shaheen: async (order) => {
     if (!process.env.SHAHEEN_API_KEY) return mockCreateShipment("shaheen", order);
