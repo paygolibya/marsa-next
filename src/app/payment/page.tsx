@@ -4,12 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { SiteNav } from "@/components/site-nav";
 import { useAuth } from "@/lib/auth-context";
-
-const tiers = {
-  starter: { name: "المبتدئ", price: 150 },
-  professional: { name: "المتقدم", price: 280 },
-  advanced: { name: "الاحترافي", price: 450 },
-} as const;
+import { getCheckoutPaymentMethods, normalizeSubscriptionTier, subscriptionPlans, type SubscriptionTier } from "@/lib/checkout-features";
 
 const PAYMENT_INFO = {
   iban: "LY26007014014011399809010",
@@ -31,8 +26,9 @@ function PaymentPageContent() {
   const searchParams = useSearchParams();
   const { token, ready } = useAuth();
 
-  const tier = (searchParams.get("tier") as keyof typeof tiers) || "professional";
-  const tierInfo = tiers[tier] ?? tiers.professional;
+  const tier = normalizeSubscriptionTier(searchParams.get("tier"));
+  const tierInfo = subscriptionPlans[tier] ?? subscriptionPlans.professional;
+  const [selectedMethod, setSelectedMethod] = useState<"dpay" | "direct_transfer" | "">("");
 
   const [file, setFile] = useState<File | null>(null);
   const [fileName, setFileName] = useState("");
@@ -78,6 +74,7 @@ function PaymentPageContent() {
       formData.append("file", file);
       formData.append("tier", tier);
       formData.append("amount", tierInfo.price.toString());
+      if (selectedMethod) formData.append("selectedMethod", selectedMethod);
 
       const response = await fetch("/api/payments/upload-receipt", {
         method: "POST",
@@ -126,7 +123,7 @@ function PaymentPageContent() {
                 <h3 className="mb-4 font-bold text-harbor">ملخص الطلب</h3>
                 <div className="mb-4">
                   <p className="mb-1 text-sm text-rope">الخطة:</p>
-                  <p className="text-xl font-bold text-harbor">{tierInfo.name}</p>
+                  <p className="text-xl font-bold text-harbor">{tierInfo.displayName}</p>
                 </div>
                 <div className="border-t border-harbor/10 pt-4">
                   <div className="mb-3 flex items-center justify-between">
@@ -180,6 +177,32 @@ function PaymentPageContent() {
             <div className="space-y-6">
               <div className="rounded-2xl border border-harbor/10 bg-white p-8">
                 <h3 className="mb-6 text-center font-bold text-harbor">📸 رفع إيصال التحويل</h3>
+
+                <div className="mb-6 rounded-xl border border-harbor/10 bg-canvas p-4 text-sm text-rope">
+                  <p className="mb-2 font-bold text-harbor">رسالة الخطة</p>
+                  <p className="leading-7">{tierInfo.checkoutMessage}</p>
+                </div>
+
+                {tier === "professional" && (
+                  <div className="mb-6 space-y-3 rounded-xl border border-harbor/10 bg-blue-50 p-4 text-right">
+                    <p className="font-bold text-harbor">اختر طريقة الدفع الفعّالة</p>
+                    <label className="flex items-center justify-between rounded-lg bg-white px-3 py-2">
+                      <span>الدفع عبر DPay</span>
+                      <input type="radio" name="method" checked={selectedMethod === "dpay"} onChange={() => setSelectedMethod("dpay")} />
+                    </label>
+                    <label className="flex items-center justify-between rounded-lg bg-white px-3 py-2">
+                      <span>تحويل بنكي مباشر</span>
+                      <input type="radio" name="method" checked={selectedMethod === "direct_transfer"} onChange={() => setSelectedMethod("direct_transfer")} />
+                    </label>
+                  </div>
+                )}
+
+                {tier === "advanced" && (
+                  <div className="mb-6 rounded-xl border border-green-200 bg-green-50 p-4 text-right text-sm text-green-800">
+                    <p className="font-bold">الطريقة المتاحة: جميع الأساليب مفعلة</p>
+                    <p className="mt-2">DPay + التحويل المباشر + الدفع عند الاستلام</p>
+                  </div>
+                )}
 
                 <div className="mb-6">
                   <label className="block cursor-pointer">

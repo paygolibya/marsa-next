@@ -18,7 +18,7 @@ export async function POST(req: Request) {
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "بيانات غير صالحة" }, { status: 400 });
     }
-    const { name, theme, courier, codEnabled, walletProvider } = parsed.data;
+    const { name, theme, courier, codEnabled, walletProvider, templateId } = parsed.data;
 
     let slug = slugify(name) || nanoid(8);
     const clash = await prisma.store.findUnique({ where: { slug } });
@@ -33,8 +33,22 @@ export async function POST(req: Request) {
         courier: courier || "vanex",
         codEnabled: codEnabled ?? true,
         walletProvider: walletProvider || null,
+        templateId: templateId || null,
       },
     });
+
+    if (templateId) {
+      await prisma.templateCustomization.upsert({
+        where: { storeId: store.id },
+        create: {
+          storeId: store.id,
+          templateId,
+        },
+        update: {
+          templateId,
+        },
+      });
+    }
 
     return NextResponse.json(store, { status: 201 });
   } catch (err) {

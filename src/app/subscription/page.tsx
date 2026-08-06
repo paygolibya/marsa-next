@@ -1,42 +1,49 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
+import { subscriptionPlans, type SubscriptionTier } from "@/lib/checkout-features";
 
 export default function SubscriptionPage() {
   const router = useRouter();
   const { token } = useAuth();
-  const [selectedTier, setSelectedTier] = useState<"starter" | "professional" | "advanced">("starter");
+  const [selectedTier, setSelectedTier] = useState<SubscriptionTier>("basic");
   const [loading, setLoading] = useState(false);
 
-  const tiers: Array<{
-    id: "starter" | "professional" | "advanced";
-    name: string;
-    price: number;
-    features: string[];
-    recommended?: boolean;
-  }> = [
-    {
-      id: "starter",
-      name: "المبتدئ (Starter)",
-      price: 150,
-      features: ["متجر واحد", "حتى 100 منتج", "حتى 150 طلب/شهر", "دعم البريد الإلكتروني"],
-    },
-    {
-      id: "professional",
-      name: "المتقدم (Professional)",
-      price: 280,
-      features: ["3 متاجر", "حتى 500 منتج", "حتى 600 طلب/شهر", "نطاق مخصص", "دعم الأولوية", "توصيل تلقائي"],
-      recommended: true,
-    },
-    {
-      id: "advanced",
-      name: "الاحترافي (Advanced)",
-      price: 450,
-      features: ["متاجر غير محدودة", "منتجات غير محدودة", "طلبات غير محدودة", "دعم VIP", "تحليلات متقدمة", "مستودعات متعددة"],
-    },
-  ];
+  const tiers = useMemo(
+    () => [
+      {
+        id: "basic" as const,
+        name: subscriptionPlans.basic.name,
+        displayName: subscriptionPlans.basic.displayName,
+        price: subscriptionPlans.basic.price,
+        description: subscriptionPlans.basic.description,
+        checkoutMessage: subscriptionPlans.basic.checkoutMessage,
+        features: ["طرق دفع يدويّة", "رفع إيصال التحويل", "مزامنة الطلبات", "التخطيط الأساسي"],
+      },
+      {
+        id: "professional" as const,
+        name: subscriptionPlans.professional.name,
+        displayName: subscriptionPlans.professional.displayName,
+        price: subscriptionPlans.professional.price,
+        description: subscriptionPlans.professional.description,
+        checkoutMessage: subscriptionPlans.professional.checkoutMessage,
+        features: ["اختيار طريقة دفع واحدة", "DPay أو تحويل مباشر", "تفعيل الدفع الآلي", "رسائل الدفع المخصصة"],
+        recommended: true,
+      },
+      {
+        id: "advanced" as const,
+        name: subscriptionPlans.advanced.name,
+        displayName: subscriptionPlans.advanced.displayName,
+        price: subscriptionPlans.advanced.price,
+        description: subscriptionPlans.advanced.description,
+        checkoutMessage: subscriptionPlans.advanced.checkoutMessage,
+        features: ["كل طرق الدفع دفعة واحدة", "DPay + تحويل + COD", "الوصول إلى API", "تحليلات متقدمة ودعم مخصص"],
+      },
+    ],
+    []
+  );
 
   const handleSubscribe = async () => {
     if (!token) {
@@ -75,7 +82,8 @@ export default function SubscriptionPage() {
                 </div>
               )}
 
-              <h3 className="mb-2 text-right text-2xl font-bold">{tier.name}</h3>
+              <h3 className="mb-2 text-right text-2xl font-bold">{tier.displayName}</h3>
+              <p className="mb-4 text-right text-sm text-gray-600">{tier.description}</p>
               <div className="mb-6 text-right">
                 <span className="text-4xl font-bold">{tier.price}</span>
                 <span className="text-gray-600"> د.ل/شهر</span>

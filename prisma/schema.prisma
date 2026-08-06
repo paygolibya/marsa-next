@@ -15,16 +15,102 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Template {
+  id            String   @id @default(cuid())
+  name          String
+  nameAr        String
+  slug          String   @unique
+  description   String
+  descriptionAr String
+  category      String   @default("all")
+  price         Int      @default(0)
+  currency      String   @default("LYD")
+  billingType   String   @default("free")
+  thumbnail     String
+  previewUrl    String
+  features      Json
+  componentPath String?
+  defaultColors Json?
+  usageCount    Int      @default(0)
+  rating        Float    @default(4.5)
+  reviews       Int      @default(0)
+  featured      Boolean  @default(false)
+  isNew         Boolean  @default(false)
+  active        Boolean  @default(true)
+
+  stores         Store[]
+  customizations TemplateCustomization[]
+  reviewsData    TemplateReview[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("templates")
+}
+
+model TemplateCustomization {
+  id               String  @id @default(cuid())
+  storeId          String  @unique @map("store_id")
+  templateId       String? @map("template_id")
+  primaryColor     String  @default("#0066cc") @map("primary_color")
+  secondaryColor   String  @default("#f0f0f0") @map("secondary_color")
+  accentColor      String? @map("accent_color")
+  logo             String?
+  favicon          String?
+  tagline          String?
+  description      String?
+  headerStyle      String  @default("standard") @map("header_style")
+  footerStyle      String  @default("standard") @map("footer_style")
+  showNewsletter   Boolean @default(true) @map("show_newsletter")
+  showReviews      Boolean @default(true) @map("show_reviews")
+  showTestimonials Boolean @default(false) @map("show_testimonials")
+  showSocialProof  Boolean @default(true) @map("show_social_proof")
+
+  store    Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  template Template? @relation(fields: [templateId], references: [id])
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("template_customizations")
+}
+
+model TemplateReview {
+  id           String  @id @default(cuid())
+  templateId   String  @map("template_id")
+  merchantId   String? @map("merchant_id")
+  rating       Int
+  reviewText   String? @map("review_text")
+  reviewTextAr String? @map("review_text_ar")
+  helpful      Int     @default(0)
+  notHelpful   Int     @default(0) @map("not_helpful")
+
+  template Template @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("template_reviews")
+}
+
 model Merchant {
-  id                   String    @id @default(cuid())
-  name                 String
-  phone                String    @unique
-  passwordHash         String    @map("password_hash")
-  createdAt            DateTime  @default(now()) @map("created_at")
-  subscriptionTier     String?   @default("starter") @map("subscription_tier")
-  subscriptionStatus   String    @default("inactive") @map("subscription_status")
-  subscriptionStartDate DateTime? @map("subscription_start_date")
-  subscriptionEndDate  DateTime? @map("subscription_end_date")
+  id                     String    @id @default(cuid())
+  name                   String
+  phone                  String    @unique
+  passwordHash           String    @map("password_hash")
+  createdAt              DateTime  @default(now()) @map("created_at")
+  subscriptionTier       String?   @default("basic") @map("subscription_tier")
+  subscriptionStatus     String    @default("inactive") @map("subscription_status")
+  subscriptionStartDate  DateTime? @map("subscription_start_date")
+  subscriptionEndDate    DateTime? @map("subscription_end_date")
+  directWireEnabled      Boolean   @default(true) @map("direct_wire_enabled")
+  receiptUploadEnabled   Boolean   @default(true) @map("receipt_upload_enabled")
+  codEnabled             Boolean   @default(true) @map("cod_enabled")
+  dpayEnabled            Boolean   @default(false) @map("dpay_enabled")
+  allowMultiplePaymentMethods Boolean @default(false) @map("allow_multiple_payment_methods")
+  apiAccessEnabled       Boolean   @default(false) @map("api_access_enabled")
+  selectedPaymentMethod  String?   @map("selected_payment_method")
+  dpayApiToken           String?   @map("dpay_api_token")
 
   stores Store[]
   payments Payment[]
@@ -63,11 +149,14 @@ model Store {
   codEnabled     Boolean  @default(true) @map("cod_enabled")
   walletProvider String?  @map("wallet_provider") // e.g. 'anis' (DPay aggregator merchant)
   currency       String   @default("LYD")
+  templateId     String?  @map("template_id")
   createdAt      DateTime @default(now()) @map("created_at")
 
-  merchant Merchant  @relation(fields: [merchantId], references: [id])
-  products Product[]
-  orders   Order[]
+  merchant       Merchant               @relation(fields: [merchantId], references: [id])
+  template       Template?              @relation(fields: [templateId], references: [id])
+  customization  TemplateCustomization?
+  products       Product[]
+  orders         Order[]
 
   @@map("stores")
 }

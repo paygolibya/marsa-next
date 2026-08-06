@@ -9,12 +9,21 @@ export async function POST(req: Request) {
   }
 
   try {
-    const { tier } = await req.json();
+    const { tier, selectedPaymentMethod, dpayEnabled, directWireEnabled, receiptUploadEnabled, codEnabled, allowMultiplePaymentMethods, apiAccessEnabled } = await req.json();
+
+    const normalizedTier = tier === "professional" || tier === "advanced" ? tier : "basic";
 
     await prisma.merchant.update({
       where: { id: merchantId },
       data: {
-        subscriptionTier: tier || "starter",
+        subscriptionTier: normalizedTier,
+        selectedPaymentMethod: selectedPaymentMethod || null,
+        dpayEnabled: Boolean(dpayEnabled),
+        directWireEnabled: Boolean(directWireEnabled),
+        receiptUploadEnabled: Boolean(receiptUploadEnabled),
+        codEnabled: Boolean(codEnabled),
+        allowMultiplePaymentMethods: Boolean(allowMultiplePaymentMethods),
+        apiAccessEnabled: Boolean(apiAccessEnabled),
         subscriptionEndDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       },
     });

@@ -3,8 +3,10 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { SiteNav } from "@/components/site-nav";
+import TemplateSelector from "@/components/onboarding/TemplateSelector";
 import { useAuth } from "@/lib/auth-context";
 import { api, ApiError } from "@/lib/api";
+import { templatesData } from "@/lib/templates-data";
 
 const couriers = [
   { value: "vanex", label: "Vanex" },
@@ -32,6 +34,7 @@ export default function OnboardingPage() {
   const [codEnabled, setCodEnabled] = useState(true);
   const [walletEnabled, setWalletEnabled] = useState(true);
   const [selectedTheme, setSelectedTheme] = useState("modern");
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(templatesData[0]?.id ?? null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -57,8 +60,9 @@ export default function OnboardingPage() {
         courier,
         codEnabled,
         walletProvider: walletEnabled ? "anis" : null,
+        templateId: selectedTemplateId,
       });
-      router.push(`/subscription?storeId=${store.id}`);
+      router.push(`/onboarding/customize?storeId=${store.id}`);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "تعذّر إنشاء المتجر، حاول مجددًا");
     } finally {
@@ -135,6 +139,15 @@ export default function OnboardingPage() {
                   </button>
                 ))}
               </div>
+            </div>
+
+            <div className="rounded-2xl border border-harbor/10 bg-white p-4">
+              <h2 className="mb-4 text-lg font-bold text-harbor">اختر قالب المتجر</h2>
+              <TemplateSelector
+                templates={templatesData}
+                selectedId={selectedTemplateId}
+                onSelect={(template) => setSelectedTemplateId(template.id)}
+              />
             </div>
 
             <label className="block">

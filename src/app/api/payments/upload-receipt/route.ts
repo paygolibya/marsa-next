@@ -15,6 +15,7 @@ export async function POST(req: Request) {
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
     const tier = (formData.get("tier") as string | null) || "professional";
+    const selectedMethod = (formData.get("selectedMethod") as string | null) || null;
     const amount = Number(formData.get("amount") || 0);
 
     if (!file) {
@@ -40,6 +41,14 @@ export async function POST(req: Request) {
         currency: "LYD",
         receiptFile: `/receipts/${uniqueName}`,
         receiptUploadedAt: new Date(),
+      },
+    });
+
+    await prisma.merchant.update({
+      where: { id: merchantId },
+      data: {
+        subscriptionTier: tier === "professional" || tier === "advanced" ? tier : "basic",
+        selectedPaymentMethod: selectedMethod || null,
       },
     });
 

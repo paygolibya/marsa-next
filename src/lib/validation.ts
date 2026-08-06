@@ -17,6 +17,7 @@ export const createStoreSchema = z.object({
   courier: z.enum(["vanex", "sabil", "shaheen"]).optional(),
   codEnabled: z.boolean().optional(),
   walletProvider: z.string().optional().nullable(),
+  templateId: z.string().optional().nullable(),
 });
 
 export const createProductSchema = z.object({
