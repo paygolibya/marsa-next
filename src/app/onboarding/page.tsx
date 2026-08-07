@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { SiteNav } from "@/components/site-nav";
 import TemplateSelector from "@/components/onboarding/TemplateSelector";
 import { useAuth } from "@/lib/auth-context";
+import { isAdminMerchant } from "@/lib/is-admin";
 import { api, ApiError } from "@/lib/api";
 import { templatesData } from "@/lib/templates-data";
 
@@ -27,7 +28,7 @@ function slugPreview(name: string) {
 
 export default function OnboardingPage() {
   const router = useRouter();
-  const { token, ready } = useAuth();
+  const { token, merchant, ready } = useAuth();
   const [step, setStep] = useState<1 | 2>(1);
   const [name, setName] = useState("");
   const [courier, setCourier] = useState("vanex");
@@ -48,6 +49,10 @@ export default function OnboardingPage() {
   useEffect(() => {
     if (ready && !token) router.replace("/login");
   }, [ready, token, router]);
+
+  useEffect(() => {
+    if (ready && token && isAdminMerchant(merchant)) router.replace("/admin");
+  }, [ready, token, merchant, router]);
 
   async function handleCreate() {
     if (!token) return;
@@ -70,7 +75,7 @@ export default function OnboardingPage() {
     }
   }
 
-  if (!ready || !token) return null;
+  if (!ready || !token || isAdminMerchant(merchant)) return null;
 
   return (
     <>

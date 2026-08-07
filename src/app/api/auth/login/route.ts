@@ -15,18 +15,7 @@ export async function POST(req: Request) {
     }
     const { phone, password } = parsed.data;
 
-    let merchant = await prisma.merchant.findUnique({ where: { phone } });
-
-    if (!merchant && phone === "0910000000" && password === "password123") {
-      merchant = await prisma.merchant.create({
-        data: {
-          name: "Admin",
-          phone,
-          passwordHash: bcrypt.hashSync(password, 10),
-          subscriptionStatus: "active",
-        },
-      });
-    }
+    const merchant = await prisma.merchant.findUnique({ where: { phone } });
 
     if (!merchant || !bcrypt.compareSync(password, merchant.passwordHash)) {
       return NextResponse.json({ error: "Invalid phone or password" }, { status: 401 });

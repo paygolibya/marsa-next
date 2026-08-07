@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import TemplateSelector from "@/components/onboarding/TemplateSelector";
 import { useAuth } from "@/lib/auth-context";
+import { isAdminMerchant } from "@/lib/is-admin";
 import { api, ApiError } from "@/lib/api";
 import { templatesData } from "@/lib/templates-data";
 
@@ -11,11 +12,15 @@ export default function TemplateSelectionPage() {
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(templatesData[0]?.id ?? null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const { token, ready } = useAuth();
+  const { token, merchant, ready } = useAuth();
 
   useEffect(() => {
     if (ready && !token) router.replace("/login");
   }, [ready, token, router]);
+
+  useEffect(() => {
+    if (ready && token && isAdminMerchant(merchant)) router.replace("/admin");
+  }, [ready, token, merchant, router]);
 
   async function handleContinue() {
     if (!selectedTemplate || !token) return;
@@ -34,7 +39,7 @@ export default function TemplateSelectionPage() {
     }
   }
 
-  if (!ready || !token) return null;
+  if (!ready || !token || isAdminMerchant(merchant)) return null;
 
   return (
     <div className="min-h-screen bg-gray-50">

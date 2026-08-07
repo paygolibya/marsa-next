@@ -45,16 +45,6 @@ export function getAuthMerchantId(req: Request): string | null {
   }
 }
 
-export function isAdminMerchant(merchant: { id?: string | null; phone?: string | null } | null | undefined) {
-  if (!merchant) return false;
-
-  const { ids, phones } = getAllowedAdminValues();
-  if (merchant.id && ids.includes(merchant.id)) return true;
-  if (merchant.phone && phones.includes(merchant.phone)) return true;
-
-  return false;
-}
-
 export async function isAdminMerchantId(merchantId: string | null | undefined) {
   if (!merchantId) return false;
 

@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
-import { isAdminMerchant } from "@/lib/auth";
+import { isAdminMerchant } from "@/lib/is-admin";
 
 const navItems = [
   { href: "/admin", label: "لوحة التحكم", icon: "📊" },
@@ -12,7 +12,6 @@ const navItems = [
   { href: "/admin/merchants", label: "التجار", icon: "👥" },
   { href: "/admin/orders", label: "الطلبات", icon: "📦" },
   { href: "/admin/settings", label: "الإعدادات", icon: "⚙️" },
-  { href: "/dashboard", label: "العودة للمتجر", icon: "←" },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

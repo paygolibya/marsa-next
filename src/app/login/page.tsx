@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { SiteNav } from "@/components/site-nav";
 import { useAuth } from "@/lib/auth-context";
+import { isAdminMerchant } from "@/lib/is-admin";
 import { api, ApiError } from "@/lib/api";
 
 export default function LoginPage() {
@@ -22,7 +23,7 @@ export default function LoginPage() {
     try {
       const { token, merchant } = await api.login({ phone, password });
       login(token, merchant);
-      router.push("/dashboard");
+      router.push(isAdminMerchant(merchant) ? "/admin" : "/dashboard");
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "تعذّر تسجيل الدخول، حاول مجددًا");
     } finally {
@@ -35,9 +36,7 @@ export default function LoginPage() {
       <SiteNav />
       <main className="mx-auto max-w-md px-6 py-20">
         <h1 className="font-display text-3xl font-extrabold text-harbor mb-2">تسجيل الدخول</h1>
-        <p className="text-rope mb-8">
-          مرحبًا بعودتك. جرّب <span dir="ltr">0910000000</span> / <span dir="ltr">password123</span> للتجربة.
-        </p>
+        <p className="text-rope mb-8">مرحبًا بعودتك.</p>
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <label className="block">

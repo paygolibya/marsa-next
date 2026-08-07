@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { writeFile, mkdir } from "fs/promises";
-import { join } from "path";
+import { put } from "@vercel/blob";
 import { randomBytes } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { getAuthMerchantId } from "@/lib/auth";
@@ -23,14 +22,9 @@ export async function POST(req: Request) {
     }
 
     const fileExtension = file.name.split(".").pop() || "bin";
-    const uniqueName = `${merchantId}-${Date.now()}-${randomBytes(4).toString("hex")}.${fileExtension}`;
+    const uniqueName = `receipts/${merchantId}-${Date.now()}-${randomBytes(4).toString("hex")}.${fileExtension}`;
 
-    const uploadsDir = join(process.cwd(), "public/receipts");
-    await mkdir(uploadsDir, { recursive: true });
-    const filePath = join(uploadsDir, uniqueName);
-
-    const bytes = await file.arrayBuffer();
-    await writeFile(filePath, Buffer.from(bytes));
+    const blob = await put(uniqueName, file, { access: "public" });
 
     const payment = await prisma.payment.create({
       data: {
@@ -39,7 +33,7 @@ export async function POST(req: Request) {
         amount,
         status: "pending",
         currency: "LYD",
-        receiptFile: `/receipts/${uniqueName}`,
+        receiptFile: blob.url,
         receiptUploadedAt: new Date(),
       },
     });

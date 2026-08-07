@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
+import { isAdminMerchant } from "@/lib/is-admin";
 
 export function SiteNav() {
   const { merchant, ready } = useAuth();
@@ -23,7 +24,14 @@ export function SiteNav() {
           <Link href="/#features" className="hover:text-brass transition-colors">
             المزايا
           </Link>
-          {ready && merchant && merchant.subscriptionStatus === "active" ? (
+          {ready && merchant && isAdminMerchant(merchant) ? (
+            <Link
+              href="/admin"
+              className="rounded-full bg-harbor px-5 py-2 text-canvas hover:bg-harbor-deep transition-colors"
+            >
+              لوحة الإدارة
+            </Link>
+          ) : ready && merchant && merchant.subscriptionStatus === "active" ? (
             <Link
               href="/dashboard"
               className="rounded-full bg-harbor px-5 py-2 text-canvas hover:bg-harbor-deep transition-colors"

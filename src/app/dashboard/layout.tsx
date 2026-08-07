@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
+import { isAdminMerchant } from "@/lib/is-admin";
 import { useCurrentStore } from "@/lib/use-current-store";
 
 const navItems = [
@@ -42,10 +43,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, [ready, token, router]);
 
   useEffect(() => {
-    if (!loading && ready && token && stores.length === 0) router.replace("/onboarding");
-  }, [loading, ready, token, stores.length, router]);
+    if (ready && token && isAdminMerchant(merchant)) router.replace("/admin");
+  }, [ready, token, merchant, router]);
 
-  if (!ready || !token) return null;
+  useEffect(() => {
+    if (!loading && ready && token && !isAdminMerchant(merchant) && stores.length === 0) router.replace("/onboarding");
+  }, [loading, ready, token, merchant, stores.length, router]);
+
+  if (!ready || !token || isAdminMerchant(merchant)) return null;
 
   if (merchant && merchant.subscriptionStatus !== "active") {
     const copy = STATUS_COPY[merchant.subscriptionStatus] ?? STATUS_COPY.pending;
