@@ -38,6 +38,14 @@ export type Merchant = {
   subscriptionTier: string | null;
   subscriptionStatus: string;
 };
+export type StoreCustomization = {
+  primaryColor: string;
+  secondaryColor: string;
+  accentColor: string | null;
+  logo: string | null;
+  tagline: string | null;
+  description: string | null;
+};
 export type Store = {
   id: string;
   merchantId: string;
@@ -49,6 +57,7 @@ export type Store = {
   walletProvider: string | null;
   currency: string;
   createdAt: string;
+  customization?: StoreCustomization | null;
 };
 export type Product = {
   id: string;
