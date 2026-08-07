@@ -1,14 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
   try {
-    const { id } = await params;
+    // The segment is shared with GET /api/templates/[slug], so it may carry
+    // either a template id or a slug depending on the caller.
+    const { slug } = await params;
     const { storeId } = await req.json();
+
+    const template = await prisma.template.findFirst({
+      where: { OR: [{ id: slug }, { slug }] },
+      select: { id: true },
+    });
+
+    if (!template) {
+      return NextResponse.json({ error: "Template not found" }, { status: 404 });
+    }
 
     const updatedStore = await prisma.store.update({
       where: { id: storeId },
-      data: { templateId: id },
+      data: { templateId: template.id },
       include: { template: true },
     });
 
@@ -16,10 +27,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       where: { storeId },
       create: {
         storeId,
-        templateId: id,
+        templateId: template.id,
       },
       update: {
-        templateId: id,
+        templateId: template.id,
       },
     });
 

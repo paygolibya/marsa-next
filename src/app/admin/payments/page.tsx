@@ -43,13 +43,12 @@ export default function PaymentsPage() {
 
   async function approvePayment(paymentId: string) {
     try {
-      const response = await fetch("/api/admin/payments/approve", {
+      const response = await fetch(`/api/admin/payments/${paymentId}/approve`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ paymentId }),
       });
 
       if (response.ok) {
@@ -66,13 +65,13 @@ export default function PaymentsPage() {
     if (!reason) return;
 
     try {
-      const response = await fetch("/api/admin/payments/reject", {
+      const response = await fetch(`/api/admin/payments/${paymentId}/reject`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ paymentId, reason }),
+        body: JSON.stringify({ reason }),
       });
 
       if (response.ok) {
