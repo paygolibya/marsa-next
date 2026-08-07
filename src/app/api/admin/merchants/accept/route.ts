@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthMerchantId, isAdminMerchantId } from "@/lib/auth";
+import { normalizeSubscriptionTier, getPlanFeatureFlags } from "@/lib/checkout-features";
 
 export async function POST(req: Request) {
   const merchantId = getAuthMerchantId(req);
@@ -9,13 +10,29 @@ export async function POST(req: Request) {
   }
 
   try {
-    const { merchantId: targetMerchantId } = await req.json();
+    const { merchantId: targetMerchantId, tier } = await req.json();
+
+    const target = await prisma.merchant.findUnique({
+      where: { id: targetMerchantId },
+      select: { subscriptionTier: true },
+    });
+    if (!target) {
+      return NextResponse.json({ error: "Merchant not found" }, { status: 404 });
+    }
+
+    // The admin can pick a tier explicitly; otherwise keep whatever the
+    // merchant already selected (e.g. via their receipt upload) instead of
+    // silently falling back to "basic".
+    const resolvedTier = normalizeSubscriptionTier(tier ?? target.subscriptionTier);
 
     await prisma.merchant.update({
       where: { id: targetMerchantId },
       data: {
+        subscriptionTier: resolvedTier,
         subscriptionStatus: "active",
         subscriptionStartDate: new Date(),
+        subscriptionEndDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        ...getPlanFeatureFlags(resolvedTier),
       },
     });
 

@@ -17,6 +17,23 @@ export function normalizeSubscriptionTier(tier?: string | null): SubscriptionTie
   return "basic";
 }
 
+// The merchant.* boolean feature flags (dpayEnabled, apiAccessEnabled, ...)
+// have real (non-null) defaults in the DB, so they never fall back to a
+// plan's defaults on their own — whatever tier a merchant is approved on,
+// this must be applied explicitly or the flags just stay at their defaults
+// forever regardless of tier.
+export function getPlanFeatureFlags(tier?: string | null) {
+  const plan = subscriptionPlans[normalizeSubscriptionTier(tier)];
+  return {
+    directWireEnabled: plan.directWire,
+    receiptUploadEnabled: plan.receiptUpload,
+    codEnabled: plan.cod,
+    dpayEnabled: Boolean(plan.dpay),
+    allowMultiplePaymentMethods: plan.multiplePayments,
+    apiAccessEnabled: plan.apiAccess,
+  };
+}
+
 export const subscriptionPlans = {
   basic: {
     id: "basic",

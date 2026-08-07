@@ -19,12 +19,19 @@ interface Merchant {
   stores: MerchantStore[];
 }
 
+const TIER_LABELS: Record<string, string> = {
+  basic: "المبتدئ (Basic)",
+  professional: "المتقدم (Professional)",
+  advanced: "الاحترافي (Advanced)",
+};
+
 export default function MerchantsPage() {
   const { token } = useAuth();
   const [merchants, setMerchants] = useState<Merchant[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedMerchant, setSelectedMerchant] = useState<Merchant | null>(null);
   const [showDetails, setShowDetails] = useState(false);
+  const [acceptingMerchant, setAcceptingMerchant] = useState<Merchant | null>(null);
 
   useEffect(() => {
     void fetchMerchants();
@@ -46,9 +53,7 @@ export default function MerchantsPage() {
     }
   }
 
-  async function acceptMerchant(merchantId: string) {
-    if (!window.confirm("تأكيد قبول هذا التاجر؟")) return;
-
+  async function acceptMerchant(merchantId: string, tier: string) {
     try {
       const response = await fetch("/api/admin/merchants/accept", {
         method: "POST",
@@ -56,11 +61,12 @@ export default function MerchantsPage() {
           "Content-Type": "application/json",
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ merchantId }),
+        body: JSON.stringify({ merchantId, tier }),
       });
 
       if (response.ok) {
         alert("✓ تم قبول التاجر");
+        setAcceptingMerchant(null);
         await fetchMerchants();
       } else {
         const data = await response.json().catch(() => null);
@@ -195,6 +201,14 @@ export default function MerchantsPage() {
         />
       )}
 
+      {acceptingMerchant && (
+        <AcceptMerchantModal
+          merchant={acceptingMerchant}
+          onConfirm={(tier) => void acceptMerchant(acceptingMerchant.id, tier)}
+          onClose={() => setAcceptingMerchant(null)}
+        />
+      )}
+
       {loading ? (
         <p className="text-rope">جاري التحميل...</p>
       ) : (
@@ -218,7 +232,7 @@ export default function MerchantsPage() {
                   <td className="px-6 py-4">{merchant.phone}</td>
                   <td className="px-6 py-4">
                     <span className="rounded-full bg-blue-100 px-3 py-1 text-sm font-bold text-blue-800">
-                      {merchant.subscriptionTier || "لم يختر"}
+                      {merchant.subscriptionTier ? TIER_LABELS[merchant.subscriptionTier] ?? merchant.subscriptionTier : "لم يختر"}
                     </span>
                   </td>
                   <td className="px-6 py-4">
@@ -256,7 +270,7 @@ export default function MerchantsPage() {
                       {(merchant.subscriptionStatus === "pending" || merchant.subscriptionStatus === "inactive") && (
                         <>
                           <button
-                            onClick={() => void acceptMerchant(merchant.id)}
+                            onClick={() => setAcceptingMerchant(merchant)}
                             className="rounded bg-emerald-600 px-3 py-1 text-sm font-bold text-white hover:bg-emerald-700"
                             title="قبول"
                           >
@@ -324,7 +338,7 @@ function MerchantDetailsModal({
             </div>
             <div>
               <p className="text-sm text-gray-600">الخطة</p>
-              <p className="font-bold">{merchant.subscriptionTier || "لم يختر"}</p>
+              <p className="font-bold">{merchant.subscriptionTier ? TIER_LABELS[merchant.subscriptionTier] ?? merchant.subscriptionTier : "لم يختر"}</p>
             </div>
             <div>
               <p className="text-sm text-gray-600">الحالة</p>
@@ -369,6 +383,47 @@ function MerchantDetailsModal({
         >
           إغلاق
         </button>
+      </div>
+    </div>
+  );
+}
+
+function AcceptMerchantModal({
+  merchant,
+  onConfirm,
+  onClose,
+}: {
+  merchant: Merchant;
+  onConfirm: (tier: string) => void;
+  onClose: () => void;
+}) {
+  const [tier, setTier] = useState(merchant.subscriptionTier || "basic");
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+      <div className="mx-4 w-full max-w-md rounded-lg bg-white p-8">
+        <h2 className="mb-2 text-xl font-bold">قبول {merchant.name}</h2>
+        <p className="mb-6 text-sm text-gray-600">اختر الخطة التي سيتم تفعيل حساب التاجر عليها.</p>
+
+        <label className="mb-6 block">
+          <span className="mb-2 block text-sm font-bold text-gray-700">الخطة</span>
+          <select value={tier} onChange={(e) => setTier(e.target.value)} className="w-full rounded-lg border px-3 py-2">
+            {Object.entries(TIER_LABELS).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <div className="flex gap-3">
+          <button onClick={onClose} className="flex-1 rounded-lg border border-gray-300 py-2 font-bold text-gray-700 hover:bg-gray-50">
+            إلغاء
+          </button>
+          <button onClick={() => onConfirm(tier)} className="flex-1 rounded-lg bg-emerald-600 py-2 font-bold text-white hover:bg-emerald-700">
+            تأكيد القبول
+          </button>
+        </div>
       </div>
     </div>
   );

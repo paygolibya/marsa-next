@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthMerchantId, isAdminMerchantId } from "@/lib/auth";
+import { getPlanFeatureFlags } from "@/lib/checkout-features";
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const merchantId = getAuthMerchantId(req);
@@ -26,6 +27,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         subscriptionStatus: "active",
         subscriptionStartDate: new Date(),
         subscriptionEndDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        ...getPlanFeatureFlags(payment.tier),
       },
     });
 
