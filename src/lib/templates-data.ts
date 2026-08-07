@@ -10,7 +10,7 @@ export const templatesData = [
     billingType: "free",
     category: "all",
     thumbnail: "/templates/modern-thumb.jpg",
-    previewUrl: "https://preview-modern.rifqa.ly",
+    previewUrl: "/preview/modern",
     features: ["Fast Loading", "Mobile Optimized", "RTL Support", "High Conversion"],
     defaultColors: {
       primaryColor: "#0066cc",
@@ -34,7 +34,7 @@ export const templatesData = [
     billingType: "free",
     category: "all",
     thumbnail: "/templates/bold-thumb.jpg",
-    previewUrl: "https://preview-bold.rifqa.ly",
+    previewUrl: "/preview/bold",
     features: ["Animated Sections", "Strong Typography", "Mobile First", "Visual Storytelling"],
     defaultColors: {
       primaryColor: "#ef4444",
@@ -58,7 +58,7 @@ export const templatesData = [
     billingType: "monthly",
     category: "premium",
     thumbnail: "/templates/luxury-thumb.jpg",
-    previewUrl: "https://preview-luxury.rifqa.ly",
+    previewUrl: "/preview/luxury",
     features: ["Dark Mode", "Gold Accents", "Advanced Animations", "Wishlist Feature"],
     defaultColors: {
       primaryColor: "#1f2937",
@@ -82,7 +82,7 @@ export const templatesData = [
     billingType: "one-time",
     category: "premium",
     thumbnail: "/templates/marketplace-thumb.jpg",
-    previewUrl: "https://preview-marketplace.rifqa.ly",
+    previewUrl: "/preview/marketplace",
     features: ["Category Pages", "Bulk Orders", "Wholesale Pricing", "RFQ Feature"],
     defaultColors: {
       primaryColor: "#0066cc",
