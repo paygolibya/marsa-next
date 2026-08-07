@@ -12,8 +12,27 @@ const navItems = [
   { href: "/dashboard/orders", label: "الطلبات" },
 ];
 
+const STATUS_COPY: Record<string, { title: string; body: string }> = {
+  pending: {
+    title: "حسابك قيد المراجعة",
+    body: "استلمنا طلبك وسيقوم فريقنا بمراجعته وتفعيل حسابك قريبًا.",
+  },
+  inactive: {
+    title: "لم يتم تفعيل حسابك بعد",
+    body: "أكمل الاشتراك ورفع إيصال الدفع، وسنقوم بتفعيل حسابك بعد المراجعة.",
+  },
+  rejected: {
+    title: "تم رفض طلبك",
+    body: "تواصل معنا لمعرفة السبب أو لإعادة تقديم طلبك.",
+  },
+  suspended: {
+    title: "تم إيقاف حسابك مؤقتًا",
+    body: "تواصل مع الدعم لمعرفة التفاصيل وإعادة تفعيل حسابك.",
+  },
+};
+
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { token, merchant, ready, logout } = useAuth();
+  const { token, merchant, ready, logout, refreshMerchant } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const { stores, store, selectStore, loading } = useCurrentStore();
@@ -27,6 +46,29 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, [loading, ready, token, stores.length, router]);
 
   if (!ready || !token) return null;
+
+  if (merchant && merchant.subscriptionStatus !== "active") {
+    const copy = STATUS_COPY[merchant.subscriptionStatus] ?? STATUS_COPY.pending;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-canvas px-6">
+        <div className="max-w-md text-center">
+          <h1 className="font-display text-2xl font-extrabold text-harbor mb-3">{copy.title}</h1>
+          <p className="text-rope mb-8">{copy.body}</p>
+          <div className="flex items-center justify-center gap-3">
+            <button
+              onClick={() => void refreshMerchant()}
+              className="rounded-full bg-signal px-5 py-2.5 font-bold text-canvas hover:bg-signal-dark transition-colors"
+            >
+              تحقق من الحالة
+            </button>
+            <button onClick={logout} className="text-rope hover:text-harbor transition-colors">
+              تسجيل الخروج
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex">

@@ -29,7 +29,7 @@ function CustomizePageContent() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="mx-auto max-w-6xl px-4 py-8">
-        <TemplateCustomizer storeId={storeId} templateName={templateName} onSave={() => router.push(`/dashboard?storeId=${storeId}`)} />
+        <TemplateCustomizer storeId={storeId} templateName={templateName} onSave={() => router.push("/subscription")} />
       </div>
     </div>
   );

@@ -23,12 +23,16 @@ export function SiteNav() {
           <Link href="/#features" className="hover:text-brass transition-colors">
             المزايا
           </Link>
-          {ready && merchant ? (
+          {ready && merchant && merchant.subscriptionStatus === "active" ? (
             <Link
               href="/dashboard"
               className="rounded-full bg-harbor px-5 py-2 text-canvas hover:bg-harbor-deep transition-colors"
             >
               لوحة التحكم
+            </Link>
+          ) : ready && merchant ? (
+            <Link href="/dashboard" className="text-rope hover:text-harbor transition-colors">
+              حسابك قيد المراجعة
             </Link>
           ) : (
             <>

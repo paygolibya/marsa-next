@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import type { Merchant } from "@/lib/api";
+import { api, type Merchant } from "@/lib/api";
 
 type AuthState = {
   token: string | null;
@@ -9,6 +9,7 @@ type AuthState = {
   ready: boolean; // true once localStorage has been read on mount
   login: (token: string, merchant: Merchant) => void;
   logout: () => void;
+  refreshMerchant: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthState | null>(null);
@@ -46,8 +47,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem(STORAGE_KEY);
   }
 
+  // Re-fetches the merchant record from the server, e.g. to pick up an
+  // admin's approval/rejection without requiring the merchant to log out
+  // and back in.
+  async function refreshMerchant() {
+    if (!token) return;
+    try {
+      const { merchant: fresh } = await api.me(token);
+      setMerchant(fresh);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ token, merchant: fresh }));
+    } catch {
+      // network hiccup or expired token — leave the cached merchant as-is
+    }
+  }
+
+  useEffect(() => {
+    if (ready && token) void refreshMerchant();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready, token]);
+
   return (
-    <AuthContext.Provider value={{ token, merchant, ready, login, logout }}>{children}</AuthContext.Provider>
+    <AuthContext.Provider value={{ token, merchant, ready, login, logout, refreshMerchant }}>
+      {children}
+    </AuthContext.Provider>
   );
 }
 

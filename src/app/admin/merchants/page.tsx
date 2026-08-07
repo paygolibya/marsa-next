@@ -159,6 +159,8 @@ export default function MerchantsPage() {
         return "معلق";
       case "rejected":
         return "مرفوض";
+      case "pending":
+        return "قيد المراجعة";
       default:
         return "غير نشط";
     }
@@ -172,8 +174,10 @@ export default function MerchantsPage() {
         return "bg-red-100 text-red-800";
       case "rejected":
         return "bg-orange-100 text-orange-800";
-      default:
+      case "pending":
         return "bg-yellow-100 text-yellow-800";
+      default:
+        return "bg-gray-100 text-gray-800";
     }
   }
 
@@ -249,7 +253,7 @@ export default function MerchantsPage() {
                       >
                         🔗
                       </button>
-                      {merchant.subscriptionStatus === "inactive" && (
+                      {(merchant.subscriptionStatus === "pending" || merchant.subscriptionStatus === "inactive") && (
                         <>
                           <button
                             onClick={() => void acceptMerchant(merchant.id)}

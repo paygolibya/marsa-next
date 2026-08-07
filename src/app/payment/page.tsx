@@ -89,7 +89,7 @@ function PaymentPageContent() {
 
       setSuccess(true);
       setTimeout(() => {
-        router.push("/dashboard?payment=pending");
+        router.push("/dashboard");
       }, 2000);
     } catch (err) {
       setError(err instanceof Error ? err.message : "حدث خطأ ما");

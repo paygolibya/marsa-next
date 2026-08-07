@@ -35,7 +35,13 @@ export async function POST(req: Request) {
     const token = signMerchantToken(merchant.id);
     return NextResponse.json({
       token,
-      merchant: { id: merchant.id, name: merchant.name, phone: merchant.phone },
+      merchant: {
+        id: merchant.id,
+        name: merchant.name,
+        phone: merchant.phone,
+        subscriptionTier: merchant.subscriptionTier,
+        subscriptionStatus: merchant.subscriptionStatus,
+      },
     });
   } catch (err) {
     console.error(err);

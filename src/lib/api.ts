@@ -31,7 +31,13 @@ function authHeaders(token: string | null): HeadersInit {
 }
 
 // --- Types mirroring the Prisma models returned by the API ---
-export type Merchant = { id: string; name: string; phone: string };
+export type Merchant = {
+  id: string;
+  name: string;
+  phone: string;
+  subscriptionTier: string | null;
+  subscriptionStatus: string;
+};
 export type Store = {
   id: string;
   merchantId: string;
@@ -88,6 +94,8 @@ export const api = {
       method: "POST",
       body: JSON.stringify(body),
     }),
+
+  me: (token: string) => request<{ merchant: Merchant }>("/api/auth/me", { headers: authHeaders(token) }),
 
   createStore: (
     token: string,

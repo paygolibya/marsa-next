@@ -1,22 +1,11 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useCurrentStore } from "@/lib/use-current-store";
 import { api, formatLYD, type Order, type Product } from "@/lib/api";
 
 export default function DashboardOverviewPage() {
-  return (
-    <Suspense fallback={null}>
-      <DashboardOverviewContent />
-    </Suspense>
-  );
-}
-
-function DashboardOverviewContent() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
   const { token } = useAuth();
   const { store, stores } = useCurrentStore();
   const [orders, setOrders] = useState<Order[]>([]);
@@ -29,8 +18,6 @@ function DashboardOverviewContent() {
   }, [token, store]);
 
   if (!store) return null;
-
-  const paymentPending = searchParams.get("payment") === "pending";
 
   const totalRevenueCents = orders
     .filter((o) => o.paymentStatus === "paid" || o.paymentMethod === "cod")
@@ -47,22 +34,6 @@ function DashboardOverviewContent() {
     <div className="p-10">
       <h1 className="font-display text-2xl font-extrabold text-harbor mb-1">نظرة عامة</h1>
       <p className="text-rope mb-8">{store.name}</p>
-
-      {paymentPending && (
-        <div className="mb-8 rounded-2xl border border-amber-300 bg-amber-50 p-6 text-amber-900">
-          <h2 className="mb-2 font-bold">انتظر الموافقة</h2>
-          <p className="text-sm">
-            تم استلام إيصال الدفع وسيتم تفعيل حسابك بعد التحقق من التحويل خلال 24 ساعة.
-          </p>
-          <button
-            type="button"
-            onClick={() => router.push("/subscription")}
-            className="mt-4 rounded-full bg-brass px-4 py-2 font-bold text-canvas"
-          >
-            اختر خطة أخرى
-          </button>
-        </div>
-      )}
 
       <div className="grid sm:grid-cols-3 gap-6 mb-10">
         {stats.map((s) => (
