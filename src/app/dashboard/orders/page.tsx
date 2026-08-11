@@ -13,6 +13,13 @@ const statusLabels: Record<Order["status"], string> = {
   cancelled: "ملغى",
 };
 
+const courierStatusLabels: Record<string, string> = {
+  accepted: "مستلمة من المخزن",
+  delivered: "تم التسليم",
+  failed_delivery: "فشل التسليم",
+  returned: "مرتجعة",
+};
+
 const filters: { value: Order["status"] | "all"; label: string }[] = [
   { value: "all", label: "الكل" },
   { value: "pending", label: "قيد الانتظار" },
@@ -65,7 +72,9 @@ export default function DashboardOrdersPage() {
                 <th className="px-5 py-3 font-bold">المدينة</th>
                 <th className="px-5 py-3 font-bold">الإجمالي</th>
                 <th className="px-5 py-3 font-bold">الدفع</th>
+                <th className="px-5 py-3 font-bold">الشحن</th>
                 <th className="px-5 py-3 font-bold">الحالة</th>
+                <th className="px-5 py-3 font-bold">حالة الشحنة</th>
                 <th className="px-5 py-3 font-bold">رقم التتبع</th>
               </tr>
             </thead>
@@ -78,11 +87,13 @@ export default function DashboardOrdersPage() {
                   <td className="px-5 py-3 text-rope">
                     {o.paymentMethod === "cod" ? "عند الاستلام" : o.paymentStatus === "paid" ? "مدفوع" : "قيد الدفع"}
                   </td>
+                  <td className="px-5 py-3 text-rope">{o.shippingCents > 0 ? formatLYD(o.shippingCents) : "—"}</td>
                   <td className="px-5 py-3">
                     <span className="stamp h-7 px-3 border-brass text-brass text-xs font-bold">
                       {statusLabels[o.status]}
                     </span>
                   </td>
+                  <td className="px-5 py-3 text-rope">{courierStatusLabels[o.courierStatus ?? ""] ?? o.courierStatus ?? "—"}</td>
                   <td className="px-5 py-3 text-rope font-mono" dir="ltr">
                     {o.courierTrackingId ?? "—"}
                   </td>

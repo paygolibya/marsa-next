@@ -188,12 +188,55 @@ model Order {
   courierTrackingId String?  @map("courier_tracking_id")
   status            String   @default("pending") // pending -> confirmed -> shipped -> delivered -> cancelled
   totalCents        Int      @map("total_cents")
+  shippingCents     Int      @default(0) @map("shipping_cents")
+  courierStatus     String?  @map("courier_status") // raw courier-reported status, e.g. accepted/delivered/failed_delivery/returned
+  courierStatusAt   DateTime? @map("courier_status_at")
+  courierNote       String?  @map("courier_note") // failure/return reason from the courier
   createdAt         DateTime @default(now()) @map("created_at")
+
+  vanexAreaId String?     @map("vanex_area_id")
+  vanexArea   VanexArea?  @relation(fields: [vanexAreaId], references: [id], onDelete: SetNull)
 
   store Store       @relation(fields: [storeId], references: [id])
   items OrderItem[]
 
   @@map("orders")
+}
+
+// ============================================
+// VANEX SHIPPING INTEGRATION
+// ============================================
+
+model VanexCity {
+  id         String   @id @default(cuid())
+  vanexId    Int      @unique @map("vanex_id")
+  name       String
+  priceCents Int      @map("price_cents")
+  code       String
+  branch     Int
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  areas VanexArea[]
+
+  @@map("vanex_cities")
+}
+
+model VanexArea {
+  id         String   @id @default(cuid())
+  vanexId    Int      @unique @map("vanex_id")
+  cityId     String   @map("city_id")
+  name       String
+  priceCents Int      @map("price_cents")
+  code       String
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  city   VanexCity @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  orders Order[]
+
+  @@index([cityId])
+  @@map("vanex_areas")
 }
 
 model OrderItem {

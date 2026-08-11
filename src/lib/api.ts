@@ -58,6 +58,7 @@ export type Store = {
   currency: string;
   createdAt: string;
   customization?: StoreCustomization | null;
+  dpayAvailable?: boolean;
 };
 export type Product = {
   id: string;
@@ -87,9 +88,13 @@ export type Order = {
   courierTrackingId: string | null;
   status: "pending" | "confirmed" | "shipped" | "delivered" | "cancelled";
   totalCents: number;
+  shippingCents: number;
+  courierStatus: string | null;
   createdAt: string;
   items?: OrderItem[];
 };
+export type VanexArea = { id: string; name: string; priceCents: number };
+export type VanexCity = { id: string; name: string; priceCents: number; areas: VanexArea[] };
 
 export const api = {
   register: (body: { name: string; phone: string; password: string }) =>
@@ -141,16 +146,22 @@ export const api = {
   createOrder: (body: {
     storeSlug: string;
     items: { productId: string; quantity: number }[];
-    buyer: { name: string; phone: string; city: string; address: string };
+    buyer: { name: string; phone: string; city: string; address: string; vanexAreaId?: string };
     paymentMethod: "cod" | "wallet";
   }) =>
-    request<{ orderId: string; totalCents: number; trackingId: string; courier: string; paymentStatus: string }>(
-      "/api/orders",
-      { method: "POST", body: JSON.stringify(body) }
-    ),
+    request<{
+      orderId: string;
+      totalCents: number;
+      shippingCents: number;
+      trackingId: string;
+      courier: string;
+      paymentStatus: string;
+    }>("/api/orders", { method: "POST", body: JSON.stringify(body) }),
 
   ordersByStore: (token: string, storeId: string) =>
     request<Order[]>(`/api/orders/by-store/${storeId}`, { headers: authHeaders(token) }),
+
+  vanexCities: () => request<{ cities: VanexCity[] }>("/api/vanex/cities"),
 };
 
 export function formatLYD(cents: number): string {

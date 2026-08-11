@@ -42,6 +42,7 @@ export const createOrderSchema = z.object({
     phone: z.string().min(6, "رقم هاتف غير صالح"),
     city: z.string().min(1, "المدينة مطلوبة"),
     address: z.string().min(1, "العنوان مطلوب"),
+    vanexAreaId: z.string().min(1).optional(),
   }),
   paymentMethod: z.enum(["cod", "wallet"]),
 });

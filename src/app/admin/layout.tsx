@@ -11,6 +11,7 @@ const navItems = [
   { href: "/admin/payments", label: "الدفعات", icon: "💰" },
   { href: "/admin/merchants", label: "التجار", icon: "👥" },
   { href: "/admin/orders", label: "الطلبات", icon: "📦" },
+  { href: "/admin/vanex", label: "الشحن (Vanex)", icon: "🚚" },
   { href: "/admin/settings", label: "الإعدادات", icon: "⚙️" },
 ];
 

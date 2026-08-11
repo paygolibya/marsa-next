@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { api, ApiError, formatLYD, type Store } from "@/lib/api";
+import { api, ApiError, formatLYD, type Store, type VanexCity } from "@/lib/api";
 import { useCart } from "@/lib/use-cart";
 
 const courierLabels: Record<string, string> = {
@@ -27,29 +27,58 @@ export default function CheckoutPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const usesVanexPricing = store?.courier === "vanex";
+  const [vanexCities, setVanexCities] = useState<VanexCity[]>([]);
+  const [vanexCityId, setVanexCityId] = useState("");
+  const [vanexAreaId, setVanexAreaId] = useState("");
+
   useEffect(() => {
     api.publicStore(slug).then(({ store }) => {
       setStore(store);
-      setPaymentMethod(store.codEnabled ? "cod" : "wallet");
+      const walletAvailable = Boolean(store.walletProvider && store.dpayAvailable);
+      setPaymentMethod(store.codEnabled ? "cod" : walletAvailable ? "wallet" : "cod");
     });
   }, [slug]);
+
+  useEffect(() => {
+    if (!usesVanexPricing) return;
+    api.vanexCities().then(({ cities }) => setVanexCities(cities));
+  }, [usesVanexPricing]);
+
+  const walletAvailable = Boolean(store?.walletProvider && store?.dpayAvailable);
+
+  const selectedCity = vanexCities.find((c) => c.id === vanexCityId);
+  const selectedArea = selectedCity?.areas.find((a) => a.id === vanexAreaId);
+  const shippingCents = usesVanexPricing ? selectedArea?.priceCents ?? 0 : 0;
+  const grandTotalCents = cart.subtotalCents + shippingCents;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (cart.lines.length === 0) return;
+    if (usesVanexPricing && !selectedArea) {
+      setError("اختر المدينة والمنطقة");
+      return;
+    }
     setError(null);
     setLoading(true);
     try {
       const result = await api.createOrder({
         storeSlug: slug,
         items: cart.lines.map((l) => ({ productId: l.productId, quantity: l.quantity })),
-        buyer: { name, phone, city, address },
+        buyer: {
+          name,
+          phone,
+          city: selectedArea ? `${selectedCity?.name} - ${selectedArea.name}` : city,
+          address,
+          vanexAreaId: selectedArea?.id,
+        },
         paymentMethod,
       });
       cart.clear();
       const q = new URLSearchParams({
         orderId: result.orderId,
         totalCents: String(result.totalCents),
+        shippingCents: String(result.shippingCents),
         trackingId: result.trackingId,
         courier: result.courier,
         paymentStatus: result.paymentStatus,
@@ -88,10 +117,51 @@ export default function CheckoutPage() {
             <span className="block text-sm font-bold text-harbor mb-1.5">رقم الهاتف</span>
             <input required dir="ltr" value={phone} onChange={(e) => setPhone(e.target.value)} className="input" />
           </label>
-          <label className="block">
-            <span className="block text-sm font-bold text-harbor mb-1.5">المدينة</span>
-            <input required value={city} onChange={(e) => setCity(e.target.value)} className="input" placeholder="طرابلس" />
-          </label>
+          {usesVanexPricing ? (
+            <div className="grid grid-cols-2 gap-3">
+              <label className="block">
+                <span className="block text-sm font-bold text-harbor mb-1.5">المدينة</span>
+                <select
+                  required
+                  value={vanexCityId}
+                  onChange={(e) => {
+                    setVanexCityId(e.target.value);
+                    setVanexAreaId("");
+                  }}
+                  className="input"
+                >
+                  <option value="">اختر المدينة</option>
+                  {vanexCities.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="block">
+                <span className="block text-sm font-bold text-harbor mb-1.5">المنطقة</span>
+                <select
+                  required
+                  disabled={!selectedCity}
+                  value={vanexAreaId}
+                  onChange={(e) => setVanexAreaId(e.target.value)}
+                  className="input disabled:opacity-50"
+                >
+                  <option value="">اختر المنطقة</option>
+                  {selectedCity?.areas.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.name} — {formatLYD(a.priceCents)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+          ) : (
+            <label className="block">
+              <span className="block text-sm font-bold text-harbor mb-1.5">المدينة</span>
+              <input required value={city} onChange={(e) => setCity(e.target.value)} className="input" placeholder="طرابلس" />
+            </label>
+          )}
           <label className="block">
             <span className="block text-sm font-bold text-harbor mb-1.5">العنوان بالتفصيل</span>
             <textarea
@@ -125,7 +195,7 @@ export default function CheckoutPage() {
                   الدفع عند الاستلام
                 </label>
               )}
-              {store.walletProvider && (
+              {walletAvailable && (
                 <label className="flex items-center gap-2 rounded-xl border border-harbor/15 bg-white px-4 py-3 cursor-pointer">
                   <input
                     type="radio"
@@ -144,10 +214,10 @@ export default function CheckoutPage() {
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || (usesVanexPricing && !selectedArea)}
             className="w-full rounded-full bg-signal py-3 font-bold text-canvas hover:bg-signal-dark transition-colors disabled:opacity-60"
           >
-            {loading ? "جارٍ التأكيد..." : `تأكيد الطلب — ${formatLYD(cart.subtotalCents)}`}
+            {loading ? "جارٍ التأكيد..." : `تأكيد الطلب — ${formatLYD(grandTotalCents)}`}
           </button>
         </form>
       </div>
@@ -164,9 +234,15 @@ export default function CheckoutPage() {
             </li>
           ))}
         </ul>
+        {usesVanexPricing && (
+          <div className="flex justify-between text-sm mt-3 pt-3 border-t border-harbor/10">
+            <span>الشحن</span>
+            <span>{selectedArea ? formatLYD(shippingCents) : "—"}</span>
+          </div>
+        )}
         <div className="border-t border-harbor/10 mt-4 pt-4 flex justify-between font-bold text-harbor">
           <span>الإجمالي</span>
-          <span>{formatLYD(cart.subtotalCents)}</span>
+          <span>{formatLYD(grandTotalCents)}</span>
         </div>
       </aside>
     </main>

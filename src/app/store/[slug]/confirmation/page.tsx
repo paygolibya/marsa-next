@@ -25,6 +25,7 @@ function ConfirmationPageContent() {
 
   const orderId = search.get("orderId");
   const totalCents = Number(search.get("totalCents") ?? 0);
+  const shippingCents = Number(search.get("shippingCents") ?? 0);
   const trackingId = search.get("trackingId");
   const courier = search.get("courier") ?? "";
   const paymentStatus = search.get("paymentStatus");
@@ -50,6 +51,7 @@ function ConfirmationPageContent() {
         <Row label="رقم الطلب" value={orderId} mono />
         <Row label="رقم التتبع" value={trackingId ?? "—"} mono />
         <Row label="شركة الشحن" value={courierLabels[courier] ?? courier} />
+        {shippingCents > 0 && <Row label="تكلفة الشحن" value={formatLYD(shippingCents)} />}
         <Row label="الإجمالي" value={formatLYD(totalCents)} />
         <Row label="حالة الدفع" value={paymentStatus === "paid" ? "مدفوع" : "قيد الدفع عند الاستلام"} />
       </dl>
