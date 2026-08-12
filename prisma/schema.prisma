@@ -112,6 +112,13 @@ model Merchant {
   selectedPaymentMethod  String?   @map("selected_payment_method")
   dpayApiToken           String?   @map("dpay_api_token")
 
+  phoneVerified          Boolean   @default(false) @map("phone_verified")
+  otpCodeHash            String?   @map("otp_code_hash")
+  otpExpiresAt           DateTime? @map("otp_expires_at")
+  otpSentAt              DateTime? @map("otp_sent_at")
+  otpAttempts            Int       @default(0) @map("otp_attempts")
+  registrationIp         String?   @map("registration_ip")
+
   stores Store[]
   payments Payment[]
 
@@ -145,7 +152,7 @@ model Store {
   name           String
   slug           String   @unique
   theme          String   @default("souk")
-  courier        String   @default("vanex") // 'vanex' | 'sabil' | 'shaheen'
+  courier        String   @default("vanex") // 'vanex' — Sabil/Shaheen removed, no real integration yet
   codEnabled     Boolean  @default(true) @map("cod_enabled")
   walletProvider String?  @map("wallet_provider") // e.g. 'anis' (DPay aggregator merchant)
   currency       String   @default("LYD")

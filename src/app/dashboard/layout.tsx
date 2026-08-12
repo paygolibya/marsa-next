@@ -50,10 +50,34 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, [ready, token, merchant, router]);
 
   useEffect(() => {
-    if (!loading && ready && token && !isAdminMerchant(merchant) && stores.length === 0) router.replace("/onboarding");
+    if (!loading && ready && token && !isAdminMerchant(merchant) && merchant?.phoneVerified && stores.length === 0) {
+      router.replace("/onboarding");
+    }
   }, [loading, ready, token, merchant, stores.length, router]);
 
   if (!ready || !token || isAdminMerchant(merchant)) return null;
+
+  if (merchant && !merchant.phoneVerified) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-canvas px-6">
+        <div className="max-w-md text-center">
+          <h1 className="font-display text-2xl font-extrabold text-harbor mb-3">تحقق من رقم هاتفك</h1>
+          <p className="text-rope mb-8">لم يتم التحقق من رقم هاتفك بعد — أكمل خطوة التحقق للمتابعة.</p>
+          <div className="flex items-center justify-center gap-3">
+            <Link
+              href="/verify-phone"
+              className="rounded-full bg-signal px-5 py-2.5 font-bold text-canvas hover:bg-signal-dark transition-colors"
+            >
+              التحقق الآن
+            </Link>
+            <button onClick={logout} className="text-rope hover:text-harbor transition-colors">
+              تسجيل الخروج
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (merchant && merchant.subscriptionStatus !== "active") {
     const copy = STATUS_COPY[merchant.subscriptionStatus] ?? STATUS_COPY.pending;

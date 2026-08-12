@@ -22,6 +22,12 @@ export default function TemplateSelectionPage() {
     if (ready && token && isAdminMerchant(merchant)) router.replace("/admin");
   }, [ready, token, merchant, router]);
 
+  useEffect(() => {
+    if (ready && token && merchant && !isAdminMerchant(merchant) && !merchant.phoneVerified) {
+      router.replace("/verify-phone");
+    }
+  }, [ready, token, merchant, router]);
+
   async function handleContinue() {
     if (!selectedTemplate || !token) return;
 
@@ -39,7 +45,7 @@ export default function TemplateSelectionPage() {
     }
   }
 
-  if (!ready || !token || isAdminMerchant(merchant)) return null;
+  if (!ready || !token || isAdminMerchant(merchant) || (merchant && !merchant.phoneVerified)) return null;
 
   return (
     <div className="min-h-screen bg-gray-50">

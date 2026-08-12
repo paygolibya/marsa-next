@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendOrderStatusEmail } from "@/lib/integrations/email";
+import { sendShipmentStatusSms } from "@/lib/integrations/sms";
 
 // POST /api/vanex/webhook — Vanex pushes shipment status changes here.
 // Auth is a shared secret header, not a merchant/admin token, since Vanex
@@ -71,6 +72,7 @@ export async function POST(req: Request) {
           { id: order.id, buyerName: order.buyerName, buyerEmail: order.buyerEmail, totalCents: order.totalCents },
           courierStatus
         );
+        await sendShipmentStatusSms(order.buyerPhone, courierStatus, order.courierTrackingId);
       }
     } catch (error) {
       // One bad/unmatched package shouldn't fail the whole batch — Vanex

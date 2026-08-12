@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getAuthMerchantId } from "@/lib/auth";
+import { getAuthMerchantId, toMerchantDTO } from "@/lib/auth";
 
 // GET /api/auth/me — refresh the merchant's own record (used to pick up
 // subscriptionStatus changes, e.g. after an admin approves the account,
@@ -16,13 +16,5 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Merchant not found" }, { status: 404 });
   }
 
-  return NextResponse.json({
-    merchant: {
-      id: merchant.id,
-      name: merchant.name,
-      phone: merchant.phone,
-      subscriptionTier: merchant.subscriptionTier,
-      subscriptionStatus: merchant.subscriptionStatus,
-    },
-  });
+  return NextResponse.json({ merchant: toMerchantDTO(merchant) });
 }

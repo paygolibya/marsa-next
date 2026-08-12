@@ -6,6 +6,7 @@ import { createOrderSchema } from "@/lib/validation";
 import { getSubscriptionState, getCheckoutPaymentMethods } from "@/lib/checkout-features";
 import { resolveCouponDiscount } from "@/lib/coupons";
 import { sendOrderConfirmationEmail } from "@/lib/integrations/email";
+import { sendNewOrderSms } from "@/lib/integrations/sms";
 
 class OutOfStockError extends Error {
   constructor(productName: string) {
@@ -145,7 +146,7 @@ export async function POST(req: Request) {
         }
 
         return created;
-      });
+      }, { timeout: 15000, maxWait: 10000 });
     } catch (err) {
       if (err instanceof OutOfStockError) {
         return NextResponse.json({ error: err.message }, { status: 409 });
@@ -196,6 +197,7 @@ export async function POST(req: Request) {
       totalCents,
       courierTrackingId: shipment.trackingId,
     });
+    await sendNewOrderSms(store.merchant.phone, order.id, order.buyerName);
 
     return NextResponse.json(
       {

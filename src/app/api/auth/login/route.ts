@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
-import { signMerchantToken } from "@/lib/auth";
+import { signMerchantToken, toMerchantDTO } from "@/lib/auth";
 import { loginSchema } from "@/lib/validation";
 
 // POST /api/auth/login — log in, get a JWT.
@@ -24,13 +24,7 @@ export async function POST(req: Request) {
     const token = signMerchantToken(merchant.id);
     return NextResponse.json({
       token,
-      merchant: {
-        id: merchant.id,
-        name: merchant.name,
-        phone: merchant.phone,
-        subscriptionTier: merchant.subscriptionTier,
-        subscriptionStatus: merchant.subscriptionStatus,
-      },
+      merchant: toMerchantDTO(merchant),
     });
   } catch (err) {
     console.error(err);

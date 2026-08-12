@@ -7,8 +7,6 @@ import { formatLYD } from "@/lib/api";
 
 const courierLabels: Record<string, string> = {
   vanex: "Vanex",
-  sabil: "دريب السبيل",
-  shaheen: "شاهين",
 };
 
 export default function ConfirmationPage() {

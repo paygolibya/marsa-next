@@ -9,12 +9,6 @@ import { isAdminMerchant } from "@/lib/is-admin";
 import { api, ApiError } from "@/lib/api";
 import { templatesData } from "@/lib/templates-data";
 
-const couriers = [
-  { value: "vanex", label: "Vanex" },
-  { value: "sabil", label: "دريب السبيل" },
-  { value: "shaheen", label: "شاهين" },
-];
-
 function slugPreview(name: string) {
   return (
     name
@@ -31,7 +25,7 @@ export default function OnboardingPage() {
   const { token, merchant, ready } = useAuth();
   const [step, setStep] = useState<1 | 2>(1);
   const [name, setName] = useState("");
-  const [courier, setCourier] = useState("vanex");
+  const courier = "vanex";
   const [codEnabled, setCodEnabled] = useState(true);
   const [walletEnabled, setWalletEnabled] = useState(true);
   const [selectedTheme, setSelectedTheme] = useState("modern");
@@ -52,6 +46,12 @@ export default function OnboardingPage() {
 
   useEffect(() => {
     if (ready && token && isAdminMerchant(merchant)) router.replace("/admin");
+  }, [ready, token, merchant, router]);
+
+  useEffect(() => {
+    if (ready && token && merchant && !isAdminMerchant(merchant) && !merchant.phoneVerified) {
+      router.replace("/verify-phone");
+    }
   }, [ready, token, merchant, router]);
 
   async function handleCreate() {
@@ -75,7 +75,7 @@ export default function OnboardingPage() {
     }
   }
 
-  if (!ready || !token || isAdminMerchant(merchant)) return null;
+  if (!ready || !token || isAdminMerchant(merchant) || (merchant && !merchant.phoneVerified)) return null;
 
   return (
     <>
@@ -155,16 +155,10 @@ export default function OnboardingPage() {
               />
             </div>
 
-            <label className="block">
+            <div>
               <span className="block text-sm font-bold text-harbor mb-1.5">شركة الشحن</span>
-              <select value={courier} onChange={(e) => setCourier(e.target.value)} className="input">
-                {couriers.map((c) => (
-                  <option key={c.value} value={c.value}>
-                    {c.label}
-                  </option>
-                ))}
-              </select>
-            </label>
+              <p className="rounded-xl border border-harbor/15 bg-white px-4 py-3 text-sm text-rope">Vanex</p>
+            </div>
 
             <div className="flex items-center justify-between rounded-xl border border-harbor/15 bg-white px-4 py-3">
               <span className="font-bold text-harbor">الدفع عند الاستلام</span>

@@ -21,9 +21,9 @@ export default function RegisterPage() {
     setError(null);
     setLoading(true);
     try {
-      const { token, merchant } = await api.register({ name, phone, password });
+      const { token, merchant, otpSendFailed } = await api.register({ name, phone, password });
       login(token, merchant);
-      router.push("/onboarding");
+      router.push(otpSendFailed ? "/verify-phone?sendFailed=1" : "/verify-phone");
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "تعذّر إنشاء الحساب، حاول مجددًا");
     } finally {

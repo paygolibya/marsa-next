@@ -8,8 +8,6 @@ import { useCart } from "@/lib/use-cart";
 
 const courierLabels: Record<string, string> = {
   vanex: "Vanex",
-  sabil: "دريب السبيل",
-  shaheen: "شاهين",
 };
 
 export default function CheckoutPage() {

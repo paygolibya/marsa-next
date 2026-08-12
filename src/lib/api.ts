@@ -37,6 +37,7 @@ export type Merchant = {
   phone: string;
   subscriptionTier: string | null;
   subscriptionStatus: string;
+  phoneVerified: boolean;
 };
 export type StoreCustomization = {
   primaryColor: string;
@@ -132,7 +133,7 @@ export type ProductReview = {
 
 export const api = {
   register: (body: { name: string; phone: string; password: string }) =>
-    request<{ token: string; merchant: Merchant }>("/api/auth/register", {
+    request<{ token: string; merchant: Merchant; otpSendFailed: boolean }>("/api/auth/register", {
       method: "POST",
       body: JSON.stringify(body),
     }),
@@ -144,6 +145,19 @@ export const api = {
     }),
 
   me: (token: string) => request<{ merchant: Merchant }>("/api/auth/me", { headers: authHeaders(token) }),
+
+  verifyOtp: (token: string, code: string) =>
+    request<{ merchant: Merchant }>("/api/auth/verify-otp", {
+      method: "POST",
+      headers: authHeaders(token),
+      body: JSON.stringify({ code }),
+    }),
+
+  resendOtp: (token: string) =>
+    request<{ success: boolean }>("/api/auth/resend-otp", {
+      method: "POST",
+      headers: authHeaders(token),
+    }),
 
   createStore: (
     token: string,

@@ -1,8 +1,12 @@
 import { z } from "zod";
+import { normalizeLibyanPhone } from "@/lib/integrations/sms";
 
 export const registerSchema = z.object({
   name: z.string().min(1, "الاسم مطلوب"),
-  phone: z.string().min(6, "رقم هاتف غير صالح"),
+  phone: z
+    .string()
+    .transform((v) => normalizeLibyanPhone(v) ?? v)
+    .refine((v) => /^09\d{8}$/.test(v), "رقم هاتف ليبي صحيح مطلوب (مثال: 0912345678)"),
   password: z.string().min(8, "كلمة المرور يجب أن تكون 8 أحرف على الأقل"),
 });
 
@@ -14,7 +18,7 @@ export const loginSchema = z.object({
 export const createStoreSchema = z.object({
   name: z.string().min(1, "اسم المتجر مطلوب"),
   theme: z.string().optional(),
-  courier: z.enum(["vanex", "sabil", "shaheen"]).optional(),
+  courier: z.enum(["vanex"]).optional(),
   codEnabled: z.boolean().optional(),
   walletProvider: z.string().optional().nullable(),
   templateId: z.string().optional().nullable(),

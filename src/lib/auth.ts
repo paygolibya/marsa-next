@@ -58,3 +58,23 @@ export async function isAdminMerchantId(merchantId: string | null | undefined) {
 
   return merchant?.phone ? phones.includes(merchant.phone) : false;
 }
+
+// Register/login/me/verify-otp all need to hand back the same trimmed
+// merchant projection — one place for it instead of four.
+export function toMerchantDTO(merchant: {
+  id: string;
+  name: string;
+  phone: string;
+  subscriptionTier: string | null;
+  subscriptionStatus: string;
+  phoneVerified: boolean;
+}) {
+  return {
+    id: merchant.id,
+    name: merchant.name,
+    phone: merchant.phone,
+    subscriptionTier: merchant.subscriptionTier,
+    subscriptionStatus: merchant.subscriptionStatus,
+    phoneVerified: merchant.phoneVerified,
+  };
+}
