@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { api, formatLYD, type Product, type Store } from "@/lib/api";
@@ -101,7 +102,7 @@ export default function StorefrontPage() {
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {filtered.map((product) => (
                 <div key={product.id} className="rounded-2xl border border-harbor/10 bg-white overflow-hidden flex flex-col">
-                  <div className="aspect-square bg-harbor/5 flex items-center justify-center text-rope text-sm">
+                  <Link href={`/store/${slug}/product/${product.id}`} className="aspect-square bg-harbor/5 flex items-center justify-center text-rope text-sm">
                     {product.imageUrl ? (
                       <Image
                         src={product.imageUrl}
@@ -114,9 +115,11 @@ export default function StorefrontPage() {
                     ) : (
                       "لا توجد صورة"
                     )}
-                  </div>
+                  </Link>
                   <div className="p-4 flex flex-col flex-1">
-                    <h3 className="font-bold text-harbor">{product.name}</h3>
+                    <Link href={`/store/${slug}/product/${product.id}`} className="font-bold text-harbor hover:underline">
+                      {product.name}
+                    </Link>
                     <p className="font-bold mt-1" style={{ color: primary }}>
                       {formatLYD(product.priceCents)}
                     </p>

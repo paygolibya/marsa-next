@@ -11,6 +11,9 @@ const navItems = [
   { href: "/dashboard", label: "نظرة عامة" },
   { href: "/dashboard/products", label: "المنتجات" },
   { href: "/dashboard/orders", label: "الطلبات" },
+  { href: "/dashboard/coupons", label: "كوبونات الخصم" },
+  { href: "/dashboard/analytics", label: "التحليلات" },
+  { href: "/dashboard/settings", label: "إعدادات المتجر" },
 ];
 
 const STATUS_COPY: Record<string, { title: string; body: string }> = {

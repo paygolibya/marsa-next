@@ -56,12 +56,20 @@ function ConfirmationPageContent() {
         <Row label="حالة الدفع" value={paymentStatus === "paid" ? "مدفوع" : "قيد الدفع عند الاستلام"} />
       </dl>
 
-      <Link
-        href={`/store/${params.slug}`}
-        className="mt-10 inline-block rounded-full bg-harbor text-canvas px-8 py-3 font-bold hover:bg-harbor-deep transition-colors"
-      >
-        متابعة التسوق
-      </Link>
+      <div className="mt-10 flex items-center justify-center gap-4">
+        <Link
+          href={`/store/${params.slug}`}
+          className="inline-block rounded-full bg-harbor text-canvas px-8 py-3 font-bold hover:bg-harbor-deep transition-colors"
+        >
+          متابعة التسوق
+        </Link>
+        <Link
+          href={`/track?orderId=${orderId}`}
+          className="inline-block rounded-full border border-harbor/20 px-8 py-3 font-bold text-harbor hover:bg-harbor/5 transition-colors"
+        >
+          تتبع طلبك
+        </Link>
+      </div>
     </main>
   );
 }

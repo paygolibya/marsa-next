@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { sendOrderStatusEmail } from "@/lib/integrations/email";
 
 // POST /api/vanex/webhook — Vanex pushes shipment status changes here.
 // Auth is a shared secret header, not a merchant/admin token, since Vanex
@@ -35,35 +36,41 @@ export async function POST(req: Request) {
 
   const statusAt = time_stamp ? new Date(time_stamp) : new Date();
 
+  const statusByType: Record<string, string> = {
+    package_accepted: "accepted",
+    package_delivered: "delivered",
+    package_failed_delivery: "failed_delivery",
+    packages_returned: "returned",
+  };
+  const courierStatus = statusByType[type];
+  if (!courierStatus) {
+    console.warn(`Vanex webhook: unknown type "${type}"`);
+    return NextResponse.json({ success: true });
+  }
+
   for (const pkg of packages || []) {
     try {
-      switch (type) {
-        case "package_accepted":
-          await prisma.order.updateMany({
-            where: { courierTrackingId: pkg.code },
-            data: { courierStatus: "accepted", courierStatusAt: statusAt },
-          });
-          break;
-        case "package_delivered":
-          await prisma.order.updateMany({
-            where: { courierTrackingId: pkg.code },
-            data: { courierStatus: "delivered", courierStatusAt: statusAt, status: "delivered" },
-          });
-          break;
-        case "package_failed_delivery":
-          await prisma.order.updateMany({
-            where: { courierTrackingId: pkg.code },
-            data: { courierStatus: "failed_delivery", courierStatusAt: statusAt, courierNote: pkg.non_delivery_reason },
-          });
-          break;
-        case "packages_returned":
-          await prisma.order.updateMany({
-            where: { courierTrackingId: pkg.code },
-            data: { courierStatus: "returned", courierStatusAt: statusAt, courierNote: pkg.non_delivery_reason },
-          });
-          break;
-        default:
-          console.warn(`Vanex webhook: unknown type "${type}" for package ${pkg.code}`);
+      const matches = await prisma.order.findMany({ where: { courierTrackingId: pkg.code } });
+      if (matches.length === 0) {
+        console.warn(`Vanex webhook: no order matched tracking id ${pkg.code}`);
+        continue;
+      }
+
+      for (const order of matches) {
+        await prisma.order.update({
+          where: { id: order.id },
+          data: {
+            courierStatus,
+            courierStatusAt: statusAt,
+            courierNote: pkg.non_delivery_reason,
+            ...(courierStatus === "delivered" ? { status: "delivered" } : {}),
+          },
+        });
+        // Best-effort — a failed send never fails the webhook itself.
+        await sendOrderStatusEmail(
+          { id: order.id, buyerName: order.buyerName, buyerEmail: order.buyerEmail, totalCents: order.totalCents },
+          courierStatus
+        );
       }
     } catch (error) {
       // One bad/unmatched package shouldn't fail the whole batch — Vanex

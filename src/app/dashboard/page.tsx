@@ -23,11 +23,13 @@ export default function DashboardOverviewPage() {
     .filter((o) => o.paymentStatus === "paid" || o.paymentMethod === "cod")
     .reduce((sum, o) => sum + o.totalCents, 0);
   const activeProducts = products.filter((p) => p.active).length;
+  const lowStockProducts = products.filter((p) => p.trackInventory && p.active && p.stockQty <= p.lowStockThreshold);
 
   const stats = [
     { label: "إجمالي المبيعات", value: formatLYD(totalRevenueCents) },
     { label: "عدد الطلبات", value: String(orders.length) },
     { label: "المنتجات النشطة", value: String(activeProducts) },
+    { label: "منتجات على وشك النفاد", value: String(lowStockProducts.length) },
   ];
 
   return (
@@ -35,7 +37,7 @@ export default function DashboardOverviewPage() {
       <h1 className="font-display text-2xl font-extrabold text-harbor mb-1">نظرة عامة</h1>
       <p className="text-rope mb-8">{store.name}</p>
 
-      <div className="grid sm:grid-cols-3 gap-6 mb-10">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
         {stats.map((s) => (
           <div key={s.label} className="rounded-2xl border border-harbor/10 bg-white/50 p-6">
             <p className="text-rope text-sm">{s.label}</p>

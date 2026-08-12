@@ -18,6 +18,11 @@ export async function DELETE(req: Request) {
 
     const storeIds = merchantStores.map((store) => store.id);
 
+    // Reviews reference both a Product and an Order — must go before either.
+    await prisma.productReview.deleteMany({
+      where: { product: { storeId: { in: storeIds } } },
+    });
+
     await prisma.orderItem.deleteMany({
       where: {
         order: {
@@ -36,6 +41,10 @@ export async function DELETE(req: Request) {
       where: {
         storeId: { in: storeIds },
       },
+    });
+
+    await prisma.coupon.deleteMany({
+      where: { storeId: { in: storeIds } },
     });
 
     await prisma.store.deleteMany({

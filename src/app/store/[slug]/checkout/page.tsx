@@ -21,11 +21,17 @@ export default function CheckoutPage() {
   const [store, setStore] = useState<Store | null>(null);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [city, setCity] = useState("");
   const [address, setAddress] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<"cod" | "wallet">("cod");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const [couponInput, setCouponInput] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discountCents: number } | null>(null);
+  const [couponMessage, setCouponMessage] = useState<string | null>(null);
+  const [couponChecking, setCouponChecking] = useState(false);
 
   const usesVanexPricing = store?.courier === "vanex";
   const [vanexCities, setVanexCities] = useState<VanexCity[]>([]);
@@ -50,7 +56,29 @@ export default function CheckoutPage() {
   const selectedCity = vanexCities.find((c) => c.id === vanexCityId);
   const selectedArea = selectedCity?.areas.find((a) => a.id === vanexAreaId);
   const shippingCents = usesVanexPricing ? selectedArea?.priceCents ?? 0 : 0;
-  const grandTotalCents = cart.subtotalCents + shippingCents;
+  const discountCents = appliedCoupon?.discountCents ?? 0;
+  const grandTotalCents = cart.subtotalCents + shippingCents - discountCents;
+
+  async function handleApplyCoupon() {
+    if (!couponInput.trim()) return;
+    setCouponChecking(true);
+    setCouponMessage(null);
+    try {
+      const result = await api.validateCoupon({ storeSlug: slug, code: couponInput.trim(), subtotalCents: cart.subtotalCents });
+      if (result.valid) {
+        setAppliedCoupon({ code: couponInput.trim(), discountCents: result.discountCents });
+        setCouponMessage("✓ تم تطبيق الكوبون");
+      } else {
+        setAppliedCoupon(null);
+        setCouponMessage(result.message || "رمز الكوبون غير صحيح");
+      }
+    } catch {
+      setAppliedCoupon(null);
+      setCouponMessage("تعذّر التحقق من الكوبون");
+    } finally {
+      setCouponChecking(false);
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -68,11 +96,13 @@ export default function CheckoutPage() {
         buyer: {
           name,
           phone,
+          email: email || undefined,
           city: selectedArea ? `${selectedCity?.name} - ${selectedArea.name}` : city,
           address,
           vanexAreaId: selectedArea?.id,
         },
         paymentMethod,
+        couponCode: appliedCoupon?.code,
       });
       cart.clear();
       const q = new URLSearchParams({
@@ -116,6 +146,17 @@ export default function CheckoutPage() {
           <label className="block">
             <span className="block text-sm font-bold text-harbor mb-1.5">رقم الهاتف</span>
             <input required dir="ltr" value={phone} onChange={(e) => setPhone(e.target.value)} className="input" />
+          </label>
+          <label className="block">
+            <span className="block text-sm font-bold text-harbor mb-1.5">البريد الإلكتروني (اختياري)</span>
+            <input
+              type="email"
+              dir="ltr"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="input"
+              placeholder="لتصلك تحديثات الطلب"
+            />
           </label>
           {usesVanexPricing ? (
             <div className="grid grid-cols-2 gap-3">
@@ -234,10 +275,40 @@ export default function CheckoutPage() {
             </li>
           ))}
         </ul>
+
+        <div className="mt-4 pt-4 border-t border-harbor/10">
+          <div className="flex gap-2">
+            <input
+              value={couponInput}
+              onChange={(e) => setCouponInput(e.target.value)}
+              className="input flex-1"
+              dir="ltr"
+              placeholder="رمز الكوبون"
+            />
+            <button
+              type="button"
+              onClick={handleApplyCoupon}
+              disabled={couponChecking || !couponInput.trim()}
+              className="rounded-full border border-harbor/20 px-4 py-2 text-sm font-bold text-harbor hover:bg-harbor/5 disabled:opacity-50"
+            >
+              {couponChecking ? "..." : "تطبيق"}
+            </button>
+          </div>
+          {couponMessage && (
+            <p className={`mt-2 text-xs ${appliedCoupon ? "text-green-700" : "text-signal"}`}>{couponMessage}</p>
+          )}
+        </div>
+
         {usesVanexPricing && (
           <div className="flex justify-between text-sm mt-3 pt-3 border-t border-harbor/10">
             <span>الشحن</span>
             <span>{selectedArea ? formatLYD(shippingCents) : "—"}</span>
+          </div>
+        )}
+        {discountCents > 0 && (
+          <div className="flex justify-between text-sm mt-3 text-green-700">
+            <span>الخصم</span>
+            <span>-{formatLYD(discountCents)}</span>
           </div>
         )}
         <div className="border-t border-harbor/10 mt-4 pt-4 flex justify-between font-bold text-harbor">

@@ -152,11 +152,17 @@ model Store {
   templateId     String?  @map("template_id")
   createdAt      DateTime @default(now()) @map("created_at")
 
+  aboutText      String? @map("about_text")
+  returnPolicy   String? @map("return_policy")
+  shippingPolicy String? @map("shipping_policy")
+  businessHours  String? @map("business_hours")
+
   merchant       Merchant               @relation(fields: [merchantId], references: [id])
   template       Template?              @relation(fields: [templateId], references: [id])
   customization  TemplateCustomization?
   products       Product[]
   orders         Order[]
+  coupons        Coupon[]
 
   @@map("stores")
 }
@@ -170,8 +176,13 @@ model Product {
   active     Boolean  @default(true)
   createdAt  DateTime @default(now()) @map("created_at")
 
-  store      Store       @relation(fields: [storeId], references: [id])
+  trackInventory    Boolean @default(false) @map("track_inventory")
+  stockQty          Int     @default(0) @map("stock_qty")
+  lowStockThreshold Int     @default(5) @map("low_stock_threshold")
+
+  store      Store           @relation(fields: [storeId], references: [id])
   orderItems OrderItem[]
+  reviews    ProductReview[]
 
   @@map("products")
 }
@@ -181,12 +192,16 @@ model Order {
   storeId           String   @map("store_id")
   buyerName         String   @map("buyer_name")
   buyerPhone        String   @map("buyer_phone")
+  buyerEmail        String?  @map("buyer_email")
   buyerCity         String   @map("buyer_city")
   buyerAddress      String   @map("buyer_address")
   paymentMethod     String   @map("payment_method") // 'cod' | 'wallet'
   paymentStatus     String   @map("payment_status") // 'pending' | 'paid' | 'failed'
   courierTrackingId String?  @map("courier_tracking_id")
   status            String   @default("pending") // pending -> confirmed -> shipped -> delivered -> cancelled
+  productSubtotalCents Int   @default(0) @map("product_subtotal_cents")
+  discountCents     Int      @default(0) @map("discount_cents")
+  couponCode        String?  @map("coupon_code")
   totalCents        Int      @map("total_cents")
   shippingCents     Int      @default(0) @map("shipping_cents")
   courierStatus     String?  @map("courier_status") // raw courier-reported status, e.g. accepted/delivered/failed_delivery/returned
@@ -197,10 +212,47 @@ model Order {
   vanexAreaId String?     @map("vanex_area_id")
   vanexArea   VanexArea?  @relation(fields: [vanexAreaId], references: [id], onDelete: SetNull)
 
-  store Store       @relation(fields: [storeId], references: [id])
-  items OrderItem[]
+  store   Store           @relation(fields: [storeId], references: [id])
+  items   OrderItem[]
+  reviews ProductReview[]
 
   @@map("orders")
+}
+
+model Coupon {
+  id            String    @id @default(cuid())
+  storeId       String    @map("store_id")
+  code          String
+  discountType  String    @map("discount_type") // 'percent' | 'fixed'
+  discountValue Int       @map("discount_value") // percent: 1-100; fixed: cents
+  minOrderCents Int?      @map("min_order_cents")
+  maxUsage      Int?      @map("max_usage")
+  usageCount    Int       @default(0) @map("usage_count")
+  active        Boolean   @default(true)
+  expiresAt     DateTime? @map("expires_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@unique([storeId, code])
+  @@map("coupons")
+}
+
+model ProductReview {
+  id         String   @id @default(cuid())
+  productId  String   @map("product_id")
+  orderId    String   @map("order_id")
+  buyerName  String   @map("buyer_name")
+  buyerPhone String   @map("buyer_phone") // spam-gate re-check only, never returned by the public GET
+  rating     Int
+  reviewText String?  @map("review_text")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@unique([orderId, productId])
+  @@map("product_reviews")
 }
 
 // ============================================
