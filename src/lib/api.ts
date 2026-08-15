@@ -2,6 +2,8 @@
 // Kept deliberately simple — no external HTTP library needed for same-origin
 // calls to a Next.js API.
 
+import type { Payout, CalculatePayoutsResult, PlatformStats, MerchantPayoutSummary } from "@/types/payment";
+
 export class ApiError extends Error {
   status: number;
   constructor(message: string, status: number) {
@@ -308,6 +310,28 @@ export const api = {
       byDay: { date: string; orders: number; revenueCents: number }[];
       topProducts: { name: string; quantity: number; revenueCents: number }[];
     }>(`/api/analytics/by-store/${storeId}?days=${days}`, { headers: authHeaders(token) }),
+
+  calculatePayouts: (token: string, body: { periodStart?: string; periodEnd?: string }) =>
+    request<CalculatePayoutsResult>("/api/admin/calculate-payouts", {
+      method: "POST",
+      headers: authHeaders(token),
+      body: JSON.stringify(body),
+    }),
+
+  adminPayouts: (token: string, status?: string) =>
+    request<{ stats: PlatformStats; payouts: Payout[] }>(`/api/admin/payouts${status ? `?status=${status}` : ""}`, {
+      headers: authHeaders(token),
+    }),
+
+  markPayoutPaid: (token: string, id: string, note?: string) =>
+    request<Payout>(`/api/admin/payouts/${id}/mark-paid`, {
+      method: "POST",
+      headers: authHeaders(token),
+      body: JSON.stringify({ note }),
+    }),
+
+  merchantPayouts: (token: string) =>
+    request<MerchantPayoutSummary>("/api/merchant/payouts", { headers: authHeaders(token) }),
 };
 
 export function formatLYD(cents: number): string {

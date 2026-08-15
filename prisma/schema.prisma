@@ -121,6 +121,8 @@ model Merchant {
 
   stores Store[]
   payments Payment[]
+  payouts Payout[]
+  commissions Commission[]
 
   @@map("merchants")
 }
@@ -219,11 +221,61 @@ model Order {
   vanexAreaId String?     @map("vanex_area_id")
   vanexArea   VanexArea?  @relation(fields: [vanexAreaId], references: [id], onDelete: SetNull)
 
-  store   Store           @relation(fields: [storeId], references: [id])
-  items   OrderItem[]
-  reviews ProductReview[]
+  store      Store           @relation(fields: [storeId], references: [id])
+  items      OrderItem[]
+  reviews    ProductReview[]
+  commission Commission?
 
   @@map("orders")
+}
+
+// ============================================
+// PAYOUTS — centralized commission/payout tracking
+//
+// Only orders where Rifqa actually held the money are eligible: wallet
+// (DPay) orders with paymentStatus "paid". COD cash is collected by the
+// courier directly from the buyer and never touches Rifqa's account, so
+// there is nothing to pay a merchant out of for a COD order through this
+// system — see src/lib/payment/commission.ts for the exact filter.
+// ============================================
+
+model Commission {
+  id                   String   @id @default(cuid())
+  orderId              String   @unique @map("order_id")
+  merchantId           String   @map("merchant_id")
+  payoutId             String?  @map("payout_id")
+  orderTotalCents      Int      @map("order_total_cents")
+  rifqaCommissionCents Int      @map("rifqa_commission_cents")
+  merchantPayoutCents  Int      @map("merchant_payout_cents")
+  status               String   @default("pending") @map("status") // 'pending' | 'paid'
+  createdAt            DateTime @default(now()) @map("created_at")
+
+  order    Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  merchant Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  payout   Payout?  @relation(fields: [payoutId], references: [id])
+
+  @@map("commissions")
+}
+
+model Payout {
+  id               String    @id @default(cuid())
+  merchantId       String    @map("merchant_id")
+  periodStart      DateTime  @map("period_start")
+  periodEnd        DateTime  @map("period_end")
+  orderCount       Int       @map("order_count")
+  totalSalesCents  Int       @map("total_sales_cents")
+  commissionCents  Int       @map("commission_cents")
+  amountCents      Int       @map("amount_cents") // what the merchant actually receives
+  status           String    @default("pending") @map("status") // 'pending' | 'processing' | 'completed'
+  markedPaidAt     DateTime? @map("marked_paid_at")
+  markedPaidBy     String?   @map("marked_paid_by")
+  note             String?
+  createdAt        DateTime  @default(now()) @map("created_at")
+
+  merchant    Merchant     @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  commissions Commission[]
+
+  @@map("payouts")
 }
 
 model Coupon {
