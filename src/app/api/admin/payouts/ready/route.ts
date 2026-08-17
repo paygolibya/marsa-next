@@ -2,8 +2,12 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthMerchantId, isAdminMerchantId } from "@/lib/auth";
 
-// GET /api/admin/payouts?status=pending — list payouts with merchant names,
-// optionally filtered by status. Also returns platform-wide stats.
+// GET /api/admin/payouts/ready?status=ready_for_transfer — lists automatically-
+// calculated payout batches (optionally filtered by status) plus
+// platform-wide stats. Nothing here is admin-triggered — every Payout row
+// was created by the Friday weekly-payouts cron from Commission rows the
+// real-time delivery trigger (or its daily-cron backstop) already
+// calculated.
 export async function GET(req: Request) {
   const merchantId = getAuthMerchantId(req);
   if (!(await isAdminMerchantId(merchantId))) {
@@ -23,8 +27,8 @@ export async function GET(req: Request) {
   const stats = {
     totalSalesCents: allPayouts.reduce((sum, p) => sum + p.amountCents + p.commissionCents, 0),
     totalCommissionCents: allPayouts.reduce((sum, p) => sum + p.commissionCents, 0),
-    pendingPayoutCents: allPayouts.filter((p) => p.status !== "completed").reduce((sum, p) => sum + p.amountCents, 0),
-    pendingPayoutCount: allPayouts.filter((p) => p.status !== "completed").length,
+    pendingPayoutCents: allPayouts.filter((p) => p.status !== "transferred").reduce((sum, p) => sum + p.amountCents, 0),
+    pendingPayoutCount: allPayouts.filter((p) => p.status !== "transferred").length,
   };
 
   return NextResponse.json({
@@ -40,7 +44,9 @@ export async function GET(req: Request) {
       commissionCents: p.commissionCents,
       amountCents: p.amountCents,
       status: p.status,
-      markedPaidAt: p.markedPaidAt,
+      transferredAt: p.transferredAt,
+      transferredBy: p.transferredBy,
+      transferReference: p.transferReference,
       note: p.note,
       createdAt: p.createdAt,
     })),

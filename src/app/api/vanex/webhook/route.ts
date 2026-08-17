@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendOrderStatusEmail } from "@/lib/integrations/email";
 import { sendShipmentStatusSms } from "@/lib/integrations/sms";
+import { calculateCommissionForOrder } from "@/lib/payment/payout-processor";
 
 // POST /api/vanex/webhook — Vanex pushes shipment status changes here.
 // Auth is a shared secret header, not a merchant/admin token, since Vanex
@@ -73,6 +74,19 @@ export async function POST(req: Request) {
           courierStatus
         );
         await sendShipmentStatusSms(order.buyerPhone, courierStatus, order.courierTrackingId);
+
+        // Real-time payout trigger — the moment an order is marked
+        // delivered, calculate its commission automatically (no admin
+        // action). No-ops for COD orders (not eligible) and is safe to
+        // call unconditionally; the daily cron re-covers anything this
+        // best-effort call fails to complete.
+        if (courierStatus === "delivered") {
+          try {
+            await calculateCommissionForOrder(order.id);
+          } catch (error) {
+            console.error(`Vanex webhook: commission calculation failed for order ${order.id}:`, error);
+          }
+        }
       }
     } catch (error) {
       // One bad/unmatched package shouldn't fail the whole batch — Vanex

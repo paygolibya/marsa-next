@@ -10,6 +10,7 @@ const navItems = [
   { href: "/admin", label: "لوحة التحكم", icon: "📊" },
   { href: "/admin/payments", label: "الدفعات", icon: "💰" },
   { href: "/admin/payouts", label: "مستحقات التجار", icon: "🏦" },
+  { href: "/admin/cron-logs", label: "سجل المهام التلقائية", icon: "🕒" },
   { href: "/admin/merchants", label: "التجار", icon: "👥" },
   { href: "/admin/orders", label: "الطلبات", icon: "📦" },
   { href: "/admin/vanex", label: "الشحن (Vanex)", icon: "🚚" },

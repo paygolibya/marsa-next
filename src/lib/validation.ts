@@ -94,15 +94,8 @@ export const createReviewSchema = z.object({
   reviewText: z.string().optional().nullable(),
 });
 
-export const calculatePayoutsSchema = z
-  .object({
-    periodStart: z.string().datetime().optional(),
-    periodEnd: z.string().datetime().optional(),
-  })
-  .refine((v) => !v.periodStart || !v.periodEnd || new Date(v.periodStart) < new Date(v.periodEnd), {
-    message: "تاريخ البداية يجب أن يكون قبل تاريخ النهاية",
-  });
-
-export const markPayoutPaidSchema = z.object({
+export const transferPayoutSchema = z.object({
+  payoutId: z.string().min(1),
+  transferReference: z.string().max(200).optional().nullable(),
   note: z.string().max(500).optional().nullable(),
 });

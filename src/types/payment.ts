@@ -1,7 +1,8 @@
-// Shared types for the payout/commission system, used by both the admin
-// and merchant dashboards.
+// Shared types for the automatic payout/commission system, used by both
+// the admin and merchant dashboards.
 
-export type PayoutStatus = "pending" | "processing" | "completed";
+export type PayoutStatus = "ready_for_transfer" | "transferred";
+export type CommissionStatus = "calculated" | "paid";
 
 export type Payout = {
   id: string;
@@ -14,19 +15,11 @@ export type Payout = {
   commissionCents: number;
   amountCents: number;
   status: PayoutStatus;
-  markedPaidAt: string | null;
+  transferredAt: string | null;
+  transferredBy: string | null;
+  transferReference: string | null;
   note: string | null;
   createdAt: string;
-};
-
-export type CalculatePayoutsResult = {
-  periodStart: string;
-  periodEnd: string;
-  merchantsCount: number;
-  ordersCount: number;
-  totalCommissionCents: number;
-  totalPayoutCents: number;
-  payouts: Payout[];
 };
 
 export type PlatformStats = {
@@ -41,4 +34,15 @@ export type MerchantPayoutSummary = {
   commissionRate: number;
   lastPayout: Payout | null;
   history: Payout[];
+};
+
+export type CronLog = {
+  id: string;
+  jobName: string;
+  status: "success" | "failed";
+  ordersProcessed: number;
+  payoutsCreated: number;
+  errorMessage: string | null;
+  durationMs: number | null;
+  executedAt: string;
 };

@@ -6,15 +6,13 @@ import { api, formatLYD } from "@/lib/api";
 import type { MerchantPayoutSummary } from "@/types/payment";
 
 const STATUS_LABELS: Record<string, string> = {
-  pending: "قيد الانتظار",
-  processing: "قيد التحويل",
-  completed: "مكتمل",
+  ready_for_transfer: "قيد الانتظار",
+  transferred: "تم التحويل",
 };
 
 const STATUS_CLASSES: Record<string, string> = {
-  pending: "bg-yellow-100 text-yellow-800",
-  processing: "bg-blue-100 text-blue-800",
-  completed: "bg-green-100 text-green-800",
+  ready_for_transfer: "bg-yellow-100 text-yellow-800",
+  transferred: "bg-green-100 text-green-800",
 };
 
 export default function PayoutDashboard() {
@@ -35,7 +33,11 @@ export default function PayoutDashboard() {
 
   return (
     <div className="p-10">
-      <h1 className="font-display text-2xl font-extrabold text-harbor mb-6">المستحقات المالية</h1>
+      <h1 className="font-display text-2xl font-extrabold text-harbor mb-2">المستحقات المالية</h1>
+      <p className="mb-6 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+        ⚡ تُحتسب مستحقاتك تلقائيًا فور تسليم كل طلب — لا حاجة لأي إجراء من طرفك. تصلك 99% من قيمة كل عملية بيع
+        عبر المحفظة الإلكترونية، وتُجمَّع الدفعات أسبوعيًا استعدادًا للتحويل.
+      </p>
 
       <div className="grid sm:grid-cols-3 gap-6 mb-10">
         <div className="rounded-2xl border border-harbor/10 bg-white/50 p-6">
@@ -48,7 +50,7 @@ export default function PayoutDashboard() {
             <>
               <p className="font-display text-3xl font-extrabold text-harbor mt-2">{formatLYD(summary.lastPayout.amountCents)}</p>
               <p className="text-xs text-rope mt-1">
-                {summary.lastPayout.markedPaidAt ? new Date(summary.lastPayout.markedPaidAt).toLocaleDateString("ar-LY") : "—"}
+                {summary.lastPayout.transferredAt ? new Date(summary.lastPayout.transferredAt).toLocaleDateString("ar-LY") : "—"}
               </p>
             </>
           ) : (
@@ -56,8 +58,9 @@ export default function PayoutDashboard() {
           )}
         </div>
         <div className="rounded-2xl border border-harbor/10 bg-white/50 p-6">
-          <p className="text-rope text-sm">نسبة عمولة رفقة</p>
+          <p className="text-rope text-sm">نسبة عمولة رفقة (رسوم الدفع الإلكتروني)</p>
           <p className="font-display text-3xl font-extrabold text-harbor mt-2">{(summary.commissionRate * 100).toFixed(0)}%</p>
+          <p className="text-xs text-rope mt-1">تحصل على {(100 - summary.commissionRate * 100).toFixed(0)}% من كل عملية بيع</p>
         </div>
       </div>
 

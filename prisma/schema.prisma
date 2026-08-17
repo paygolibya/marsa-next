@@ -218,6 +218,16 @@ model Order {
   courierNote       String?  @map("courier_note") // failure/return reason from the courier
   createdAt         DateTime @default(now()) @map("created_at")
 
+  // Automatic payout tracking — set the moment the real-time trigger (or
+  // its daily-cron backstop) calculates this order's commission. Denormalized
+  // copies of the linked Commission row so the order itself is queryable
+  // without a join; see src/lib/payment/payout-processor.ts.
+  rifqaCommissionCents Int?      @map("rifqa_commission_cents")
+  merchantPayoutCents  Int?      @map("merchant_payout_cents")
+  payoutStatus         String?   @map("payout_status") // null (not yet calculated) | 'ready_for_transfer' | 'transferred'
+  payoutCalculatedAt   DateTime? @map("payout_calculated_at")
+  payoutTransferredAt  DateTime? @map("payout_transferred_at")
+
   vanexAreaId String?     @map("vanex_area_id")
   vanexArea   VanexArea?  @relation(fields: [vanexAreaId], references: [id], onDelete: SetNull)
 
@@ -230,25 +240,32 @@ model Order {
 }
 
 // ============================================
-// PAYOUTS — centralized commission/payout tracking
+// PAYOUTS — automatic commission/payout tracking
 //
 // Only orders where Rifqa actually held the money are eligible: wallet
 // (DPay) orders with paymentStatus "paid". COD cash is collected by the
 // courier directly from the buyer and never touches Rifqa's account, so
 // there is nothing to pay a merchant out of for a COD order through this
 // system — see src/lib/payment/commission.ts for the exact filter.
+//
+// Commission = one row per eligible order, created automatically the
+// moment it's marked delivered (real-time trigger) or, as a backstop, by
+// the daily cron. Payout = a weekly batch of Commission rows for one
+// merchant, created by the Friday cron and manually transferred by an
+// admin — see src/lib/payment/payout-processor.ts.
 // ============================================
 
 model Commission {
-  id                   String   @id @default(cuid())
-  orderId              String   @unique @map("order_id")
-  merchantId           String   @map("merchant_id")
-  payoutId             String?  @map("payout_id")
-  orderTotalCents      Int      @map("order_total_cents")
-  rifqaCommissionCents Int      @map("rifqa_commission_cents")
-  merchantPayoutCents  Int      @map("merchant_payout_cents")
-  status               String   @default("pending") @map("status") // 'pending' | 'paid'
-  createdAt            DateTime @default(now()) @map("created_at")
+  id                   String    @id @default(cuid())
+  orderId              String    @unique @map("order_id")
+  merchantId           String    @map("merchant_id")
+  payoutId             String?   @map("payout_id")
+  orderTotalCents      Int       @map("order_total_cents")
+  rifqaCommissionCents Int       @map("rifqa_commission_cents")
+  merchantPayoutCents  Int       @map("merchant_payout_cents")
+  status               String    @default("calculated") @map("status") // 'calculated' | 'paid'
+  calculatedAt         DateTime  @default(now()) @map("calculated_at")
+  paidAt               DateTime? @map("paid_at")
 
   order    Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   merchant Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
@@ -258,24 +275,38 @@ model Commission {
 }
 
 model Payout {
-  id               String    @id @default(cuid())
-  merchantId       String    @map("merchant_id")
-  periodStart      DateTime  @map("period_start")
-  periodEnd        DateTime  @map("period_end")
-  orderCount       Int       @map("order_count")
-  totalSalesCents  Int       @map("total_sales_cents")
-  commissionCents  Int       @map("commission_cents")
-  amountCents      Int       @map("amount_cents") // what the merchant actually receives
-  status           String    @default("pending") @map("status") // 'pending' | 'processing' | 'completed'
-  markedPaidAt     DateTime? @map("marked_paid_at")
-  markedPaidBy     String?   @map("marked_paid_by")
-  note             String?
-  createdAt        DateTime  @default(now()) @map("created_at")
+  id                String    @id @default(cuid())
+  merchantId        String    @map("merchant_id")
+  periodStart       DateTime  @map("period_start")
+  periodEnd         DateTime  @map("period_end")
+  orderCount        Int       @map("order_count")
+  totalSalesCents   Int       @map("total_sales_cents")
+  commissionCents   Int       @map("commission_cents")
+  amountCents       Int       @map("amount_cents") // what the merchant actually receives
+  status            String    @default("ready_for_transfer") @map("status") // 'ready_for_transfer' | 'transferred'
+  transferredAt     DateTime? @map("transferred_at")
+  transferredBy     String?   @map("transferred_by") // admin merchantId who clicked transfer
+  transferReference String?   @map("transfer_reference") // bank ref / note for the manual transfer
+  note              String?
+  createdAt         DateTime  @default(now()) @map("created_at")
 
   merchant    Merchant     @relation(fields: [merchantId], references: [id], onDelete: Cascade)
   commissions Commission[]
 
   @@map("payouts")
+}
+
+model CronLog {
+  id              String   @id @default(cuid())
+  jobName         String   @map("job_name") // 'process-deliveries' | 'weekly-payouts'
+  status          String   // 'success' | 'failed'
+  ordersProcessed Int      @default(0) @map("orders_processed")
+  payoutsCreated  Int      @default(0) @map("payouts_created")
+  errorMessage    String?  @map("error_message")
+  durationMs      Int?     @map("duration_ms")
+  executedAt      DateTime @default(now()) @map("executed_at")
+
+  @@map("cron_logs")
 }
 
 model Coupon {
