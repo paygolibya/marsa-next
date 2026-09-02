@@ -139,14 +139,21 @@ model Payment {
   merchant          Merchant  @relation(fields: [merchantId], references: [id], onDelete: Cascade)
 
   tier              String
-  amount            Int
+  amount            Int // whole LYD, NOT cents — existing convention on this model, kept as-is rather than migrated
   currency          String    @default("LYD")
-  status            String    @default("pending")
+  status            String    @default("pending") // 'pending' | 'approved' | 'rejected'
+  method            String    @default("bank_transfer") @map("method") // 'bank_transfer' | 'dpay'
   receiptFile       String?   @map("receipt_file")
   receiptUploadedAt DateTime? @map("receipt_uploaded_at")
   approvedAt        DateTime? @map("approved_at")
-  approvedBy        String?   @map("approved_by")
+  approvedBy        String?   @map("approved_by") // admin merchantId for a manual approval; null for an automatic DPay one
   rejectionReason   String?   @map("rejection_reason")
+
+  // Set when method is "dpay" — same DPay session tracking as Order,
+  // see src/lib/payment/dpay-subscription.ts.
+  dpaySessionId String? @unique @map("dpay_session_id")
+  dpayPayMethod String? @map("dpay_pay_method")
+  dpayFeeCents  Int?    @map("dpay_fee_cents")
 
   createdAt         DateTime  @default(now()) @map("created_at")
   updatedAt         DateTime  @updatedAt @map("updated_at")

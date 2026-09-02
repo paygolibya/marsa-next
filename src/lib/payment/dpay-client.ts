@@ -42,7 +42,12 @@ export const DPAY_REQUIRED_FIELDS: Record<DpayPayMethod, ("mobile" | "birthYear"
 export type DpaySessionParams = {
   payMethod: DpayPayMethod;
   totalCents: number;
-  orderId: string;
+  // Correlation metadata echoed back verbatim in the webhook payload
+  // (data.order_id / data.payment_id / ...) — the one thing the webhook
+  // handler has to identify what this session was actually for. Callers
+  // pass exactly one key: order_id for a store order, payment_id for a
+  // merchant subscription payment.
+  data: { order_id: string } | { payment_id: string };
   customerMobile?: string;
   birthYear?: string;
   category?: number;
@@ -131,7 +136,7 @@ export async function openDpaySession(params: DpaySessionParams): Promise<DpaySe
   const body: Record<string, unknown> = {
     pay_method: params.payMethod,
     amount: centsToLyd(params.totalCents),
-    data: { order_id: params.orderId },
+    data: params.data,
   };
   if (params.customerMobile) body.customer_mobile = params.customerMobile;
   if (params.birthYear) body.birth_year = params.birthYear;

@@ -288,6 +288,29 @@ export const api = {
       body: JSON.stringify({ orderId, otp }),
     }),
 
+  subscriptionDpayCheckout: (
+    token: string,
+    body: {
+      tier: "basic" | "professional" | "advanced";
+      dpayPayMethod: DpayPayMethod;
+      dpayCustomerMobile?: string;
+      dpayBirthYear?: string;
+      dpayCardNumber?: string;
+    }
+  ) =>
+    request<{
+      paymentId: string;
+      status: string;
+      dpay?: { sessionId: number; payMethod: DpayPayMethod; requiresOtp: boolean; paymentLink?: string };
+    }>("/api/payments/dpay-checkout", { method: "POST", headers: authHeaders(token), body: JSON.stringify(body) }),
+
+  subscriptionDpayVerifyOtp: (token: string, paymentId: string, otp: string) =>
+    request<{ status: string; error?: string }>("/api/payments/dpay-verify-otp", {
+      method: "POST",
+      headers: authHeaders(token),
+      body: JSON.stringify({ paymentId, otp }),
+    }),
+
   ordersByStore: (token: string, storeId: string) =>
     request<Order[]>(`/api/orders/by-store/${storeId}`, { headers: authHeaders(token) }),
 

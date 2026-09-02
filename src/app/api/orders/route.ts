@@ -177,7 +177,7 @@ export async function POST(req: Request) {
         session = await openDpaySession({
           payMethod: dpayPayMethod!,
           totalCents,
-          orderId: order.id,
+          data: { order_id: order.id },
           customerMobile: dpayCustomerMobile,
           birthYear: dpayBirthYear,
           cardNumber: dpayCardNumber,

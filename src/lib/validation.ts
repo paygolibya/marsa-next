@@ -120,6 +120,14 @@ export const setCustomDomainSchema = z.object({
     .nullable(),
 });
 
+export const dpaySubscriptionCheckoutSchema = z.object({
+  tier: z.enum(["basic", "professional", "advanced"]),
+  dpayPayMethod: z.enum(DPAY_PAY_METHODS),
+  dpayCustomerMobile: z.string().optional(),
+  dpayBirthYear: z.string().optional(),
+  dpayCardNumber: z.string().optional(),
+});
+
 export const transferPayoutSchema = z.object({
   payoutId: z.string().min(1),
   transferReference: z.string().max(200).optional().nullable(),

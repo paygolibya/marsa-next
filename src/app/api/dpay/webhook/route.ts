@@ -1,12 +1,19 @@
 import { NextResponse } from "next/server";
 import { verifyDpayWebhookSignature } from "@/lib/payment/dpay-webhook";
 import { finalizeWalletOrder } from "@/lib/payment/dpay-order";
+import { finalizeSubscriptionPayment } from "@/lib/payment/dpay-subscription";
 
 // POST /api/dpay/webhook — DPay's signed, retried notification of a
 // payment's terminal state. The sole authoritative confirmation for
 // Moamalat sessions (which have no OTP-verify step at all), and a
-// safety net for every other method in case the buyer closes the tab
-// right after entering their OTP.
+// safety net for every other method in case the buyer/merchant closes
+// the tab right after entering their OTP.
+//
+// Handles two entirely different kinds of session, told apart by which
+// key is present in `data` (see openDpaySession's `data` param): a store
+// order (data.order_id) or a merchant's own subscription payment
+// (data.payment_id) — one DPay account, one webhook URL, both flows
+// funnel through here.
 //
 // Must read the raw body before any JSON parsing — the HMAC is computed
 // over the exact bytes DPay sent, and re-serializing a parsed object can
@@ -25,7 +32,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  let payload: { event?: string; live?: boolean; data?: { order_id?: string } };
+  let payload: { event?: string; live?: boolean; data?: { order_id?: string; payment_id?: string } };
   try {
     payload = JSON.parse(rawBody);
   } catch {
@@ -33,36 +40,41 @@ export async function POST(req: Request) {
   }
 
   const orderId = payload.data?.order_id;
-  if (!orderId) {
-    // webhook.test, or a session opened without our order_id metadata (e.g.
-    // an invoice payment link) — nothing in our system to update.
+  const paymentId = payload.data?.payment_id;
+  if (!orderId && !paymentId) {
+    // webhook.test, or a session opened without our correlation metadata
+    // (e.g. an invoice payment link) — nothing in our system to update.
     return NextResponse.json({ success: true });
   }
+  const finalize = (outcome: "paid" | "failed") =>
+    orderId ? finalizeWalletOrder(orderId, outcome) : finalizeSubscriptionPayment(paymentId!, outcome);
+  const subjectLabel = orderId ? `order ${orderId}` : `subscription payment ${paymentId}`;
 
   try {
     switch (payload.event) {
       case "payment.paid":
-        await finalizeWalletOrder(orderId, "paid");
+        await finalize("paid");
         break;
       case "payment.failed":
       case "payment.expired":
-        await finalizeWalletOrder(orderId, "failed");
+        await finalize("failed");
         break;
       case "payment.refunded":
       case "payment.voided":
-        // No automated refund/shipment-cancellation flow yet — see
-        // "Known limitations" in docs/dpay.md. Logged for manual follow-up.
-        console.warn(`DPay webhook: ${payload.event} for order ${orderId} — needs manual review, no automatic handling.`);
+        // No automated refund/shipment-cancellation (orders) or
+        // subscription-deactivation (payments) flow yet — see "Known
+        // limitations" in docs/dpay.md. Logged for manual follow-up.
+        console.warn(`DPay webhook: ${payload.event} for ${subjectLabel} — needs manual review, no automatic handling.`);
         break;
       default:
-        console.warn(`DPay webhook: unhandled event "${payload.event}" for order ${orderId}`);
+        console.warn(`DPay webhook: unhandled event "${payload.event}" for ${subjectLabel}`);
     }
   } catch (error) {
     // A genuine failure here (DB error, bug) is worth DPay's retry — up to
     // 5 attempts with backoff — so this deliberately does NOT swallow to a
     // 200 the way the Vanex webhook's per-package loop does; there's no
     // "one bad item in a batch" concern here, just one event to get right.
-    console.error(`DPay webhook: failed to process order ${orderId}:`, error);
+    console.error(`DPay webhook: failed to process ${subjectLabel}:`, error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 

@@ -89,6 +89,40 @@ and `dpayFeeCents` (DPay's own cut, logged for reference — separate from
 and unrelated to Rifqa's own 1% commission in `src/lib/payment/commission.ts`,
 which is computed from `Order.totalCents`, not affected by DPay's fee).
 
+## Second use: merchants paying their own subscription instantly
+
+The exact same session/OTP/webhook machinery also powers `/payment`'s
+"⚡ الدفع الفوري عبر DPay" — a merchant paying their *own* subscription
+fee, real-time, instead of uploading a bank transfer receipt and waiting
+for an admin. This was built after the buyer-checkout flow above, reusing
+it rather than duplicating it:
+
+- `openDpaySession`'s `data` param generalizes to `{ order_id }` **or**
+  `{ payment_id }` — one webhook URL, one DPay account, both flows funnel
+  through `/api/dpay/webhook`, which branches on which key is present.
+- `src/lib/payment/dpay-subscription.ts`'s `finalizeSubscriptionPayment`
+  mirrors `finalizeWalletOrder`'s exact shape (same atomic
+  `status: "pending"` guard, callable from both the OTP-verify route and
+  the webhook) — and mirrors `/api/admin/payments/[id]/approve`'s exact
+  activation logic (`subscriptionTier`/`subscriptionStatus`/
+  `subscriptionEndDate`/`getPlanFeatureFlags`), just triggered
+  automatically instead of by an admin's click.
+- `Payment` gained the same three DPay fields `Order` has
+  (`dpaySessionId`/`dpayPayMethod`/`dpayFeeCents`), plus `method`
+  (`'bank_transfer' | 'dpay'`) to tell the two payment paths apart.
+  `Payment.amount` stays in whole LYD (that model's existing convention,
+  predating this work) — only converted to cents at the `openDpaySession`
+  call site, same as everywhere else that talks to DPay.
+- The manual receipt-upload path is untouched and still works exactly as
+  before — this is a new alternative on the same page, not a replacement.
+
+Don't confuse this with the *other* DPay-labeled control on the same
+page, for the professional tier: that one picks which checkout method the
+merchant's **own store** offers **its** customers
+(`getCheckoutPaymentMethods` in `checkout-features.ts`) — a completely
+different, already-working feature that predates any real DPay
+integration and has nothing to do with paying the subscription itself.
+
 ## Idempotency and races
 
 - `finalizeWalletOrder`'s `updateMany` guard (`paymentStatus: "pending"` in
@@ -158,6 +192,15 @@ gateways, since none were configured in the DPay dashboard's Pay Methods
 settings at test time (`edfali` failed with "gateway is not configured" —
 an account setup step in DPay's own dashboard, not a code issue). Moamalat
 needed no such setup and was the one gateway tested fully live.
+
+The subscription-payment path (see above) was live-verified the same way:
+`POST /api/payments/dpay-checkout` with `tier: "professional"`,
+`dpayPayMethod: "moamalat"` → real session opened, correct `Payment` row
+(`method: "dpay"`, `amount: 280`); a self-signed `payment.paid` webhook
+with `data: { payment_id }` → `Payment.status` flips to `approved` and the
+merchant's `subscriptionTier`/`subscriptionStatus`/`subscriptionEndDate`
+update exactly as `/api/admin/payments/[id]/approve` already does; a
+duplicate delivery of the same event → safe no-op, no double-activation.
 
 ## Setup checklist before this can go live
 

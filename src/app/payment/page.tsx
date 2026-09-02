@@ -5,6 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { SiteNav } from "@/components/site-nav";
 import { useAuth } from "@/lib/auth-context";
 import { getCheckoutPaymentMethods, normalizeSubscriptionTier, subscriptionPlans, type SubscriptionTier } from "@/lib/checkout-features";
+import { api, ApiError } from "@/lib/api";
+import { DPAY_PAY_METHODS, DPAY_PAY_METHOD_LABELS, DPAY_REQUIRED_FIELDS, type DpayPayMethod } from "@/lib/payment/dpay-client";
 
 const PAYMENT_INFO = {
   iban: "LY26007014014011399809010",
@@ -36,9 +38,75 @@ function PaymentPageContent() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
+  // Instant DPay subscription payment — a real alternative to the manual
+  // receipt upload below, using the same DPay session/OTP infrastructure
+  // as buyer checkout (src/app/store/[slug]/checkout/page.tsx), just for
+  // the merchant's own subscription fee instead of a store order.
+  const [dpayPayMethod, setDpayPayMethod] = useState<DpayPayMethod | "">("");
+  const [dpayCustomerMobile, setDpayCustomerMobile] = useState("");
+  const [dpayBirthYear, setDpayBirthYear] = useState("");
+  const [dpayCardNumber, setDpayCardNumber] = useState("");
+  const [dpayLoading, setDpayLoading] = useState(false);
+  const [dpayError, setDpayError] = useState<string | null>(null);
+  const [pendingOtpPayment, setPendingOtpPayment] = useState<{ paymentId: string } | null>(null);
+  const [otp, setOtp] = useState("");
+  const [otpError, setOtpError] = useState<string | null>(null);
+  const [otpSubmitting, setOtpSubmitting] = useState(false);
+
   useEffect(() => {
     if (ready && !token) router.replace("/login");
   }, [ready, token, router]);
+
+  async function handleDpaySubmit() {
+    if (!token || !dpayPayMethod) return;
+    setDpayError(null);
+    setDpayLoading(true);
+    try {
+      const result = await api.subscriptionDpayCheckout(token, {
+        tier,
+        dpayPayMethod,
+        dpayCustomerMobile: dpayCustomerMobile || undefined,
+        dpayBirthYear: dpayBirthYear || undefined,
+        dpayCardNumber: dpayCardNumber || undefined,
+      });
+
+      if (result.status === "paid") {
+        router.push("/dashboard");
+        return;
+      }
+      if (result.dpay?.paymentLink) {
+        window.location.href = result.dpay.paymentLink;
+        return;
+      }
+      if (result.dpay?.requiresOtp) {
+        setPendingOtpPayment({ paymentId: result.paymentId });
+        return;
+      }
+    } catch (err) {
+      setDpayError(err instanceof ApiError ? err.message : "تعذّر بدء الدفع الإلكتروني");
+    } finally {
+      setDpayLoading(false);
+    }
+  }
+
+  async function handleVerifyOtp(e: React.FormEvent) {
+    e.preventDefault();
+    if (!pendingOtpPayment || !otp.trim() || !token) return;
+    setOtpError(null);
+    setOtpSubmitting(true);
+    try {
+      const result = await api.subscriptionDpayVerifyOtp(token, pendingOtpPayment.paymentId, otp.trim());
+      if (result.status === "paid") {
+        router.push("/dashboard");
+        return;
+      }
+      setOtpError(result.error ?? "رمز التحقق غير صحيح، حاول مجددًا");
+    } catch (err) {
+      setOtpError(err instanceof ApiError ? err.message : "تعذّر التحقق من رمز الدفع");
+    } finally {
+      setOtpSubmitting(false);
+    }
+  }
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const selectedFile = e.target.files?.[0];
@@ -99,6 +167,46 @@ function PaymentPageContent() {
   }
 
   if (!ready || !token) return null;
+
+  if (pendingOtpPayment) {
+    return (
+      <>
+        <SiteNav />
+        <main className="min-h-screen bg-gradient-to-b from-canvas to-harbor/5 flex items-center justify-center px-6">
+          <div className="max-w-md w-full text-center py-16">
+            <h1 className="mb-2 font-display text-2xl font-extrabold text-harbor">أدخل رمز التحقق</h1>
+            <p className="mb-8 text-rope">
+              أرسلت {dpayPayMethod ? DPAY_PAY_METHOD_LABELS[dpayPayMethod as DpayPayMethod] : "جهة الدفع"} رمز تحقق إلى هاتفك — أدخله لإتمام دفع{" "}
+              {tierInfo.price} د.ل.
+            </p>
+            <form onSubmit={handleVerifyOtp} className="space-y-4">
+              <input
+                required
+                dir="ltr"
+                inputMode="numeric"
+                autoFocus
+                value={otp}
+                onChange={(e) => setOtp(e.target.value)}
+                className="input text-center text-2xl tracking-[0.5em]"
+                placeholder="••••••"
+              />
+              {otpError && <p className="text-signal text-sm">{otpError}</p>}
+              <button
+                type="submit"
+                disabled={otpSubmitting || !otp.trim()}
+                className="w-full rounded-full bg-signal py-3 font-bold text-canvas hover:bg-signal-dark transition-colors disabled:opacity-60"
+              >
+                {otpSubmitting ? "جارٍ التحقق..." : "تأكيد الدفع"}
+              </button>
+              <button type="button" onClick={() => setPendingOtpPayment(null)} className="w-full text-rope hover:text-harbor transition-colors text-sm">
+                العودة
+              </button>
+            </form>
+          </div>
+        </main>
+      </>
+    );
+  }
 
   return (
     <>
@@ -181,6 +289,75 @@ function PaymentPageContent() {
                 <div className="mb-6 rounded-xl border border-harbor/10 bg-canvas p-4 text-sm text-rope">
                   <p className="mb-2 font-bold text-harbor">رسالة الخطة</p>
                   <p className="leading-7">{tierInfo.checkoutMessage}</p>
+                </div>
+
+                <div className="mb-6 rounded-xl border-2 border-signal/20 bg-signal/5 p-5">
+                  <h4 className="mb-1 font-bold text-harbor">⚡ الدفع الفوري عبر DPay</h4>
+                  <p className="mb-4 text-xs text-rope">تفعيل تلقائي فور الدفع — لا حاجة لانتظار المراجعة</p>
+
+                  <div className="mb-3 grid grid-cols-2 gap-2">
+                    {DPAY_PAY_METHODS.map((m) => (
+                      <label
+                        key={m}
+                        className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm cursor-pointer ${
+                          dpayPayMethod === m ? "border-signal bg-white" : "border-harbor/10 bg-white/60"
+                        }`}
+                      >
+                        <input type="radio" name="dpay-sub-method" checked={dpayPayMethod === m} onChange={() => setDpayPayMethod(m)} className="accent-signal" />
+                        {DPAY_PAY_METHOD_LABELS[m]}
+                      </label>
+                    ))}
+                  </div>
+
+                  {dpayPayMethod && DPAY_REQUIRED_FIELDS[dpayPayMethod].includes("mobile") && (
+                    <input
+                      required
+                      dir="ltr"
+                      value={dpayCustomerMobile}
+                      onChange={(e) => setDpayCustomerMobile(e.target.value)}
+                      className="input mb-2"
+                      placeholder="رقم الهاتف المسجل بالمحفظة"
+                    />
+                  )}
+                  {dpayPayMethod && DPAY_REQUIRED_FIELDS[dpayPayMethod].includes("birthYear") && (
+                    <input
+                      required
+                      dir="ltr"
+                      inputMode="numeric"
+                      maxLength={4}
+                      value={dpayBirthYear}
+                      onChange={(e) => setDpayBirthYear(e.target.value)}
+                      className="input mb-2"
+                      placeholder="سنة الميلاد"
+                    />
+                  )}
+                  {dpayPayMethod && DPAY_REQUIRED_FIELDS[dpayPayMethod].includes("cardNumber") && (
+                    <input
+                      required
+                      dir="ltr"
+                      value={dpayCardNumber}
+                      onChange={(e) => setDpayCardNumber(e.target.value)}
+                      className="input mb-2"
+                      placeholder="رقم البطاقة"
+                    />
+                  )}
+
+                  {dpayError && <p className="mb-2 text-sm text-signal">{dpayError}</p>}
+
+                  <button
+                    type="button"
+                    onClick={handleDpaySubmit}
+                    disabled={!dpayPayMethod || dpayLoading}
+                    className="w-full rounded-xl bg-signal py-3 font-bold text-canvas transition hover:bg-signal-dark disabled:opacity-40"
+                  >
+                    {dpayLoading ? "جارٍ المعالجة..." : `ادفع ${tierInfo.price} د.ل الآن`}
+                  </button>
+                </div>
+
+                <div className="mb-6 flex items-center gap-3 text-xs text-rope">
+                  <div className="h-px flex-1 bg-harbor/10" />
+                  أو حوّل يدويًا وارفع الإيصال
+                  <div className="h-px flex-1 bg-harbor/10" />
                 </div>
 
                 {/* This chooses which checkout method the MERCHANT'S OWN
