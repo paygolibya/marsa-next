@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { api, ApiError, formatLYD, type Store, type VanexCity } from "@/lib/api";
 import { useCart } from "@/lib/use-cart";
+import { DPAY_PAY_METHODS, DPAY_PAY_METHOD_LABELS, DPAY_REQUIRED_FIELDS, type DpayPayMethod } from "@/lib/payment/dpay-client";
 
 const courierLabels: Record<string, string> = {
   vanex: "Vanex",
@@ -23,8 +24,19 @@ export default function CheckoutPage() {
   const [city, setCity] = useState("");
   const [address, setAddress] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<"cod" | "wallet">("cod");
+  const [dpayPayMethod, setDpayPayMethod] = useState<DpayPayMethod | "">("");
+  const [dpayCustomerMobile, setDpayCustomerMobile] = useState("");
+  const [dpayBirthYear, setDpayBirthYear] = useState("");
+  const [dpayCardNumber, setDpayCardNumber] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // Set once /api/orders opens a real DPay session that needs the buyer to
+  // enter an OTP — switches the page from the checkout form to the OTP step.
+  const [pendingOtpOrder, setPendingOtpOrder] = useState<{ orderId: string; totalCents: number; shippingCents: number } | null>(null);
+  const [otp, setOtp] = useState("");
+  const [otpError, setOtpError] = useState<string | null>(null);
+  const [otpSubmitting, setOtpSubmitting] = useState(false);
 
   const [couponInput, setCouponInput] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discountCents: number } | null>(null);
@@ -78,11 +90,28 @@ export default function CheckoutPage() {
     }
   }
 
+  function goToConfirmation(result: { orderId: string; totalCents: number; shippingCents: number; trackingId?: string; courier?: string; paymentStatus: string }) {
+    cart.clear();
+    const q = new URLSearchParams({
+      orderId: result.orderId,
+      totalCents: String(result.totalCents),
+      shippingCents: String(result.shippingCents),
+      trackingId: result.trackingId ?? "",
+      courier: result.courier ?? "",
+      paymentStatus: result.paymentStatus,
+    });
+    router.push(`/store/${slug}/confirmation?${q.toString()}`);
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (cart.lines.length === 0) return;
     if (usesVanexPricing && !selectedArea) {
       setError("اختر المدينة والمنطقة");
+      return;
+    }
+    if (paymentMethod === "wallet" && !dpayPayMethod) {
+      setError("اختر طريقة الدفع الإلكتروني");
       return;
     }
     setError(null);
@@ -100,18 +129,27 @@ export default function CheckoutPage() {
           vanexAreaId: selectedArea?.id,
         },
         paymentMethod,
+        dpayPayMethod: paymentMethod === "wallet" ? (dpayPayMethod as DpayPayMethod) : undefined,
+        dpayCustomerMobile: dpayCustomerMobile || undefined,
+        dpayBirthYear: dpayBirthYear || undefined,
+        dpayCardNumber: dpayCardNumber || undefined,
         couponCode: appliedCoupon?.code,
       });
-      cart.clear();
-      const q = new URLSearchParams({
-        orderId: result.orderId,
-        totalCents: String(result.totalCents),
-        shippingCents: String(result.shippingCents),
-        trackingId: result.trackingId,
-        courier: result.courier,
-        paymentStatus: result.paymentStatus,
-      });
-      router.push(`/store/${slug}/confirmation?${q.toString()}`);
+
+      if (result.dpay) {
+        if (result.dpay.paymentLink) {
+          // Moamalat — hosted LightBox page. Our order already exists
+          // (pending); DPay's webhook confirms it once the customer pays.
+          window.location.href = result.dpay.paymentLink;
+          return;
+        }
+        if (result.dpay.requiresOtp) {
+          setPendingOtpOrder({ orderId: result.orderId, totalCents: result.totalCents, shippingCents: result.shippingCents });
+          return;
+        }
+      }
+
+      goToConfirmation(result);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "تعذّر إتمام الطلب، حاول مجددًا");
     } finally {
@@ -119,15 +157,69 @@ export default function CheckoutPage() {
     }
   }
 
+  async function handleVerifyOtp(e: React.FormEvent) {
+    e.preventDefault();
+    if (!pendingOtpOrder || !otp.trim()) return;
+    setOtpError(null);
+    setOtpSubmitting(true);
+    try {
+      const result = await api.dpayVerifyOtp(pendingOtpOrder.orderId, otp.trim());
+      if (result.status === "paid") {
+        goToConfirmation({ ...pendingOtpOrder, trackingId: result.trackingId, courier: result.courier, paymentStatus: "paid" });
+        return;
+      }
+      setOtpError(result.error ?? "رمز التحقق غير صحيح، حاول مجددًا");
+    } catch (err) {
+      setOtpError(err instanceof ApiError ? err.message : "تعذّر التحقق من رمز الدفع");
+    } finally {
+      setOtpSubmitting(false);
+    }
+  }
+
   if (!store) return null;
 
-  if (cart.ready && cart.lines.length === 0) {
+  if (cart.ready && cart.lines.length === 0 && !pendingOtpOrder) {
     return (
       <main className="mx-auto max-w-md px-6 py-24 text-center">
         <h1 className="font-display text-2xl font-bold text-harbor">سلتك فارغة</h1>
         <Link href={`/store/${slug}`} className="text-brass font-bold mt-4 inline-block">
           العودة إلى المتجر
         </Link>
+      </main>
+    );
+  }
+
+  if (pendingOtpOrder) {
+    return (
+      <main className="mx-auto max-w-md px-6 py-24 text-center">
+        <h1 className="font-display text-2xl font-extrabold text-harbor mb-2">أدخل رمز التحقق</h1>
+        <p className="text-rope mb-8">
+          أرسلت {dpayPayMethod ? DPAY_PAY_METHOD_LABELS[dpayPayMethod as DpayPayMethod] : "جهة الدفع"} رمز تحقق إلى هاتفك — أدخله لإتمام دفع{" "}
+          {formatLYD(pendingOtpOrder.totalCents)}.
+        </p>
+        <form onSubmit={handleVerifyOtp} className="space-y-4">
+          <input
+            required
+            dir="ltr"
+            inputMode="numeric"
+            autoFocus
+            value={otp}
+            onChange={(e) => setOtp(e.target.value)}
+            className="input text-center text-2xl tracking-[0.5em]"
+            placeholder="••••••"
+          />
+          {otpError && <p className="text-signal text-sm">{otpError}</p>}
+          <button
+            type="submit"
+            disabled={otpSubmitting || !otp.trim()}
+            className="w-full rounded-full bg-signal py-3 font-bold text-canvas hover:bg-signal-dark transition-colors disabled:opacity-60"
+          >
+            {otpSubmitting ? "جارٍ التحقق..." : "تأكيد الدفع"}
+          </button>
+          <button type="button" onClick={() => setPendingOtpOrder(null)} className="w-full text-rope hover:text-harbor transition-colors text-sm">
+            العودة لتغيير طريقة الدفع
+          </button>
+        </form>
       </main>
     );
   }
@@ -243,17 +335,78 @@ export default function CheckoutPage() {
                     onChange={() => setPaymentMethod("wallet")}
                     className="accent-brass"
                   />
-                  الدفع الإلكتروني (دي‑باي)
+                  الدفع الإلكتروني
                 </label>
               )}
             </div>
+
+            {paymentMethod === "wallet" && walletAvailable && (
+              <div className="mt-3 rounded-xl border border-harbor/15 bg-white p-4 space-y-3">
+                <span className="block text-sm font-bold text-harbor">اختر جهة الدفع</span>
+                <div className="grid grid-cols-2 gap-2">
+                  {DPAY_PAY_METHODS.map((m) => (
+                    <label
+                      key={m}
+                      className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm cursor-pointer ${
+                        dpayPayMethod === m ? "border-brass bg-brass/5" : "border-harbor/10"
+                      }`}
+                    >
+                      <input type="radio" name="dpay-method" checked={dpayPayMethod === m} onChange={() => setDpayPayMethod(m)} className="accent-brass" />
+                      {DPAY_PAY_METHOD_LABELS[m]}
+                    </label>
+                  ))}
+                </div>
+
+                {dpayPayMethod && DPAY_REQUIRED_FIELDS[dpayPayMethod].includes("mobile") && (
+                  <label className="block">
+                    <span className="block text-sm font-bold text-harbor mb-1.5">رقم الهاتف المسجل بالمحفظة</span>
+                    <input
+                      required
+                      dir="ltr"
+                      value={dpayCustomerMobile}
+                      onChange={(e) => setDpayCustomerMobile(e.target.value)}
+                      className="input"
+                      placeholder="0912345678"
+                    />
+                  </label>
+                )}
+                {dpayPayMethod && DPAY_REQUIRED_FIELDS[dpayPayMethod].includes("birthYear") && (
+                  <label className="block">
+                    <span className="block text-sm font-bold text-harbor mb-1.5">سنة الميلاد</span>
+                    <input
+                      required
+                      dir="ltr"
+                      inputMode="numeric"
+                      maxLength={4}
+                      value={dpayBirthYear}
+                      onChange={(e) => setDpayBirthYear(e.target.value)}
+                      className="input"
+                      placeholder="1994"
+                    />
+                  </label>
+                )}
+                {dpayPayMethod && DPAY_REQUIRED_FIELDS[dpayPayMethod].includes("cardNumber") && (
+                  <label className="block">
+                    <span className="block text-sm font-bold text-harbor mb-1.5">رقم البطاقة</span>
+                    <input
+                      required
+                      dir="ltr"
+                      value={dpayCardNumber}
+                      onChange={(e) => setDpayCardNumber(e.target.value)}
+                      className="input"
+                      placeholder="1234567"
+                    />
+                  </label>
+                )}
+              </div>
+            )}
           </div>
 
           {error && <p className="text-signal text-sm">{error}</p>}
 
           <button
             type="submit"
-            disabled={loading || (usesVanexPricing && !selectedArea)}
+            disabled={loading || (usesVanexPricing && !selectedArea) || (paymentMethod === "wallet" && !dpayPayMethod)}
             className="w-full rounded-full bg-signal py-3 font-bold text-canvas hover:bg-signal-dark transition-colors disabled:opacity-60"
           >
             {loading ? "جارٍ التأكيد..." : `تأكيد الطلب — ${formatLYD(grandTotalCents)}`}

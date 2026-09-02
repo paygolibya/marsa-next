@@ -3,6 +3,7 @@
 // calls to a Next.js API.
 
 import type { Payout, PlatformStats, MerchantPayoutSummary, CronLog } from "@/types/payment";
+import type { DpayPayMethod } from "@/lib/payment/dpay-client";
 
 export class ApiError extends Error {
   status: number;
@@ -242,6 +243,10 @@ export const api = {
     items: { productId: string; quantity: number }[];
     buyer: { name: string; phone: string; email?: string; city: string; address: string; vanexAreaId?: string };
     paymentMethod: "cod" | "wallet";
+    dpayPayMethod?: DpayPayMethod;
+    dpayCustomerMobile?: string;
+    dpayBirthYear?: string;
+    dpayCardNumber?: string;
     couponCode?: string;
   }) =>
     request<{
@@ -249,10 +254,17 @@ export const api = {
       totalCents: number;
       shippingCents: number;
       discountCents: number;
-      trackingId: string;
-      courier: string;
+      trackingId?: string;
+      courier?: string;
       paymentStatus: string;
+      dpay?: { sessionId: number; payMethod: DpayPayMethod; requiresOtp: boolean; paymentLink?: string };
     }>("/api/orders", { method: "POST", body: JSON.stringify(body) }),
+
+  dpayVerifyOtp: (orderId: string, otp: string) =>
+    request<{ status: string; trackingId?: string; courier?: string; error?: string }>("/api/dpay/verify-otp", {
+      method: "POST",
+      body: JSON.stringify({ orderId, otp }),
+    }),
 
   ordersByStore: (token: string, storeId: string) =>
     request<Order[]>(`/api/orders/by-store/${storeId}`, { headers: authHeaders(token) }),

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { normalizeLibyanPhone } from "@/lib/integrations/sms";
+import { DPAY_PAY_METHODS } from "@/lib/payment/dpay-client";
 
 export const registerSchema = z.object({
   name: z.string().min(1, "الاسم مطلوب"),
@@ -48,27 +49,39 @@ export const updateStoreSettingsSchema = z.object({
   businessHours: z.string().optional().nullable(),
 });
 
-export const createOrderSchema = z.object({
-  storeSlug: z.string().min(1),
-  items: z
-    .array(
-      z.object({
-        productId: z.string().min(1),
-        quantity: z.number().int().positive(),
-      })
-    )
-    .min(1, "السلة فارغة"),
-  buyer: z.object({
-    name: z.string().min(1, "اسم العميل مطلوب"),
-    phone: z.string().min(6, "رقم هاتف غير صالح"),
-    email: z.string().email("بريد إلكتروني غير صالح").optional().or(z.literal("")),
-    city: z.string().min(1, "المدينة مطلوبة"),
-    address: z.string().min(1, "العنوان مطلوب"),
-    vanexAreaId: z.string().min(1).optional(),
-  }),
-  paymentMethod: z.enum(["cod", "wallet"]),
-  couponCode: z.string().optional(),
-});
+export const createOrderSchema = z
+  .object({
+    storeSlug: z.string().min(1),
+    items: z
+      .array(
+        z.object({
+          productId: z.string().min(1),
+          quantity: z.number().int().positive(),
+        })
+      )
+      .min(1, "السلة فارغة"),
+    buyer: z.object({
+      name: z.string().min(1, "اسم العميل مطلوب"),
+      phone: z.string().min(6, "رقم هاتف غير صالح"),
+      email: z.string().email("بريد إلكتروني غير صالح").optional().or(z.literal("")),
+      city: z.string().min(1, "المدينة مطلوبة"),
+      address: z.string().min(1, "العنوان مطلوب"),
+      vanexAreaId: z.string().min(1).optional(),
+    }),
+    paymentMethod: z.enum(["cod", "wallet"]),
+    // Required (per the refine below) only when paymentMethod is "wallet" —
+    // which DPay gateway the buyer picked, plus whichever of its required
+    // fields apply (see DPAY_REQUIRED_FIELDS in dpay-client.ts).
+    dpayPayMethod: z.enum(DPAY_PAY_METHODS).optional(),
+    dpayCustomerMobile: z.string().optional(),
+    dpayBirthYear: z.string().optional(),
+    dpayCardNumber: z.string().optional(),
+    couponCode: z.string().optional(),
+  })
+  .refine((v) => v.paymentMethod !== "wallet" || !!v.dpayPayMethod, {
+    message: "اختر طريقة الدفع الإلكتروني",
+    path: ["dpayPayMethod"],
+  });
 
 export const createCouponSchema = z.object({
   storeId: z.string().min(1),

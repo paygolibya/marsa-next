@@ -218,6 +218,15 @@ model Order {
   courierNote       String?  @map("courier_note") // failure/return reason from the courier
   createdAt         DateTime @default(now()) @map("created_at")
 
+  // DPay wallet payment tracking — set when a wallet order opens a DPay
+  // session (src/lib/payment/dpay-client.ts). paymentStatus flips from
+  // pending to paid/failed only via src/lib/payment/dpay-order.ts, called
+  // from either the OTP-verify route or the DPay webhook (whichever
+  // confirms first) — never written directly anywhere else.
+  dpaySessionId String? @unique @map("dpay_session_id")
+  dpayPayMethod String? @map("dpay_pay_method") // edfali | sadad | masrefypay | yousrpay | saharapay | mobicash | moamalat
+  dpayFeeCents  Int?    @map("dpay_fee_cents") // DPay's own fee, separate from Rifqa's commission
+
   // Automatic payout tracking — set the moment the real-time trigger (or
   // its daily-cron backstop) calculates this order's commission. Denormalized
   // copies of the linked Commission row so the order itself is queryable

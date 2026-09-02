@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Cairo, Tajawal } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
+import ChatWidget from "@/components/layout/ChatWidget";
 
 const cairo = Cairo({
   subsets: ["arabic", "latin"],
@@ -25,6 +26,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="ar" dir="rtl" className={`${cairo.variable} ${tajawal.variable}`}>
       <body>
         <AuthProvider>{children}</AuthProvider>
+        <ChatWidget />
       </body>
     </html>
   );

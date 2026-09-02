@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createShipment } from "@/lib/integrations/couriers";
-import { initiateWalletPayment } from "@/lib/integrations/payments";
+import { openDpaySession, DpayApiError } from "@/lib/payment/dpay-client";
 import { createOrderSchema } from "@/lib/validation";
 import { getSubscriptionState, getCheckoutPaymentMethods } from "@/lib/checkout-features";
 import { resolveCouponDiscount } from "@/lib/coupons";
@@ -30,7 +30,8 @@ export async function POST(req: Request) {
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "بيانات غير صالحة" }, { status: 400 });
     }
-    const { storeSlug, items, buyer, paymentMethod, couponCode } = parsed.data;
+    const { storeSlug, items, buyer, paymentMethod, dpayPayMethod, dpayCustomerMobile, dpayBirthYear, dpayCardNumber, couponCode } =
+      parsed.data;
 
     const store = await prisma.store.findUnique({ where: { slug: storeSlug }, include: { merchant: true } });
     if (!store) return NextResponse.json({ error: "Store not found" }, { status: 404 });
@@ -163,13 +164,62 @@ export async function POST(req: Request) {
     const totalCents = order.totalCents;
     const discountCents = order.discountCents;
 
-    // Wallet payments settle immediately (or fail) before we confirm the order.
+    // Wallet orders open a DPay payment session instead of settling
+    // synchronously — most gateways need the buyer to enter an OTP DPay
+    // texts them directly (we never see it ourselves until the buyer
+    // types it back to us), and Moamalat redirects to a hosted page
+    // entirely. Only DPay's webhook (or, for a faster UI, the OTP-verify
+    // call — see finalizeWalletOrder) ever flips paymentStatus to
+    // paid/failed; nothing here assumes success.
     if (paymentMethod === "wallet") {
-      const payment = await initiateWalletPayment({ id: order.id, totalCents });
-      await prisma.order.update({ where: { id: order.id }, data: { paymentStatus: payment.status } });
-      if (payment.status !== "paid") {
-        return NextResponse.json({ error: "Payment failed", orderId: order.id }, { status: 402 });
+      let session;
+      try {
+        session = await openDpaySession({
+          payMethod: dpayPayMethod!,
+          totalCents,
+          orderId: order.id,
+          customerMobile: dpayCustomerMobile,
+          birthYear: dpayBirthYear,
+          cardNumber: dpayCardNumber,
+        });
+      } catch (err) {
+        const message = err instanceof DpayApiError ? err.message : "تعذّر بدء الدفع الإلكتروني";
+        console.error(`DPay session open failed for order ${order.id}:`, err);
+        return NextResponse.json({ error: message, orderId: order.id }, { status: 502 });
       }
+
+      await prisma.order.update({
+        where: { id: order.id },
+        data: {
+          dpaySessionId: String(session.sessionId),
+          dpayPayMethod,
+          dpayFeeCents: session.feeCents,
+          paymentStatus: session.status === "paid" ? "paid" : "pending",
+        },
+      });
+
+      if (session.status !== "paid") {
+        // Real session, awaiting OTP entry or the Moamalat redirect —
+        // nothing to ship yet. See /api/dpay/verify-otp and /api/dpay/webhook.
+        return NextResponse.json(
+          {
+            orderId: order.id,
+            totalCents,
+            shippingCents,
+            discountCents,
+            paymentStatus: "pending",
+            dpay: {
+              sessionId: session.sessionId,
+              payMethod: dpayPayMethod,
+              requiresOtp: dpayPayMethod !== "moamalat",
+              paymentLink: session.paymentLink,
+            },
+          },
+          { status: 201 }
+        );
+      }
+      // Mock mode (no DPAY_API_TOKEN) resolves "paid" immediately — fall
+      // through to the shared shipment/notify block below, same as COD.
     }
 
     // Hand off to the courier regardless of payment method — COD orders still
