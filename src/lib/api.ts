@@ -41,6 +41,8 @@ export type Merchant = {
   subscriptionTier: string | null;
   subscriptionStatus: string;
   phoneVerified: boolean;
+  subscriptionEndDate: string | null;
+  trialEndsAt: string | null;
 };
 export type StoreCustomization = {
   primaryColor: string;

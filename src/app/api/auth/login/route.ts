@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { signMerchantToken, toMerchantDTO } from "@/lib/auth";
 import { loginSchema } from "@/lib/validation";
+import { expireIfLapsed } from "@/lib/subscription/expire";
 
 // POST /api/auth/login — log in, get a JWT.
 // Ported from marsa-backend/src/routes/auth.js (POST /login).
@@ -21,10 +22,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid phone or password" }, { status: 401 });
     }
 
+    const expired = await expireIfLapsed(merchant.id);
     const token = signMerchantToken(merchant.id);
     return NextResponse.json({
       token,
-      merchant: toMerchantDTO(merchant),
+      merchant: toMerchantDTO(expired ? { ...merchant, subscriptionStatus: "inactive" } : merchant),
     });
   } catch (err) {
     console.error(err);

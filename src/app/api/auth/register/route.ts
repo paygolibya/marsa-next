@@ -4,9 +4,15 @@ import { prisma } from "@/lib/prisma";
 import { signMerchantToken, toMerchantDTO } from "@/lib/auth";
 import { registerSchema } from "@/lib/validation";
 import { sendOtpSms } from "@/lib/integrations/sms";
+import { getPlanFeatureFlags } from "@/lib/checkout-features";
 
 const OTP_EXPIRY_MS = 10 * 60 * 1000;
 const MAX_REGISTRATIONS_PER_IP_PER_HOUR = 3;
+const TRIAL_DAYS = 90;
+// Full-featured tier during the trial, so a merchant can actually evaluate
+// DPay/API access/etc — not the earlier behavior of sitting in "pending"
+// with no tier at all until an admin manually reviewed a payment receipt.
+const TRIAL_TIER = "advanced";
 
 function generateOtp(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -52,13 +58,25 @@ export async function POST(req: Request) {
     const passwordHash = bcrypt.hashSync(password, 10);
     const otp = generateOtp();
     const otpCodeHash = bcrypt.hashSync(otp, 10);
+    const trialEndsAt = new Date(Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000);
 
     const merchant = await prisma.merchant.create({
       data: {
         name,
         phone,
         passwordHash,
-        subscriptionStatus: "pending",
+        // 90-day free trial starts immediately — no payment/receipt review
+        // gate for new signups. subscriptionEndDate is the field that
+        // actually gates dashboard access (see dashboard/layout.tsx and
+        // src/lib/subscription/expire.ts); trialEndsAt is kept alongside
+        // it purely so the UI/admin can tell a trial apart from a real
+        // paid period once one starts.
+        subscriptionStatus: "active",
+        subscriptionTier: TRIAL_TIER,
+        subscriptionStartDate: new Date(),
+        subscriptionEndDate: trialEndsAt,
+        trialEndsAt,
+        ...getPlanFeatureFlags(TRIAL_TIER),
         registrationIp,
         otpCodeHash,
         otpExpiresAt: new Date(Date.now() + OTP_EXPIRY_MS),

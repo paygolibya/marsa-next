@@ -68,6 +68,8 @@ export function toMerchantDTO(merchant: {
   subscriptionTier: string | null;
   subscriptionStatus: string;
   phoneVerified: boolean;
+  subscriptionEndDate?: Date | null;
+  trialEndsAt?: Date | null;
 }) {
   return {
     id: merchant.id,
@@ -76,5 +78,7 @@ export function toMerchantDTO(merchant: {
     subscriptionTier: merchant.subscriptionTier,
     subscriptionStatus: merchant.subscriptionStatus,
     phoneVerified: merchant.phoneVerified,
+    subscriptionEndDate: merchant.subscriptionEndDate ?? null,
+    trialEndsAt: merchant.trialEndsAt ?? null,
   };
 }

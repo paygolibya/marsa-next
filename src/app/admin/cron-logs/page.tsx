@@ -8,6 +8,7 @@ import type { CronLog } from "@/types/payment";
 const JOB_LABELS: Record<string, string> = {
   "process-deliveries": "احتساب الطلبات المُسلَّمة (يومي 8:00 ص)",
   "weekly-payouts": "تجميع الدفعات الأسبوعية (جمعة 9:00 ص)",
+  "expire-subscriptions": "إنهاء الاشتراكات المنتهية (يومي 3:00 ص)",
 };
 
 export default function CronLogsPage() {

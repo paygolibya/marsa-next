@@ -103,6 +103,12 @@ model Merchant {
   subscriptionStatus     String    @default("inactive") @map("subscription_status")
   subscriptionStartDate  DateTime? @map("subscription_start_date")
   subscriptionEndDate    DateTime? @map("subscription_end_date")
+  // Set once at registration for new signups (see /api/auth/register).
+  // subscriptionEndDate is the one field that actually gates access — this
+  // is kept alongside it purely so the UI/admin can tell "still on the
+  // free trial" apart from "a real paid period," even after a genuine
+  // payment later overwrites subscriptionEndDate to something later.
+  trialEndsAt            DateTime? @map("trial_ends_at")
   directWireEnabled      Boolean   @default(true) @map("direct_wire_enabled")
   receiptUploadEnabled   Boolean   @default(true) @map("receipt_upload_enabled")
   codEnabled             Boolean   @default(true) @map("cod_enabled")

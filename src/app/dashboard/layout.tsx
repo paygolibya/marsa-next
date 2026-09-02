@@ -88,9 +88,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <h1 className="font-display text-2xl font-extrabold text-harbor mb-3">{copy.title}</h1>
           <p className="text-rope mb-8">{copy.body}</p>
           <div className="flex items-center justify-center gap-3">
+            {merchant.subscriptionStatus === "inactive" && (
+              <Link
+                href="/subscription"
+                className="rounded-full bg-signal px-5 py-2.5 font-bold text-canvas hover:bg-signal-dark transition-colors"
+              >
+                اشترك الآن
+              </Link>
+            )}
             <button
               onClick={() => void refreshMerchant()}
-              className="rounded-full bg-signal px-5 py-2.5 font-bold text-canvas hover:bg-signal-dark transition-colors"
+              className="rounded-full border border-harbor/20 px-5 py-2.5 font-bold text-harbor hover:bg-harbor/5 transition-colors"
             >
               تحقق من الحالة
             </button>
@@ -102,6 +110,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </div>
     );
   }
+
+  const trialDaysLeft =
+    merchant?.trialEndsAt && merchant.trialEndsAt === merchant.subscriptionEndDate
+      ? Math.ceil((new Date(merchant.trialEndsAt).getTime() - Date.now()) / (24 * 60 * 60 * 1000))
+      : null;
 
   return (
     <div className="min-h-screen flex">
@@ -152,6 +165,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </aside>
 
       <main className="flex-1 bg-canvas">
+        {trialDaysLeft !== null && trialDaysLeft >= 0 && (
+          <div className="bg-brass/10 border-b border-brass/20 px-6 py-3 text-sm text-harbor flex items-center justify-between gap-4">
+            <span>
+              ⏳ أنت في الفترة التجريبية المجانية —{" "}
+              {trialDaysLeft === 0 ? "تنتهي اليوم" : `تنتهي خلال ${trialDaysLeft} يوم`}
+            </span>
+            <Link href="/subscription" className="font-bold text-brass hover:underline whitespace-nowrap">
+              اشترك الآن
+            </Link>
+          </div>
+        )}
         {!loading && store ? (
           children
         ) : loading ? (

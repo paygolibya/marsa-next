@@ -15,8 +15,21 @@ interface Merchant {
   phone: string;
   subscriptionTier: string | null;
   subscriptionStatus: string;
+  subscriptionEndDate: string | null;
+  trialEndsAt: string | null;
   createdAt: string;
   stores: MerchantStore[];
+}
+
+// A merchant is "on trial" as long as subscriptionStatus is active,
+// trialEndsAt is set, and subscriptionEndDate hasn't been pushed out past
+// it by a real payment approval since — matching them exactly means the
+// trial is still the operative period, not just a historical record.
+function trialDaysLeft(merchant: Merchant): number | null {
+  if (merchant.subscriptionStatus !== "active" || !merchant.trialEndsAt) return null;
+  if (merchant.subscriptionEndDate !== merchant.trialEndsAt) return null;
+  const days = Math.ceil((new Date(merchant.trialEndsAt).getTime() - Date.now()) / (24 * 60 * 60 * 1000));
+  return days >= 0 ? days : null;
 }
 
 const TIER_LABELS: Record<string, string> = {
@@ -239,6 +252,11 @@ export default function MerchantsPage() {
                     <span className={`rounded-full px-3 py-1 text-sm font-bold ${getStatusClasses(merchant.subscriptionStatus)}`}>
                       {getStatusLabel(merchant.subscriptionStatus)}
                     </span>
+                    {trialDaysLeft(merchant) !== null && (
+                      <span className="mr-2 rounded-full bg-purple-100 px-3 py-1 text-xs font-bold text-purple-800">
+                        تجريبي — {trialDaysLeft(merchant)} يوم متبقي
+                      </span>
+                    )}
                   </td>
                   <td className="px-6 py-4">{merchant.stores.length}</td>
                   <td className="px-6 py-4">{new Date(merchant.createdAt).toLocaleDateString("ar-LY")}</td>
@@ -342,7 +360,10 @@ function MerchantDetailsModal({
             </div>
             <div>
               <p className="text-sm text-gray-600">الحالة</p>
-              <p className="font-bold">{merchant.subscriptionStatus}</p>
+              <p className="font-bold">
+                {merchant.subscriptionStatus}
+                {trialDaysLeft(merchant) !== null && ` (تجريبي — ${trialDaysLeft(merchant)} يوم متبقي)`}
+              </p>
             </div>
             <div>
               <p className="text-sm text-gray-600">تاريخ الإنشاء</p>
