@@ -183,15 +183,25 @@ function PaymentPageContent() {
                   <p className="leading-7">{tierInfo.checkoutMessage}</p>
                 </div>
 
+                {/* This chooses which checkout method the MERCHANT'S OWN
+                    STORE will offer ITS customers (professional tier only
+                    allows one) — it does not itself charge anything or
+                    start a DPay session. Paying for the subscription itself
+                    is always the receipt-upload step below, regardless of
+                    which method is picked here — a real, working feature
+                    (see getCheckoutPaymentMethods in checkout-features.ts),
+                    just worded ambiguously enough to read as a "pay via
+                    DPay now" button. */}
                 {tier === "professional" && (
                   <div className="mb-6 space-y-3 rounded-xl border border-harbor/10 bg-blue-50 p-4 text-right">
-                    <p className="font-bold text-harbor">اختر طريقة الدفع الفعّالة</p>
+                    <p className="font-bold text-harbor">اختر طريقة الدفع التي سيوفرها متجرك لعملائك</p>
+                    <p className="text-xs text-rope">هذا لا يدفع اشتراكك — اشتراكك يُدفع دائمًا عبر التحويل البنكي أدناه، بغض النظر عن اختيارك هنا.</p>
                     <label className="flex items-center justify-between rounded-lg bg-white px-3 py-2">
-                      <span>الدفع عبر DPay</span>
+                      <span>الدفع الإلكتروني (DPay) لعملائك</span>
                       <input type="radio" name="method" checked={selectedMethod === "dpay"} onChange={() => setSelectedMethod("dpay")} />
                     </label>
                     <label className="flex items-center justify-between rounded-lg bg-white px-3 py-2">
-                      <span>تحويل بنكي مباشر</span>
+                      <span>التحويل البنكي المباشر لعملائك</span>
                       <input type="radio" name="method" checked={selectedMethod === "direct_transfer"} onChange={() => setSelectedMethod("direct_transfer")} />
                     </label>
                   </div>
@@ -199,8 +209,8 @@ function PaymentPageContent() {
 
                 {tier === "advanced" && (
                   <div className="mb-6 rounded-xl border border-green-200 bg-green-50 p-4 text-right text-sm text-green-800">
-                    <p className="font-bold">الطريقة المتاحة: جميع الأساليب مفعلة</p>
-                    <p className="mt-2">DPay + التحويل المباشر + الدفع عند الاستلام</p>
+                    <p className="font-bold">طرق الدفع المتاحة لعملائك: جميعها مفعّلة</p>
+                    <p className="mt-2">DPay + التحويل المباشر + الدفع عند الاستلام. اشتراكك أنت يُدفع دائمًا عبر التحويل البنكي أدناه.</p>
                   </div>
                 )}
 
