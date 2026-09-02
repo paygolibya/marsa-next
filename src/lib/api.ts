@@ -49,9 +49,19 @@ export type StoreCustomization = {
   secondaryColor: string;
   accentColor: string | null;
   logo: string | null;
+  favicon: string | null;
   tagline: string | null;
   description: string | null;
+  headerStyle: string;
+  footerStyle: string;
+  showNewsletter: boolean;
+  showReviews: boolean;
+  showTestimonials: boolean;
+  showSocialProof: boolean;
+  template?: { nameAr: string } | null;
 };
+export type StoreStats = { deliveredOrderCount: number; averageRating: number | null; reviewCount: number };
+export type StoreTestimonial = { buyerName: string; rating: number; reviewText: string | null; productName: string };
 export type Store = {
   id: string;
   merchantId: string;
@@ -178,7 +188,21 @@ export const api = {
     request<Store[]>("/api/stores/mine", { headers: authHeaders(token) }),
 
   publicStore: (slug: string) =>
-    request<{ store: Store; products: Product[] }>(`/api/stores/public/${slug}`),
+    request<{ store: Store; products: Product[]; stats: StoreStats | null; testimonials: StoreTestimonial[] }>(
+      `/api/stores/public/${slug}`
+    ),
+
+  subscribeNewsletter: (storeSlug: string, email: string) =>
+    request<{ success: boolean }>("/api/newsletter/subscribe", { method: "POST", body: JSON.stringify({ storeSlug, email }) }),
+
+  uploadImage: async (token: string, file: File): Promise<{ url: string }> => {
+    const formData = new FormData();
+    formData.append("file", file);
+    const res = await fetch("/api/uploads/image", { method: "POST", headers: authHeaders(token), body: formData });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new ApiError((data as { error?: string }).error ?? "فشل رفع الصورة", res.status);
+    return data;
+  },
 
   createProduct: (
     token: string,

@@ -26,7 +26,41 @@ export async function GET(_req: Request, { params }: { params: Promise<{ slug: s
     const { merchant, ...publicStore } = store;
     const dpayAvailable = getCheckoutPaymentMethods(getSubscriptionState(merchant)).dpay;
 
-    return NextResponse.json({ store: { ...publicStore, dpayAvailable }, products });
+    // Real numbers behind the customizer's "عرض عدد العملاء والمبيعات"
+    // toggle — previously saved to the DB and never queried or rendered
+    // anywhere. Only computed when the merchant actually enabled it
+    // (default true, but still — no point running these aggregates for a
+    // store that opted out).
+    let stats: { deliveredOrderCount: number; averageRating: number | null; reviewCount: number } | null = null;
+    let testimonials: { buyerName: string; rating: number; reviewText: string | null; productName: string }[] = [];
+
+    if (store.customization?.showSocialProof !== false) {
+      const [deliveredOrderCount, ratingAgg] = await Promise.all([
+        prisma.order.count({ where: { storeId: store.id, status: "delivered" } }),
+        prisma.productReview.aggregate({
+          where: { product: { storeId: store.id } },
+          _avg: { rating: true },
+          _count: { rating: true },
+        }),
+      ]);
+      stats = {
+        deliveredOrderCount,
+        averageRating: ratingAgg._avg.rating,
+        reviewCount: ratingAgg._count.rating,
+      };
+    }
+
+    if (store.customization?.showTestimonials) {
+      const reviews = await prisma.productReview.findMany({
+        where: { product: { storeId: store.id }, rating: { gte: 4 }, reviewText: { not: null } },
+        orderBy: { createdAt: "desc" },
+        take: 5,
+        select: { buyerName: true, rating: true, reviewText: true, product: { select: { name: true } } },
+      });
+      testimonials = reviews.map((r) => ({ buyerName: r.buyerName, rating: r.rating, reviewText: r.reviewText, productName: r.product.name }));
+    }
+
+    return NextResponse.json({ store: { ...publicStore, dpayAvailable }, products, stats, testimonials });
   } catch (err) {
     console.error(err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

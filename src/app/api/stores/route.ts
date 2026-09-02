@@ -38,11 +38,21 @@ export async function POST(req: Request) {
     });
 
     if (templateId) {
+      // Previously always started a new store at the schema's hardcoded
+      // blue default regardless of which template was picked — a
+      // merchant choosing a dark/gold template got the exact same blue
+      // starting colors as everyone else. Templates carry their own
+      // defaultColors for exactly this; use them when present.
+      const template = await prisma.template.findUnique({ where: { id: templateId }, select: { defaultColors: true } });
+      const defaults = (template?.defaultColors ?? {}) as { primaryColor?: string; secondaryColor?: string };
+
       await prisma.templateCustomization.upsert({
         where: { storeId: store.id },
         create: {
           storeId: store.id,
           templateId,
+          primaryColor: defaults.primaryColor,
+          secondaryColor: defaults.secondaryColor,
         },
         update: {
           templateId,
