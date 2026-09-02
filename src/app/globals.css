@@ -3,6 +3,17 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --color-canvas: 239 233 218; /* #EFE9DA */
+    --color-canvas-dim: 228 220 200; /* #E4DCC8 */
+    --color-ink: 27 27 24; /* #1B1B18 */
+  }
+  .dark {
+    --color-canvas: 16 24 33; /* near-black navy page background */
+    --color-canvas-dim: 23 33 44; /* one step lighter — secondary sections */
+    --color-ink: 231 226 216; /* warm off-white body text, echoes the light theme's cream */
+  }
+
   body {
     @apply bg-canvas text-ink font-body;
   }
@@ -43,4 +54,267 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* ============================================
+   DARK MODE — pragmatic retrofit, not a rewrite
+   ============================================
+   canvas/canvas-dim/ink (above) cover the primary page background + body
+   text everywhere with zero per-component changes, since every page in
+   this codebase already builds on those three tokens.
+
+   Two other things needed explicit handling and couldn't use the same
+   CSS-variable trick without side effects:
+
+   1. `harbor` is deliberately NOT a CSS variable (see tailwind.config.ts)
+      — it's used both as a permanent dark panel color (bg-harbor
+      sidebars/buttons, which should stay dark in both themes) and as a
+      text/border color on the canvas background (text-harbor headings,
+      border-harbor opacity variants used as dividers), which does need
+      to lighten once canvas goes dark. Flipping the shared variable
+      would've relighted the panels too. Instead, this overrides the
+      specific compiled utility classes below, placed after @tailwind
+      utilities so plain source order — not !important — is what wins.
+
+   2. `canvas` — the CSS variable, unlike harbor — turned out to have the
+      exact same dual-role problem, caught by actually screenshotting the
+      landing page in dark mode: the hero section and the dashboard
+      sidebar are both permanently-dark bg-harbor panels that use
+      text-canvas / border-canvas / bg-canvas opacity variants as their
+      LIGHT text and dividers (e.g. `<section className="bg-harbor
+      text-canvas">` in page.tsx). Flipping canvas's variable for dark
+      mode — correct for its main role as the page background — turned
+      that light text dark-on-dark and made it unreadable. Every single
+      text-canvas/border-canvas usage in this codebase (grepped, not
+      guessed) is inside one of these permanently-dark panels, so those
+      are pinned back to the original light-cream values below,
+      regardless of theme — only plain bg-canvas and bg-canvas/95 (the
+      actual page background and the nav bar's backdrop) are left to flip
+      naturally via the variable.
+
+   3. A lot of this app (every admin page, several dashboard pages) was
+      built with plain Tailwind grays, whites, and status-badge colors
+      rather than the branded palette. Rather than rewriting ~30 files'
+      className strings to introduce theme-aware tokens there too, this
+      takes the same override-the-compiled-class approach for the
+      specific gray, white, and badge-color shades actually used
+      (enumerated by grepping the whole src tree) — broad practical
+      coverage without touching that JSX. A less common utility combo
+      introduced later and never added here would just silently stay
+      light-mode-colored in dark mode; add it here when that happens.
+*/
+/* canvas-as-light-text/border/tint on the permanently-dark hero + sidebar
+   panels — pinned to the original cream values, NOT the flipped variable */
+.dark .text-canvas {
+  color: rgb(239 233 218);
+}
+.dark .text-canvas\/50 {
+  color: rgb(239 233 218 / 0.5);
+}
+.dark .text-canvas\/60 {
+  color: rgb(239 233 218 / 0.6);
+}
+.dark .text-canvas\/70 {
+  color: rgb(239 233 218 / 0.7);
+}
+.dark .text-canvas\/75 {
+  color: rgb(239 233 218 / 0.75);
+}
+.dark .border-canvas\/10 {
+  border-color: rgb(239 233 218 / 0.1);
+}
+.dark .border-canvas\/20 {
+  border-color: rgb(239 233 218 / 0.2);
+}
+.dark .border-canvas\/30 {
+  border-color: rgb(239 233 218 / 0.3);
+}
+.dark .border-canvas\/40 {
+  border-color: rgb(239 233 218 / 0.4);
+}
+.dark .bg-canvas\/5 {
+  background-color: rgb(239 233 218 / 0.05);
+}
+.dark .bg-canvas\/10 {
+  background-color: rgb(239 233 218 / 0.1);
+}
+
+/* text-harbor headings on the now-dark canvas */
+.dark .text-harbor {
+  color: rgb(198 213 227);
+}
+.dark .text-harbor\/40 {
+  color: rgb(198 213 227 / 0.4);
+}
+.dark .text-harbor\/80 {
+  color: rgb(198 213 227 / 0.8);
+}
+/* subtle harbor-tinted borders/fills — switch to white-based tints so
+   they're still visible against a dark background instead of vanishing */
+.dark .border-harbor\/5 {
+  border-color: rgb(255 255 255 / 0.05);
+}
+.dark .border-harbor\/10 {
+  border-color: rgb(255 255 255 / 0.08);
+}
+.dark .border-harbor\/15 {
+  border-color: rgb(255 255 255 / 0.1);
+}
+.dark .border-harbor\/20 {
+  border-color: rgb(255 255 255 / 0.14);
+}
+.dark .bg-harbor\/5 {
+  background-color: rgb(255 255 255 / 0.04);
+}
+.dark .bg-harbor\/15 {
+  background-color: rgb(255 255 255 / 0.07);
+}
+.dark .bg-harbor\/20 {
+  background-color: rgb(255 255 255 / 0.1);
+}
+.dark .bg-harbor\/40 {
+  background-color: rgb(255 255 255 / 0.16);
+}
+
+/* plain-Tailwind admin/dashboard pages — card surfaces */
+.dark .bg-white {
+  background-color: theme("colors.slate.900");
+}
+/* bg-white/NN opacity variants (branded-palette pages' translucent cards,
+   e.g. feature/pricing cards on the landing page) — caught by actually
+   screenshotting the landing page in dark mode: these blend 60%/40% white
+   over whatever's behind them, so against the new near-black canvas they
+   rendered as a jarring light-gray card instead of a dark one. Solid,
+   non-translucent dark card colors read better here than a translucent
+   white-based tint would on a dark backdrop. */
+.dark .bg-white\/15 {
+  background-color: rgb(255 255 255 / 0.06);
+}
+.dark .bg-white\/25 {
+  background-color: rgb(255 255 255 / 0.08);
+}
+.dark .bg-white\/40 {
+  background-color: rgb(15 23 42 / 0.6); /* slate-900 */
+}
+.dark .bg-white\/50 {
+  background-color: rgb(15 23 42 / 0.7);
+}
+.dark .bg-white\/60 {
+  background-color: rgb(15 23 42 / 0.8);
+}
+.dark .bg-gray-50 {
+  background-color: theme("colors.slate.950");
+}
+.dark .bg-gray-100 {
+  background-color: theme("colors.slate.800");
+}
+.dark .bg-gray-200 {
+  background-color: theme("colors.slate.700");
+}
+.dark .bg-gray-300 {
+  background-color: theme("colors.slate.600");
+}
+.dark .border-gray-100 {
+  border-color: theme("colors.slate.800");
+}
+.dark .border-gray-200 {
+  border-color: theme("colors.slate.700");
+}
+.dark .border-gray-300 {
+  border-color: theme("colors.slate.600");
+}
+.dark .border-gray-400 {
+  border-color: theme("colors.slate.500");
+}
+.dark .text-gray-300 {
+  color: theme("colors.slate.400");
+}
+.dark .text-gray-500 {
+  color: theme("colors.slate.400");
+}
+.dark .text-gray-600 {
+  color: theme("colors.slate.300");
+}
+.dark .text-gray-700 {
+  color: theme("colors.slate.200");
+}
+.dark .text-gray-800 {
+  color: theme("colors.slate.100");
+}
+.dark .text-gray-900 {
+  color: theme("colors.slate.50");
+}
+
+/* status pills (bg-{hue}-100 + text-{hue}-800 pattern) and light-tint
+   alert banners (bg-{hue}-50) — darken the fill, lighten the text, same
+   hue throughout so the semantic color (green=success, red=error, ...)
+   still reads correctly */
+.dark .bg-blue-50 {
+  background-color: rgb(30 58 95 / 0.4);
+}
+.dark .bg-blue-100 {
+  background-color: theme("colors.blue.950");
+}
+.dark .text-blue-600 {
+  color: theme("colors.blue.400");
+}
+.dark .text-blue-800 {
+  color: theme("colors.blue.300");
+}
+.dark .bg-green-50 {
+  background-color: rgb(20 60 45 / 0.4);
+}
+.dark .bg-green-100 {
+  background-color: theme("colors.green.950");
+}
+.dark .text-green-600 {
+  color: theme("colors.green.400");
+}
+.dark .text-green-700 {
+  color: theme("colors.green.400");
+}
+.dark .text-green-800 {
+  color: theme("colors.green.300");
+}
+.dark .bg-emerald-600 {
+  background-color: theme("colors.emerald.700");
+}
+.dark .bg-emerald-700 {
+  background-color: theme("colors.emerald.800");
+}
+.dark .bg-yellow-50 {
+  background-color: rgb(75 60 15 / 0.4);
+}
+.dark .bg-yellow-100 {
+  background-color: theme("colors.yellow.950");
+}
+.dark .text-yellow-800 {
+  color: theme("colors.yellow.300");
+}
+.dark .bg-red-50 {
+  background-color: rgb(75 25 25 / 0.4);
+}
+.dark .bg-red-100 {
+  background-color: theme("colors.red.950");
+}
+.dark .text-red-600 {
+  color: theme("colors.red.400");
+}
+.dark .text-red-800 {
+  color: theme("colors.red.300");
+}
+.dark .bg-orange-100 {
+  background-color: theme("colors.orange.950");
+}
+.dark .text-orange-800 {
+  color: theme("colors.orange.300");
+}
+.dark .bg-purple-50 {
+  background-color: rgb(55 30 75 / 0.4);
+}
+.dark .bg-purple-100 {
+  background-color: theme("colors.purple.950");
+}
+.dark .text-purple-800 {
+  color: theme("colors.purple.300");
 }

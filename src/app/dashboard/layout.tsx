@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { isAdminMerchant } from "@/lib/is-admin";
 import { useCurrentStore } from "@/lib/use-current-store";
+import ThemeToggle from "@/components/layout/ThemeToggle";
 
 const navItems = [
   { href: "/dashboard", label: "نظرة عامة" },
@@ -119,10 +120,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <div className="min-h-screen flex">
       <aside className="w-64 shrink-0 bg-harbor text-canvas flex flex-col">
-        <div className="px-6 py-6 border-b border-canvas/10">
+        <div className="px-6 py-6 border-b border-canvas/10 flex items-center justify-between">
           <Link href="/" className="font-display text-lg font-extrabold">
             رفقة <span className="text-canvas/50 font-normal text-sm">من مرسى</span>
           </Link>
+          <ThemeToggle className="text-canvas/70 hover:text-canvas transition-colors" />
         </div>
 
         {stores.length > 1 && (

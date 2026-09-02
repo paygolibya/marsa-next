@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Cairo, Tajawal } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
+import { ThemeProvider, THEME_INIT_SCRIPT } from "@/lib/theme-context";
 import ChatWidget from "@/components/layout/ChatWidget";
 
 const cairo = Cairo({
@@ -23,10 +24,18 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ar" dir="rtl" className={`${cairo.variable} ${tajawal.variable}`}>
+    <html lang="ar" dir="rtl" className={`${cairo.variable} ${tajawal.variable}`} suppressHydrationWarning>
+      <head>
+        {/* Must run before hydration — sets .dark on <html> synchronously
+            so the first paint already has the right theme, matching the
+            stored preference (or the OS's) instead of flashing light mode. */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+      </head>
       <body>
-        <AuthProvider>{children}</AuthProvider>
-        <ChatWidget />
+        <ThemeProvider>
+          <AuthProvider>{children}</AuthProvider>
+          <ChatWidget />
+        </ThemeProvider>
       </body>
     </html>
   );

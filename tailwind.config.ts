@@ -4,20 +4,32 @@ import type { Config } from "tailwindcss";
 // for the full rationale. Named for the subject, not for generic Tailwind
 // slate/gray defaults, so components read intentionally in markup.
 const config: Config = {
+  darkMode: "class",
   content: ["./src/**/*.{js,ts,jsx,tsx,mdx}"],
   theme: {
     extend: {
       colors: {
-        harbor: "#0E2A3F", // deep navy — dark sections, headers
+        harbor: "#0E2A3F", // deep navy — dark sections, headers. Deliberately
+        // NOT theme-aware: it's used as a permanent dark accent (sidebars,
+        // solid buttons, footer) that reads fine on a dark page too. Where
+        // it's used as *text* on the (theme-aware) canvas background —
+        // text-harbor, border-harbor/* — see the .dark overrides in
+        // globals.css instead; flipping this variable itself would also
+        // wrongly relight every bg-harbor panel.
         "harbor-deep": "#081D2C",
-        canvas: "#EFE9DA", // warm sail-cloth off-white — light sections
-        "canvas-dim": "#E4DCC8",
-        brass: "#B8752E", // accent — links, icons, stamps
+        // canvas/canvas-dim/ink are the three tokens that actually flip
+        // between light and dark — see the CSS custom properties in
+        // globals.css. rgb(var(...) / <alpha-value>) is Tailwind's
+        // documented pattern for a CSS-variable color that still supports
+        // the /opacity modifier (bg-canvas/10 etc, used throughout).
+        canvas: "rgb(var(--color-canvas) / <alpha-value>)",
+        "canvas-dim": "rgb(var(--color-canvas-dim) / <alpha-value>)",
+        ink: "rgb(var(--color-ink) / <alpha-value>)",
+        brass: "#B8752E", // accent — links, icons, stamps. Works on both themes unchanged.
         "brass-light": "#D89A55",
-        signal: "#C1443C", // primary CTA red
+        signal: "#C1443C", // primary CTA red — unchanged across themes.
         "signal-dark": "#9E332C",
-        rope: "#8A7A5C", // muted secondary text on canvas
-        ink: "#1B1B18", // near-black text
+        rope: "#8A7A5C", // muted secondary text — mid-tone enough to stay legible on both themes unchanged.
       },
       fontFamily: {
         display: ["var(--font-cairo)", "sans-serif"],

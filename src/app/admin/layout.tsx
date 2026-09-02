@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { isAdminMerchant } from "@/lib/is-admin";
+import ThemeToggle from "@/components/layout/ThemeToggle";
 
 const navItems = [
   { href: "/admin", label: "لوحة التحكم", icon: "📊" },
@@ -40,7 +41,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <div className="min-h-screen bg-gray-50">
       <div className="flex min-h-screen flex-col lg:flex-row">
         <aside className="w-full bg-harbor p-6 text-white lg:min-h-screen lg:w-64">
-          <h1 className="mb-8 text-2xl font-bold">Marsa Admin</h1>
+          <div className="mb-8 flex items-center justify-between">
+            <h1 className="text-2xl font-bold">Marsa Admin</h1>
+            <ThemeToggle className="text-white/70 hover:text-white transition-colors" />
+          </div>
 
           <nav className="space-y-2">
             {navItems.map((item) => (

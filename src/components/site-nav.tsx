@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import { isAdminMerchant } from "@/lib/is-admin";
+import ThemeToggle from "@/components/layout/ThemeToggle";
 
 export function SiteNav() {
   const { merchant, ready } = useAuth();
@@ -24,6 +25,7 @@ export function SiteNav() {
           <Link href="/#features" className="hover:text-brass transition-colors">
             المزايا
           </Link>
+          <ThemeToggle className="text-lg hover:opacity-70 transition-opacity" />
           {ready && merchant && isAdminMerchant(merchant) ? (
             <Link
               href="/admin"
