@@ -2,14 +2,10 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { getAuthMerchantId } from "@/lib/auth";
-import { sendOtpSms } from "@/lib/integrations/sms";
+import { requestOtpPin } from "@/lib/integrations/sms";
 
 const OTP_EXPIRY_MS = 10 * 60 * 1000;
 const RESEND_COOLDOWN_MS = 60 * 1000;
-
-function generateOtp(): string {
-  return Math.floor(100000 + Math.random() * 900000).toString();
-}
 
 // POST /api/auth/resend-otp — Bearer-authed. Enforces the cooldown
 // server-side (not just disabling the button client-side) and resets the
@@ -31,19 +27,18 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: `الرجاء الانتظار ${waitSeconds} ثانية قبل إعادة الإرسال` }, { status: 429 });
     }
 
-    const otp = generateOtp();
+    const otpResult = await requestOtpPin(merchant.phone);
     await prisma.merchant.update({
       where: { id: merchantId },
       data: {
-        otpCodeHash: bcrypt.hashSync(otp, 10),
+        otpCodeHash: bcrypt.hashSync(otpResult.pin, 10),
         otpExpiresAt: new Date(Date.now() + OTP_EXPIRY_MS),
         otpSentAt: new Date(),
         otpAttempts: 0,
       },
     });
 
-    const smsResult = await sendOtpSms(merchant.phone, otp);
-    if (!smsResult.success) {
+    if (!otpResult.success) {
       return NextResponse.json({ error: "فشل إرسال الرمز، حاول مجددًا" }, { status: 500 });
     }
 

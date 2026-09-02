@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { signMerchantToken, toMerchantDTO } from "@/lib/auth";
 import { registerSchema } from "@/lib/validation";
-import { sendOtpSms } from "@/lib/integrations/sms";
+import { requestOtpPin } from "@/lib/integrations/sms";
 import { getPlanFeatureFlags } from "@/lib/checkout-features";
 
 const OTP_EXPIRY_MS = 10 * 60 * 1000;
@@ -13,10 +13,6 @@ const TRIAL_DAYS = 90;
 // DPay/API access/etc — not the earlier behavior of sitting in "pending"
 // with no tier at all until an admin manually reviewed a payment receipt.
 const TRIAL_TIER = "advanced";
-
-function generateOtp(): string {
-  return Math.floor(100000 + Math.random() * 900000).toString();
-}
 
 function getClientIp(req: Request): string | null {
   const forwardedFor = req.headers.get("x-forwarded-for");
@@ -56,8 +52,11 @@ export async function POST(req: Request) {
     }
 
     const passwordHash = bcrypt.hashSync(password, 10);
-    const otp = generateOtp();
-    const otpCodeHash = bcrypt.hashSync(otp, 10);
+    // Resala generates the actual OTP code themselves (see requestOtpPin) —
+    // we just hash and store whatever they hand back, same as a
+    // self-generated one.
+    const otpResult = await requestOtpPin(phone);
+    const otpCodeHash = bcrypt.hashSync(otpResult.pin, 10);
     const trialEndsAt = new Date(Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000);
 
     const merchant = await prisma.merchant.create({
@@ -84,14 +83,12 @@ export async function POST(req: Request) {
       },
     });
 
-    const smsResult = await sendOtpSms(phone, otp);
-
     const token = signMerchantToken(merchant.id);
     return NextResponse.json(
       {
         token,
         merchant: toMerchantDTO(merchant),
-        otpSendFailed: !smsResult.success,
+        otpSendFailed: !otpResult.success,
       },
       { status: 201 }
     );
