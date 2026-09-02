@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useCurrentStore } from "@/lib/use-current-store";
 import { api, ApiError } from "@/lib/api";
+import DomainSettings from "@/components/store/DomainSettings";
 
 export default function DashboardSettingsPage() {
   const { token } = useAuth();
@@ -101,6 +102,8 @@ export default function DashboardSettingsPage() {
           {saving ? "جارٍ الحفظ..." : "حفظ الإعدادات"}
         </button>
       </form>
+
+      <DomainSettings storeId={store.id} />
     </div>
   );
 }

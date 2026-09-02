@@ -107,6 +107,19 @@ export const createReviewSchema = z.object({
   reviewText: z.string().optional().nullable(),
 });
 
+export const setCustomDomainSchema = z.object({
+  storeId: z.string().min(1),
+  // null clears the domain. Basic hostname shape only — Vercel's own API
+  // is the real validator (rejects anything it can't actually route to).
+  customDomain: z
+    .string()
+    .min(3)
+    .max(255)
+    .regex(/^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/i, "نطاق غير صالح")
+    .transform((v) => v.toLowerCase())
+    .nullable(),
+});
+
 export const transferPayoutSchema = z.object({
   payoutId: z.string().min(1),
   transferReference: z.string().max(200).optional().nullable(),

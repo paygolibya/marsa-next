@@ -172,6 +172,14 @@ model Store {
   shippingPolicy String? @map("shipping_policy")
   businessHours  String? @map("business_hours")
 
+  // Custom domain (e.g. www.merchant-shop.ly) — the {slug}.rifqa.ly
+  // subdomain needs no DB field at all, `slug` already is it. Verification
+  // is Vercel's own (via its Domains API, src/lib/domains/vercel-client.ts)
+  // — customDomainVerified only ever reflects what Vercel itself confirms,
+  // never set directly by application logic.
+  customDomain         String?  @unique @map("custom_domain")
+  customDomainVerified Boolean  @default(false) @map("custom_domain_verified")
+
   merchant       Merchant               @relation(fields: [merchantId], references: [id])
   template       Template?              @relation(fields: [templateId], references: [id])
   customization  TemplateCustomization?

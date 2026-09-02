@@ -240,6 +240,26 @@ export const api = {
       body: JSON.stringify(body),
     }),
 
+  getDomain: (token: string, storeId: string) =>
+    request<{
+      subdomain: string;
+      customDomain: string | null;
+      customDomainVerified: boolean;
+      records: { type: string; domain: string; value: string; reason: string }[];
+      error?: string;
+    }>(`/api/merchant/domain?storeId=${storeId}`, { headers: authHeaders(token) }),
+
+  setCustomDomain: (token: string, storeId: string, customDomain: string | null) =>
+    request<{
+      customDomain: string | null;
+      customDomainVerified: boolean;
+      records: { type: string; domain: string; value: string; reason: string }[];
+    }>("/api/merchant/domain", {
+      method: "POST",
+      headers: authHeaders(token),
+      body: JSON.stringify({ storeId, customDomain }),
+    }),
+
   createOrder: (body: {
     storeSlug: string;
     items: { productId: string; quantity: number }[];
