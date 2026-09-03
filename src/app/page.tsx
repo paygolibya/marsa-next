@@ -188,12 +188,15 @@ export default function MarketingPage() {
       </section>
 
       {/* SHOWCASE — the two illustrations, each paired with a real part of
-          the merchant journey rather than dropped in as generic decoration. */}
-      <section className="bg-white/40 border-y border-harbor/10">
+          the merchant journey rather than dropped in as generic decoration.
+          Sits directly on the site's own brand gradient now (no washed-out
+          white section backdrop) so the blended images read against real
+          color, with the copy in its own card for legibility. */}
+      <section>
         <div className="mx-auto max-w-6xl px-6 py-24 space-y-20">
           <Reveal>
             <div className="grid md:grid-cols-2 gap-10 items-center">
-              <div className="order-2 md:order-1">
+              <div className="order-2 md:order-1 rounded-2xl bg-white/90 shadow-xl p-8">
                 <p className="text-signal font-bold text-sm mb-2">لكل تاجر</p>
                 <h3 className="font-display text-2xl md:text-3xl font-extrabold text-harbor mb-4">
                   من فكرة متجر إلى أول عملية بيع، في نفس اليوم
@@ -205,12 +208,19 @@ export default function MarketingPage() {
               </div>
               <div className="order-1 md:order-2 relative">
                 <div className="absolute -inset-6 rounded-full bg-rose-light/30 blur-3xl" aria-hidden />
+                {/* mix-blend-multiply drops the illustration's white canvas
+                    out entirely (its white pixels let the page's own
+                    background show through, so only the colored artwork
+                    reads), and the radial mask feathers the rectangular
+                    edge into a soft fade instead of a hard-cut border —
+                    together the image sits IN the page, not on a tile. */}
                 <Image
                   src="/marketing/illustration-family-shopping.jpg"
                   alt="عائلة تتسوّق عبر الإنترنت"
                   width={600}
                   height={480}
-                  className="relative w-full h-auto"
+                  className="relative w-full h-auto mix-blend-multiply"
+                  style={{ maskImage: "radial-gradient(ellipse 65% 65% at center, black 55%, transparent 100%)", WebkitMaskImage: "radial-gradient(ellipse 65% 65% at center, black 55%, transparent 100%)" }}
                 />
               </div>
             </div>
@@ -225,10 +235,11 @@ export default function MarketingPage() {
                   alt="تسوّق منتجات متنوعة عبر متجرك"
                   width={600}
                   height={480}
-                  className="relative w-full h-auto"
+                  className="relative w-full h-auto mix-blend-multiply"
+                  style={{ maskImage: "radial-gradient(ellipse 65% 65% at center, black 55%, transparent 100%)", WebkitMaskImage: "radial-gradient(ellipse 65% 65% at center, black 55%, transparent 100%)" }}
                 />
               </div>
-              <div>
+              <div className="rounded-2xl bg-white/90 shadow-xl p-8">
                 <p className="text-signal font-bold text-sm mb-2">لكل قطاع</p>
                 <h3 className="font-display text-2xl md:text-3xl font-extrabold text-harbor mb-4">
                   أزياء، أطفال، إلكترونيات — أي منتج تبيعه
@@ -243,11 +254,15 @@ export default function MarketingPage() {
         </div>
       </section>
 
-      {/* PRICING */}
-      <section id="pricing" className="bg-harbor-deep/5">
+      {/* PRICING — restyled to actually use the site's own brand gradient
+          (not a disconnected flat navy block) for the popular plan, and a
+          gradient top-edge accent on the other two, so this section reads
+          as part of the same identity as the hero/CTA band instead of a
+          separate, plainer design language. */}
+      <section id="pricing">
         <div className="mx-auto max-w-6xl px-6 py-24">
           <Reveal>
-            <div className="max-w-xl mb-14">
+            <div className="max-w-xl mb-14 rounded-2xl bg-white/90 shadow-xl px-8 py-6 inline-block">
               <p className="text-brass font-bold text-sm mb-2">الاشتراك</p>
               <h2 className="font-display text-3xl md:text-4xl font-extrabold text-harbor">
                 خطة واحدة تناسب حجم متجرك
@@ -260,21 +275,27 @@ export default function MarketingPage() {
             {plans.map((plan, i) => (
               <Reveal key={plan.name} delayMs={i * 100}>
                 <div
-                  className={`relative h-full rounded-2xl p-8 flex flex-col transition-all duration-300 hover:-translate-y-1.5 ${
+                  className={`relative h-full rounded-2xl p-8 flex flex-col transition-all duration-300 hover:-translate-y-1.5 overflow-hidden ${
                     plan.popular
-                      ? "bg-harbor text-canvas shadow-xl scale-[1.03] hover:shadow-2xl"
-                      : "bg-white/60 text-harbor border border-harbor/10 hover:shadow-lg"
+                      ? "bg-gradient-to-br from-signal via-rose to-brass text-white shadow-2xl scale-[1.03] hover:shadow-[0_25px_50px_-12px_rgba(219,61,46,0.5)]"
+                      : "bg-white/95 text-harbor shadow-md hover:shadow-xl"
                   }`}
                 >
+                  {/* Non-popular cards get the brand gradient as a top accent
+                      bar instead of a plain border, tying them visually to
+                      the popular card's full gradient treatment. */}
+                  {!plan.popular && (
+                    <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-l from-signal via-rose to-brass" aria-hidden />
+                  )}
                   {plan.popular && (
-                    <span className="stamp absolute -top-4 right-8 h-14 w-14 border-rose bg-rose text-canvas text-[11px] font-bold leading-tight text-center animate-bob">
+                    <span className="stamp absolute -top-4 right-8 h-14 w-14 border-white bg-white text-signal text-[11px] font-bold leading-tight text-center animate-bob shadow-lg">
                       الأكثر
                       <br />
                       طلبًا
                     </span>
                   )}
                   <h3 className="font-display text-xl font-bold">{plan.name}</h3>
-                  <p className={`text-sm mt-1 ${plan.popular ? "text-canvas/70" : "text-rope"}`}>{plan.tagline}</p>
+                  <p className={`text-sm mt-1 ${plan.popular ? "text-white/80" : "text-rope"}`}>{plan.tagline}</p>
                   <p className="mt-6 mb-6">
                     <span className="font-display text-4xl font-extrabold">{plan.price}</span>
                     <span className="text-sm"> د.ل / شهر</span>
@@ -282,7 +303,7 @@ export default function MarketingPage() {
                   <ul className="space-y-3 flex-1 text-sm">
                     {plan.features.map((f) => (
                       <li key={f} className="flex items-start gap-2">
-                        <span className={plan.popular ? "text-brass-light" : "text-brass"}>•</span>
+                        <span className={plan.popular ? "text-white" : "text-signal"}>•</span>
                         <span>{f}</span>
                       </li>
                     ))}
@@ -290,7 +311,7 @@ export default function MarketingPage() {
                   <Link
                     href="/register"
                     className={`mt-8 block text-center rounded-full py-3 font-bold transition-colors ${
-                      plan.popular ? "bg-signal hover:bg-signal-dark" : "bg-harbor text-canvas hover:bg-harbor-deep"
+                      plan.popular ? "bg-white text-signal hover:bg-white/90" : "bg-harbor text-canvas hover:bg-harbor-deep"
                     }`}
                   >
                     ابدأ مع {plan.name}
