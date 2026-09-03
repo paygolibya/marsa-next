@@ -101,13 +101,23 @@ export default function MarketplaceTemplate({
                   <p className="font-extrabold text-sm mt-1" style={{ color: primary }}>
                     {formatLYD(product.priceCents)}
                   </p>
-                  <button
-                    onClick={() => onAddToCart(product)}
-                    style={{ backgroundColor: primary }}
-                    className="mt-2 rounded text-white py-1.5 text-xs font-bold hover:opacity-90 transition-opacity"
-                  >
-                    أضف إلى السلة
-                  </button>
+                  {product.variantOptions?.length ? (
+                    <Link
+                      href={`/store/${slug}/product/${product.id}`}
+                      style={{ backgroundColor: primary }}
+                      className="mt-2 rounded text-white py-1.5 text-xs font-bold text-center hover:opacity-90 transition-opacity"
+                    >
+                      اختر الخيارات
+                    </Link>
+                  ) : (
+                    <button
+                      onClick={() => onAddToCart(product)}
+                      style={{ backgroundColor: primary }}
+                      className="mt-2 rounded text-white py-1.5 text-xs font-bold hover:opacity-90 transition-opacity"
+                    >
+                      أضف إلى السلة
+                    </button>
+                  )}
                 </div>
               </div>
             ))}

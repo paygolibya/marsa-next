@@ -95,13 +95,23 @@ export default function ModernTemplate({
                   <p className="font-bold mt-1" style={{ color: primary }}>
                     {formatLYD(product.priceCents)}
                   </p>
-                  <button
-                    onClick={() => onAddToCart(product)}
-                    style={{ backgroundColor: primary }}
-                    className="mt-4 rounded-full text-white py-2 font-bold text-sm hover:opacity-90 transition-opacity"
-                  >
-                    أضف إلى السلة
-                  </button>
+                  {product.variantOptions?.length ? (
+                    <Link
+                      href={`/store/${slug}/product/${product.id}`}
+                      style={{ backgroundColor: primary }}
+                      className="mt-4 rounded-full text-white py-2 font-bold text-sm text-center hover:opacity-90 transition-opacity"
+                    >
+                      اختر الخيارات
+                    </Link>
+                  ) : (
+                    <button
+                      onClick={() => onAddToCart(product)}
+                      style={{ backgroundColor: primary }}
+                      className="mt-4 rounded-full text-white py-2 font-bold text-sm hover:opacity-90 transition-opacity"
+                    >
+                      أضف إلى السلة
+                    </button>
+                  )}
                 </div>
               </div>
             ))}

@@ -75,21 +75,48 @@ export async function POST(req: Request) {
     let order: Awaited<ReturnType<typeof prisma.order.create>>;
     try {
       order = await prisma.$transaction(async (tx) => {
-        const resolvedItems: { product: NonNullable<Awaited<ReturnType<typeof tx.product.findFirst>>>; quantity: number }[] = [];
-        for (const { productId, quantity } of items) {
+        const resolvedItems: {
+          product: NonNullable<Awaited<ReturnType<typeof tx.product.findFirst>>>;
+          quantity: number;
+          variant: NonNullable<Awaited<ReturnType<typeof tx.productVariant.findFirst>>> | null;
+          unitPriceCents: number;
+          variantLabel: string | null;
+        }[] = [];
+        for (const { productId, quantity, variantId } of items) {
           const product = await tx.product.findFirst({
             where: { id: productId, storeId: store.id, active: true },
           });
           if (!product) {
             throw new ProductNotFoundError(`Product ${productId} not found in this store`);
           }
-          if (product.trackInventory && product.stockQty < quantity) {
+
+          let variant: NonNullable<Awaited<ReturnType<typeof tx.productVariant.findFirst>>> | null = null;
+          if (variantId) {
+            variant = await tx.productVariant.findFirst({ where: { id: variantId, productId: product.id, active: true } });
+            if (!variant) {
+              throw new ProductNotFoundError(`Variant ${variantId} not found for product ${productId}`);
+            }
+            // Stock is tracked per-variant once a product has variants —
+            // always, not gated behind trackInventory (unlike a plain
+            // product, where a merchant can opt out of stock tracking
+            // entirely).
+            if (variant.stockQty < quantity) {
+              throw new OutOfStockError(product.name);
+            }
+          } else if (product.trackInventory && product.stockQty < quantity) {
             throw new OutOfStockError(product.name);
           }
-          resolvedItems.push({ product, quantity });
+
+          resolvedItems.push({
+            product,
+            quantity,
+            variant,
+            unitPriceCents: variant?.priceCents ?? product.priceCents,
+            variantLabel: variant ? Object.entries(variant.options as Record<string, string>).map(([k, v]) => `${k}: ${v}`).join("، ") : null,
+          });
         }
 
-        const productSubtotalCents = resolvedItems.reduce((sum, { product, quantity }) => sum + product.priceCents * quantity, 0);
+        const productSubtotalCents = resolvedItems.reduce((sum, { unitPriceCents, quantity }) => sum + unitPriceCents * quantity, 0);
 
         // Never trust a client-sent discount — recompute authoritatively
         // against the coupon row, same principle already applied to prices
@@ -127,17 +154,30 @@ export async function POST(req: Request) {
             shippingCents,
             vanexAreaId: buyer.vanexAreaId || null,
             items: {
-              create: resolvedItems.map(({ product, quantity }) => ({
+              create: resolvedItems.map(({ product, quantity, variant, unitPriceCents, variantLabel }) => ({
                 productId: product.id,
                 productName: product.name,
-                unitPriceCents: product.priceCents,
+                unitPriceCents,
                 quantity,
+                variantId: variant?.id ?? null,
+                variantLabel,
               })),
             },
           },
         });
 
-        for (const { product, quantity } of resolvedItems) {
+        for (const { product, quantity, variant } of resolvedItems) {
+          if (variant) {
+            // Variant stock, not the parent product's — a product with
+            // variants tracks stock per-combination, never at the
+            // product level.
+            const remaining = variant.stockQty - quantity;
+            await tx.productVariant.update({
+              where: { id: variant.id },
+              data: { stockQty: remaining, ...(remaining <= 0 ? { active: false } : {}) },
+            });
+            continue;
+          }
           if (!product.trackInventory) continue;
           const remaining = product.stockQty - quantity;
           await tx.product.update({

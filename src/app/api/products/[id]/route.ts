@@ -27,7 +27,15 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "بيانات غير صالحة" }, { status: 400 });
     }
 
-    const product = await prisma.product.update({ where: { id }, data: parsed.data });
+    const { images, ...rest } = parsed.data;
+    // imageUrl mirrors images[0] — only touch it when images was actually
+    // part of this request, same "derived, never independent" rule as
+    // creating a product.
+    const product = await prisma.product.update({
+      where: { id },
+      data: { ...rest, ...(images !== undefined ? { images, imageUrl: images[0] ?? null } : {}) },
+      include: { variants: true },
+    });
     return NextResponse.json(product);
   } catch (err) {
     console.error(err);

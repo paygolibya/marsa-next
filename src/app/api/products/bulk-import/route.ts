@@ -27,7 +27,7 @@ export async function POST(req: Request) {
     const text = await file.text();
     const parsed = Papa.parse<CsvRow>(text, { header: true, skipEmptyLines: true });
 
-    const toCreate: { name: string; priceCents: number; imageUrl: string | null; trackInventory: boolean; stockQty: number }[] = [];
+    const toCreate: { name: string; priceCents: number; imageUrl: string | null; images: string[]; trackInventory: boolean; stockQty: number }[] = [];
     const errors: { row: number; message: string }[] = [];
 
     parsed.data.forEach((row, index) => {
@@ -49,10 +49,12 @@ export async function POST(req: Request) {
         return;
       }
 
+      const imageUrl = row.imageUrl?.trim() || null;
       toCreate.push({
         name,
         priceCents: Math.round(price * 100),
-        imageUrl: row.imageUrl?.trim() || null,
+        imageUrl,
+        images: imageUrl ? [imageUrl] : [], // kept in sync with imageUrl, same rule as every other product-creation path
         trackInventory: Boolean(stockRaw),
         stockQty: stockRaw ? stockQty : 0,
       });

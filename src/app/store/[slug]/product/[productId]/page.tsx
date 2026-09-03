@@ -20,6 +20,8 @@ export default function ProductDetailPage() {
   const [cartOpen, setCartOpen] = useState(false);
   const [reviews, setReviews] = useState<ProductReview[]>([]);
   const [average, setAverage] = useState(0);
+  const [activeImage, setActiveImage] = useState(0);
+  const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({});
 
   const cart = useCart(slug);
 
@@ -34,9 +36,36 @@ export default function ProductDetailPage() {
           return;
         }
         setProduct(found);
+        // Pre-select the first value of every option so a variant is
+        // always resolvable without the buyer having to touch anything
+        // for a single-combination product.
+        if (found.variantOptions?.length) {
+          setSelectedOptions(Object.fromEntries(found.variantOptions.map((o) => [o.name, o.values[0]])));
+        }
       })
       .catch(() => setNotFound(true));
   }, [slug, productId]);
+
+  // The variant matching whatever the buyer has currently picked — null
+  // if this product has no variants, or the exact combination isn't
+  // offered (shouldn't normally happen since every value comes from the
+  // product's own option lists, but a variant can be individually
+  // deleted by the merchant after being generated).
+  const selectedVariant =
+    product?.variantOptions?.length && product.variants.length > 0
+      ? (product.variants.find((v) => Object.entries(selectedOptions).every(([k, val]) => v.options[k] === val)) ?? null)
+      : null;
+
+  const gallery = product?.images?.length ? product.images : product?.imageUrl ? [product.imageUrl] : [];
+  const effectivePriceCents = selectedVariant?.priceCents ?? product?.priceCents ?? 0;
+  const hasVariants = Boolean(product?.variantOptions?.length);
+  // Stock is tracked per-variant once a product has variants — the base
+  // product's own stockQty is only meaningful for a plain product.
+  const outOfStock = hasVariants
+    ? selectedVariant
+      ? selectedVariant.stockQty <= 0
+      : true // no matching variant for the current selection — nothing to sell
+    : Boolean(product?.trackInventory && product.stockQty <= 0);
 
   function refreshReviews() {
     api.productReviews(productId).then(({ reviews, average }) => {
@@ -61,7 +90,17 @@ export default function ProductDetailPage() {
   if (!store || !product) return null;
 
   const primary = store.customization?.primaryColor || "#0066cc";
-  const outOfStock = product.trackInventory && product.stockQty <= 0;
+  const activeImageUrl = gallery[activeImage] ?? gallery[0];
+
+  function handleAddToCart() {
+    if (!product || outOfStock) return;
+    cart.add(
+      product,
+      1,
+      selectedVariant ? { id: selectedVariant.id, label: Object.entries(selectedVariant.options).map(([k, v]) => `${k}: ${v}`).join("، "), priceCents: effectivePriceCents } : null
+    );
+    setCartOpen(true);
+  }
 
   return (
     <>
@@ -71,11 +110,26 @@ export default function ProductDetailPage() {
         </Link>
 
         <div className="mt-6 grid md:grid-cols-2 gap-10">
-          <div className="aspect-square rounded-2xl border border-harbor/10 bg-harbor/5 overflow-hidden flex items-center justify-center">
-            {product.imageUrl ? (
-              <Image src={product.imageUrl} alt={product.name} width={800} height={800} unoptimized className="h-full w-full object-cover" />
-            ) : (
-              <span className="text-rope text-sm">لا توجد صورة</span>
+          <div>
+            <div className="aspect-square rounded-2xl border border-harbor/10 bg-harbor/5 overflow-hidden flex items-center justify-center">
+              {activeImageUrl ? (
+                <Image src={activeImageUrl} alt={product.name} width={800} height={800} unoptimized className="h-full w-full object-cover" />
+              ) : (
+                <span className="text-rope text-sm">لا توجد صورة</span>
+              )}
+            </div>
+            {gallery.length > 1 && (
+              <div className="mt-3 flex gap-2">
+                {gallery.map((url, i) => (
+                  <button
+                    key={url + i}
+                    onClick={() => setActiveImage(i)}
+                    className={`h-16 w-16 rounded-lg overflow-hidden border-2 transition-colors ${i === activeImage ? "border-brass" : "border-transparent"}`}
+                  >
+                    <Image src={url} alt="" width={100} height={100} unoptimized className="h-full w-full object-cover" />
+                  </button>
+                ))}
+              </div>
             )}
           </div>
 
@@ -88,24 +142,45 @@ export default function ProductDetailPage() {
               </p>
             )}
             <p className="font-bold text-2xl mt-4" style={{ color: primary }}>
-              {formatLYD(product.priceCents)}
+              {formatLYD(effectivePriceCents)}
             </p>
 
+            {product.variantOptions?.map((option) => (
+              <div key={option.name} className="mt-5">
+                <span className="block text-sm font-bold text-harbor mb-2">{option.name}</span>
+                <div className="flex flex-wrap gap-2">
+                  {option.values.map((value) => {
+                    const active = selectedOptions[option.name] === value;
+                    return (
+                      <button
+                        key={value}
+                        onClick={() => setSelectedOptions((prev) => ({ ...prev, [option.name]: value }))}
+                        className="rounded-full border px-4 py-1.5 text-sm font-bold transition-colors"
+                        style={active ? { backgroundColor: primary, color: "white", borderColor: primary } : { borderColor: "rgba(0,0,0,0.15)" }}
+                      >
+                        {value}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+
             {outOfStock ? (
-              <p className="mt-6 text-signal font-bold">نفدت الكمية</p>
+              <p className="mt-6 text-signal font-bold">{hasVariants && !selectedVariant ? "هذا الخيار غير متوفر" : "نفدت الكمية"}</p>
             ) : (
               <button
-                onClick={() => {
-                  cart.add(product);
-                  setCartOpen(true);
-                }}
+                onClick={handleAddToCart}
                 style={{ backgroundColor: primary }}
                 className="mt-6 rounded-full text-white py-3 px-8 font-bold hover:opacity-90 transition-opacity"
               >
                 أضف إلى السلة
               </button>
             )}
-            {product.trackInventory && !outOfStock && product.stockQty <= product.lowStockThreshold && (
+            {!hasVariants && product.trackInventory && !outOfStock && product.stockQty <= product.lowStockThreshold && (
+              <p className="mt-2 text-xs text-signal">كمية محدودة متبقية</p>
+            )}
+            {hasVariants && selectedVariant && !outOfStock && selectedVariant.stockQty <= 5 && (
               <p className="mt-2 text-xs text-signal">كمية محدودة متبقية</p>
             )}
           </div>

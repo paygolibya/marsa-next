@@ -3,10 +3,18 @@
 import { useCallback, useEffect, useState } from "react";
 import type { Product } from "@/lib/api";
 
-export type CartLine = { productId: string; name: string; priceCents: number; quantity: number };
+// variantId identifies the line alongside productId — two different
+// variants of the same product (e.g. "Red/M" and "Blue/L") are genuinely
+// different lines, not one merged quantity. null means "no variant" (a
+// plain product, or a variant-less line from before this existed).
+export type CartLine = { productId: string; variantId: string | null; name: string; variantLabel: string | null; priceCents: number; quantity: number };
 
 function storageKey(storeSlug: string) {
   return `marsa_cart_${storeSlug}`;
+}
+
+function sameLine(l: CartLine, productId: string, variantId: string | null) {
+  return l.productId === productId && (l.variantId ?? null) === (variantId ?? null);
 }
 
 /**
@@ -23,7 +31,11 @@ export function useCart(storeSlug: string) {
   useEffect(() => {
     try {
       const raw = localStorage.getItem(storageKey(storeSlug));
-      if (raw) setLines(JSON.parse(raw));
+      // Older carts (persisted before variants existed) have no
+      // variantId/variantLabel field at all — normalize to null so
+      // sameLine()'s comparisons behave consistently either way.
+      type StoredLine = Partial<Pick<CartLine, "variantId" | "variantLabel">> & Omit<CartLine, "variantId" | "variantLabel">;
+      if (raw) setLines((JSON.parse(raw) as StoredLine[]).map((l) => ({ variantId: null, variantLabel: null, ...l })));
     } catch {
       // ignore corrupted cart
     }
@@ -40,12 +52,23 @@ export function useCart(storeSlug: string) {
   );
 
   const add = useCallback(
-    (product: Product, quantity = 1) => {
+    (product: Product, quantity = 1, variant?: { id: string; label: string; priceCents: number } | null) => {
+      const variantId = variant?.id ?? null;
       setLines((prev) => {
-        const existing = prev.find((l) => l.productId === product.id);
+        const existing = prev.find((l) => sameLine(l, product.id, variantId));
         const next = existing
-          ? prev.map((l) => (l.productId === product.id ? { ...l, quantity: l.quantity + quantity } : l))
-          : [...prev, { productId: product.id, name: product.name, priceCents: product.priceCents, quantity }];
+          ? prev.map((l) => (sameLine(l, product.id, variantId) ? { ...l, quantity: l.quantity + quantity } : l))
+          : [
+              ...prev,
+              {
+                productId: product.id,
+                variantId,
+                variantLabel: variant?.label ?? null,
+                name: product.name,
+                priceCents: variant?.priceCents ?? product.priceCents,
+                quantity,
+              },
+            ];
         localStorage.setItem(storageKey(storeSlug), JSON.stringify(next));
         return next;
       });
@@ -54,12 +77,9 @@ export function useCart(storeSlug: string) {
   );
 
   const setQuantity = useCallback(
-    (productId: string, quantity: number) => {
+    (productId: string, quantity: number, variantId: string | null = null) => {
       setLines((prev) => {
-        const next =
-          quantity <= 0
-            ? prev.filter((l) => l.productId !== productId)
-            : prev.map((l) => (l.productId === productId ? { ...l, quantity } : l));
+        const next = quantity <= 0 ? prev.filter((l) => !sameLine(l, productId, variantId)) : prev.map((l) => (sameLine(l, productId, variantId) ? { ...l, quantity } : l));
         localStorage.setItem(storageKey(storeSlug), JSON.stringify(next));
         return next;
       });
@@ -67,7 +87,7 @@ export function useCart(storeSlug: string) {
     [storeSlug]
   );
 
-  const remove = useCallback((productId: string) => setQuantity(productId, 0), [setQuantity]);
+  const remove = useCallback((productId: string, variantId: string | null = null) => setQuantity(productId, 0, variantId), [setQuantity]);
 
   const clear = useCallback(() => persist([]), [persist]);
 

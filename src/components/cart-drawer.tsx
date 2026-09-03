@@ -17,7 +17,7 @@ export function CartDrawer({
   storeSlug: string;
   lines: CartLine[];
   subtotalCents: number;
-  setQuantity: (productId: string, quantity: number) => void;
+  setQuantity: (productId: string, quantity: number, variantId?: string | null) => void;
 }) {
   return (
     <>
@@ -38,14 +38,15 @@ export function CartDrawer({
         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
           {lines.length === 0 && <p className="text-rope text-sm py-10 text-center">سلتك فارغة حاليًا.</p>}
           {lines.map((line) => (
-            <div key={line.productId} className="flex items-center justify-between gap-3 border-b border-harbor/5 pb-4">
+            <div key={`${line.productId}:${line.variantId ?? ""}`} className="flex items-center justify-between gap-3 border-b border-harbor/5 pb-4">
               <div className="flex-1">
                 <p className="font-bold text-harbor text-sm">{line.name}</p>
+                {line.variantLabel && <p className="text-xs text-rope">{line.variantLabel}</p>}
                 <p className="text-rope text-sm">{formatLYD(line.priceCents)}</p>
               </div>
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => setQuantity(line.productId, line.quantity - 1)}
+                  onClick={() => setQuantity(line.productId, line.quantity - 1, line.variantId)}
                   className="h-7 w-7 rounded-full border border-harbor/20 text-harbor hover:bg-harbor/5"
                   aria-label="إنقاص الكمية"
                 >
@@ -53,7 +54,7 @@ export function CartDrawer({
                 </button>
                 <span className="w-5 text-center text-sm">{line.quantity}</span>
                 <button
-                  onClick={() => setQuantity(line.productId, line.quantity + 1)}
+                  onClick={() => setQuantity(line.productId, line.quantity + 1, line.variantId)}
                   className="h-7 w-7 rounded-full border border-harbor/20 text-harbor hover:bg-harbor/5"
                   aria-label="زيادة الكمية"
                 >

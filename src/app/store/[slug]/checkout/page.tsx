@@ -119,7 +119,7 @@ export default function CheckoutPage() {
     try {
       const result = await api.createOrder({
         storeSlug: slug,
-        items: cart.lines.map((l) => ({ productId: l.productId, quantity: l.quantity })),
+        items: cart.lines.map((l) => ({ productId: l.productId, quantity: l.quantity, variantId: l.variantId ?? undefined })),
         buyer: {
           name,
           phone,

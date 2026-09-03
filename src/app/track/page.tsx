@@ -100,7 +100,8 @@ function TrackPageContent() {
                 {result.items.map((item) => (
                   <li key={item.id} className="flex justify-between">
                     <span>
-                      {item.productName} × {item.quantity}
+                      {item.productName}
+                      {item.variantLabel && <span className="text-xs opacity-70"> ({item.variantLabel})</span>} × {item.quantity}
                     </span>
                     <span>{formatLYD(item.unitPriceCents * item.quantity)}</span>
                   </li>

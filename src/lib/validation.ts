@@ -25,21 +25,43 @@ export const createStoreSchema = z.object({
   templateId: z.string().optional().nullable(),
 });
 
+// Up to 8 photos per product — enough for a real gallery without inviting
+// abuse; imageUrl is always derived as images[0] server-side, never sent
+// independently.
+const productImagesSchema = z.array(z.string().url()).max(8).optional();
+
 export const createProductSchema = z.object({
   storeId: z.string().min(1),
   name: z.string().min(1, "اسم المنتج مطلوب"),
   priceCents: z.number().int().positive("السعر يجب أن يكون أكبر من صفر"),
-  imageUrl: z.string().url().optional().nullable(),
+  images: productImagesSchema,
 });
 
 export const updateProductSchema = z.object({
   name: z.string().min(1, "اسم المنتج مطلوب").optional(),
   priceCents: z.number().int().positive("السعر يجب أن يكون أكبر من صفر").optional(),
-  imageUrl: z.string().url().optional().nullable(),
+  images: productImagesSchema,
   active: z.boolean().optional(),
   trackInventory: z.boolean().optional(),
   stockQty: z.number().int().min(0).optional(),
   lowStockThreshold: z.number().int().min(0).optional(),
+});
+
+// Capped at 2 option types (e.g. "الحجم" + "اللون") — enough for the
+// overwhelming majority of small-merchant catalogs this app targets,
+// while keeping the generated combination matrix (values1 × values2)
+// from growing unmanageably large in the editor UI.
+export const productVariantOptionSchema = z.object({
+  name: z.string().min(1, "اسم الخيار مطلوب").max(30),
+  values: z.array(z.string().min(1).max(30)).min(1, "أضف قيمة واحدة على الأقل").max(10),
+});
+export const setProductVariantOptionsSchema = z.object({
+  options: z.array(productVariantOptionSchema).max(2, "حتى نوعين من الخيارات (مثال: الحجم واللون)"),
+});
+export const updateProductVariantSchema = z.object({
+  priceCents: z.number().int().positive("السعر يجب أن يكون أكبر من صفر").optional().nullable(),
+  stockQty: z.number().int().min(0).optional(),
+  active: z.boolean().optional(),
 });
 
 export const updateStoreSettingsSchema = z.object({
@@ -57,6 +79,7 @@ export const createOrderSchema = z
         z.object({
           productId: z.string().min(1),
           quantity: z.number().int().positive(),
+          variantId: z.string().optional(),
         })
       )
       .min(1, "السلة فارغة"),

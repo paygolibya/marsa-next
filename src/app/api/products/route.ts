@@ -19,17 +19,24 @@ export async function POST(req: Request) {
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "بيانات غير صالحة" }, { status: 400 });
     }
-    const { storeId, name, priceCents, imageUrl } = parsed.data;
+    const { storeId, name, priceCents, images } = parsed.data;
 
     if (!(await assertOwnsStore(storeId, merchantId))) {
       return NextResponse.json({ error: "You do not own this store" }, { status: 403 });
     }
 
+    // imageUrl is always images[0] — the two are never set independently,
+    // so every existing single-image call site (storefront cards, cart,
+    // order emails) keeps working without knowing galleries exist.
     const product = await prisma.product.create({
-      data: { storeId, name, priceCents, imageUrl: imageUrl || null },
+      data: { storeId, name, priceCents, images: images ?? [], imageUrl: images?.[0] ?? null },
     });
 
-    return NextResponse.json(product, { status: 201 });
+    // A freshly created product has no variants yet — returned explicitly
+    // rather than via Prisma `include` for a relation that's always empty
+    // here, matching what the Product type expects (variants: never
+    // undefined).
+    return NextResponse.json({ ...product, variants: [] }, { status: 201 });
   } catch (err) {
     console.error(err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

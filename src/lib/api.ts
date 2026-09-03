@@ -80,12 +80,25 @@ export type Store = {
   shippingPolicy: string | null;
   businessHours: string | null;
 };
+export type ProductVariantOption = { name: string; values: string[] };
+export type ProductVariant = {
+  id: string;
+  productId?: string;
+  options: Record<string, string>;
+  priceCents: number | null; // null = inherit the product's own price
+  stockQty: number;
+  sku?: string | null;
+  active?: boolean;
+};
 export type Product = {
   id: string;
   storeId: string;
   name: string;
   priceCents: number;
   imageUrl: string | null;
+  images: string[];
+  variantOptions: ProductVariantOption[] | null;
+  variants: ProductVariant[];
   active: boolean;
   createdAt: string;
   trackInventory: boolean;
@@ -98,6 +111,7 @@ export type OrderItem = {
   productName: string;
   unitPriceCents: number;
   quantity: number;
+  variantLabel?: string | null;
 };
 export type Order = {
   id: string;
@@ -204,15 +218,34 @@ export const api = {
     return data;
   },
 
-  createProduct: (
-    token: string,
-    body: { storeId: string; name: string; priceCents: number; imageUrl?: string | null }
-  ) =>
+  createProduct: (token: string, body: { storeId: string; name: string; priceCents: number; images?: string[] }) =>
     request<Product>("/api/products", {
       method: "POST",
       headers: authHeaders(token),
       body: JSON.stringify(body),
     }),
+
+  setProductVariantOptions: (token: string, productId: string, options: ProductVariantOption[]) =>
+    request<{ variantOptions: ProductVariantOption[]; variants: ProductVariant[] }>(`/api/products/${productId}/variant-options`, {
+      method: "POST",
+      headers: authHeaders(token),
+      body: JSON.stringify({ options }),
+    }),
+
+  updateProductVariant: (
+    token: string,
+    productId: string,
+    variantId: string,
+    body: Partial<{ priceCents: number | null; stockQty: number; active: boolean }>
+  ) =>
+    request<ProductVariant>(`/api/products/${productId}/variants/${variantId}`, {
+      method: "PATCH",
+      headers: authHeaders(token),
+      body: JSON.stringify(body),
+    }),
+
+  deleteProductVariant: (token: string, productId: string, variantId: string) =>
+    request<{ ok: boolean }>(`/api/products/${productId}/variants/${variantId}`, { method: "DELETE", headers: authHeaders(token) }),
 
   productsByStore: (token: string, storeId: string) =>
     request<Product[]>(`/api/products/by-store/${storeId}`, { headers: authHeaders(token) }),
@@ -240,7 +273,7 @@ export const api = {
     body: Partial<{
       name: string;
       priceCents: number;
-      imageUrl: string | null;
+      images: string[];
       active: boolean;
       trackInventory: boolean;
       stockQty: number;
@@ -286,7 +319,7 @@ export const api = {
 
   createOrder: (body: {
     storeSlug: string;
-    items: { productId: string; quantity: number }[];
+    items: { productId: string; quantity: number; variantId?: string }[];
     buyer: { name: string; phone: string; email?: string; city: string; address: string; vanexAreaId?: string };
     paymentMethod: "cod" | "wallet";
     dpayPayMethod?: DpayPayMethod;

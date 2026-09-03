@@ -32,6 +32,7 @@ export async function GET(req: Request) {
       productName: i.productName,
       unitPriceCents: i.unitPriceCents,
       quantity: i.quantity,
+      variantLabel: i.variantLabel,
     })),
   });
 }

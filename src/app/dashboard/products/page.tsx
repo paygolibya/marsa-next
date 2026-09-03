@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useCurrentStore } from "@/lib/use-current-store";
-import { api, ApiError, formatLYD, type Product } from "@/lib/api";
-import ProductImageUpload from "@/components/products/ProductImageUpload";
+import { api, ApiError, formatLYD, type Product, type ProductVariant, type ProductVariantOption } from "@/lib/api";
+import ProductGalleryUpload from "@/components/products/ProductGalleryUpload";
+import ProductVariantsManager from "@/components/products/ProductVariantsManager";
 
 export default function DashboardProductsPage() {
   const { token } = useAuth();
@@ -12,7 +13,7 @@ export default function DashboardProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
+  const [images, setImages] = useState<string[]>([]);
   const [trackInventory, setTrackInventory] = useState(false);
   const [stockQty, setStockQty] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -33,13 +34,13 @@ export default function DashboardProductsPage() {
     setSaving(true);
     try {
       const priceCents = Math.round(parseFloat(price) * 100);
-      const created = await api.createProduct(token, { storeId: store.id, name, priceCents, imageUrl: imageUrl || null });
+      const created = await api.createProduct(token, { storeId: store.id, name, priceCents, images });
       if (trackInventory) {
         await api.updateProduct(token, created.id, { trackInventory: true, stockQty: Number(stockQty) || 0 });
       }
       setName("");
       setPrice("");
-      setImageUrl("");
+      setImages([]);
       setTrackInventory(false);
       setStockQty("");
       refresh();
@@ -80,7 +81,7 @@ export default function DashboardProductsPage() {
               dir="ltr"
             />
           </label>
-          <ProductImageUpload imageUrl={imageUrl || null} onChange={(url) => setImageUrl(url || "")} />
+          <ProductGalleryUpload images={images} onChange={setImages} />
 
           <div className="flex items-center justify-between rounded-xl border border-harbor/15 bg-white px-4 py-3">
             <span className="font-bold text-harbor text-sm">تتبع المخزون</span>
@@ -104,6 +105,8 @@ export default function DashboardProductsPage() {
               />
             </label>
           )}
+
+          <p className="text-xs text-rope">يمكنك إضافة متغيرات (مقاسات، ألوان...) بعد إنشاء المنتج من زر "تعديل".</p>
 
           {error && <p className="text-signal text-sm">{error}</p>}
 
@@ -142,19 +145,30 @@ export default function DashboardProductsPage() {
                   key={p.id}
                   className="flex items-center justify-between rounded-xl border border-harbor/10 bg-white/50 px-5 py-3"
                 >
-                  <div>
-                    <p className="font-bold text-harbor flex items-center gap-2">
-                      {p.name}
-                      {p.trackInventory && p.stockQty <= p.lowStockThreshold && (
-                        <span className="stamp h-6 px-2 border-signal text-signal text-[11px] font-bold">مخزون منخفض</span>
-                      )}
-                    </p>
-                    <p className="text-rope text-sm">
-                      {formatLYD(p.priceCents)}
-                      {p.trackInventory && <span className="mr-2">· الكمية: {p.stockQty}</span>}
-                    </p>
-                  </div>
                   <div className="flex items-center gap-3">
+                    {p.imageUrl && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={p.imageUrl} alt="" className="h-12 w-12 rounded-lg object-cover border border-harbor/10 shrink-0" />
+                    )}
+                    <div>
+                      <p className="font-bold text-harbor flex items-center gap-2">
+                        {p.name}
+                        {p.trackInventory && p.stockQty <= p.lowStockThreshold && (
+                          <span className="stamp h-6 px-2 border-signal text-signal text-[11px] font-bold">مخزون منخفض</span>
+                        )}
+                        {p.variants.length > 0 && (
+                          <span className="rounded-full bg-harbor/10 px-2 py-0.5 text-[11px] font-bold text-harbor">
+                            {p.variants.length} متغير
+                          </span>
+                        )}
+                      </p>
+                      <p className="text-rope text-sm">
+                        {formatLYD(p.priceCents)}
+                        {p.trackInventory && <span className="mr-2">· الكمية: {p.stockQty}</span>}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 shrink-0">
                     <button onClick={() => setEditingId(p.id)} className="text-harbor text-sm font-bold hover:underline">
                       تعديل
                     </button>
@@ -185,11 +199,14 @@ function ProductEditRow({
 }) {
   const [name, setName] = useState(product.name);
   const [price, setPrice] = useState(String(product.priceCents / 100));
-  const [imageUrl, setImageUrl] = useState(product.imageUrl ?? "");
+  const [images, setImages] = useState<string[]>(product.images ?? []);
   const [trackInventory, setTrackInventory] = useState(product.trackInventory);
   const [stockQty, setStockQty] = useState(String(product.stockQty));
   const [lowStockThreshold, setLowStockThreshold] = useState(String(product.lowStockThreshold));
   const [saving, setSaving] = useState(false);
+
+  const [variantOptions, setVariantOptions] = useState<ProductVariantOption[] | null>(product.variantOptions);
+  const [variants, setVariants] = useState<ProductVariant[]>(product.variants ?? []);
 
   async function handleSave() {
     if (!token) return;
@@ -198,7 +215,7 @@ function ProductEditRow({
       await api.updateProduct(token, product.id, {
         name,
         priceCents: Math.round(parseFloat(price) * 100),
-        imageUrl: imageUrl || null,
+        images,
         trackInventory,
         stockQty: Number(stockQty) || 0,
         lowStockThreshold: Number(lowStockThreshold) || 0,
@@ -221,7 +238,7 @@ function ProductEditRow({
         dir="ltr"
         placeholder="السعر"
       />
-      <ProductImageUpload imageUrl={imageUrl || null} onChange={(url) => setImageUrl(url || "")} />
+      <ProductGalleryUpload images={images} onChange={setImages} />
       <div className="flex items-center justify-between rounded-lg border border-harbor/15 px-3 py-2">
         <span className="text-sm font-bold text-harbor">تتبع المخزون</span>
         <input
@@ -250,6 +267,22 @@ function ProductEditRow({
           </label>
         </div>
       )}
+
+      <ProductVariantsManager
+        productId={product.id}
+        variantOptions={variantOptions}
+        variants={variants}
+        onUpdate={(options, newVariants) => {
+          setVariantOptions(options.length > 0 ? options : null);
+          setVariants(newVariants);
+        }}
+      />
+      {variants.length > 0 && (
+        <p className="text-xs text-rope">
+          عند وجود متغيرات، تُستخدم كمية كل متغير عند البيع بدلًا من الكمية العامة للمنتج أعلاه.
+        </p>
+      )}
+
       <div className="flex gap-2">
         <button
           onClick={handleSave}

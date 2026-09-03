@@ -117,13 +117,23 @@ export default function LuxuryTemplate({
                   <p className="mt-1 font-bold tracking-wide" style={{ color: gold }}>
                     {formatLYD(product.priceCents)}
                   </p>
-                  <button
-                    onClick={() => onAddToCart(product)}
-                    className="mt-3 rounded-full border px-6 py-2 text-xs font-bold tracking-widest hover:bg-white/5 transition-colors"
-                    style={{ borderColor: gold, color: gold }}
-                  >
-                    أضف إلى السلة
-                  </button>
+                  {product.variantOptions?.length ? (
+                    <Link
+                      href={`/store/${slug}/product/${product.id}`}
+                      className="mt-3 inline-block rounded-full border px-6 py-2 text-xs font-bold tracking-widest hover:bg-white/5 transition-colors"
+                      style={{ borderColor: gold, color: gold }}
+                    >
+                      اختر الخيارات
+                    </Link>
+                  ) : (
+                    <button
+                      onClick={() => onAddToCart(product)}
+                      className="mt-3 rounded-full border px-6 py-2 text-xs font-bold tracking-widest hover:bg-white/5 transition-colors"
+                      style={{ borderColor: gold, color: gold }}
+                    >
+                      أضف إلى السلة
+                    </button>
+                  )}
                 </div>
               </div>
             ))}

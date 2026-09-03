@@ -16,7 +16,15 @@ export async function GET(_req: Request, { params }: { params: Promise<{ slug: s
 
     const products = await prisma.product.findMany({
       where: { storeId: store.id, active: true },
-      select: { id: true, name: true, priceCents: true, imageUrl: true },
+      select: {
+        id: true,
+        name: true,
+        priceCents: true,
+        imageUrl: true,
+        images: true,
+        variantOptions: true,
+        variants: { where: { active: true }, select: { id: true, options: true, priceCents: true, stockQty: true } },
+      },
     });
 
     // dpayAvailable reflects the store owner's subscription plan — Basic

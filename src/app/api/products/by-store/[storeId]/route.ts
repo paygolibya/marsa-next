@@ -13,7 +13,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ storeId:
     const store = await prisma.store.findFirst({ where: { id: storeId, merchantId } });
     if (!store) return NextResponse.json({ error: "You do not own this store" }, { status: 403 });
 
-    const products = await prisma.product.findMany({ where: { storeId } });
+    const products = await prisma.product.findMany({ where: { storeId }, include: { variants: true } });
     return NextResponse.json(products);
   } catch (err) {
     console.error(err);

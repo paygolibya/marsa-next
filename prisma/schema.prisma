@@ -217,7 +217,13 @@ model Product {
   storeId    String   @map("store_id")
   name       String
   priceCents Int      @map("price_cents")
+  // imageUrl is kept as images[0] — always written together, never a
+  // second source of truth — so every existing call site that only knows
+  // about a single image (storefront template cards, cart, order emails)
+  // keeps working unchanged; only the product detail page and the editor
+  // need the full gallery.
   imageUrl   String?  @map("image_url")
+  images     String[] @default([])
   active     Boolean  @default(true)
   createdAt  DateTime @default(now()) @map("created_at")
 
@@ -225,11 +231,38 @@ model Product {
   stockQty          Int     @default(0) @map("stock_qty")
   lowStockThreshold Int     @default(5) @map("low_stock_threshold")
 
-  store      Store           @relation(fields: [storeId], references: [id])
+  // Option TYPES this product offers, e.g.
+  // [{"name":"الحجم","values":["S","M","L"]},{"name":"اللون","values":["أحمر","أزرق"]}]
+  // — null/empty means no variants, same as today. The actual purchasable
+  // combinations are ProductVariant rows; this is only the merchant's
+  // editable option definitions used to generate/regenerate them.
+  variantOptions Json? @map("variant_options")
+
+  store      Store            @relation(fields: [storeId], references: [id])
   orderItems OrderItem[]
   reviews    ProductReview[]
+  variants   ProductVariant[]
 
   @@map("products")
+}
+
+model ProductVariant {
+  id        String  @id @default(cuid())
+  productId String  @map("product_id")
+  // e.g. {"الحجم":"M","اللون":"أحمر"} — one concrete combination of the
+  // parent product's variantOptions.
+  options   Json
+  // null = inherit Product.priceCents; set only when this specific
+  // combination costs more/less than the base product.
+  priceCents Int?   @map("price_cents")
+  stockQty  Int     @default(0) @map("stock_qty")
+  sku       String?
+  active    Boolean @default(true)
+
+  product    Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  orderItems OrderItem[]
+
+  @@map("product_variants")
 }
 
 model Order {
@@ -427,15 +460,22 @@ model VanexArea {
 }
 
 model OrderItem {
-  id             String @id @default(cuid())
-  orderId        String @map("order_id")
-  productId      String @map("product_id")
-  productName    String @map("product_name")
-  unitPriceCents Int    @map("unit_price_cents")
+  id             String  @id @default(cuid())
+  orderId        String  @map("order_id")
+  productId      String  @map("product_id")
+  productName    String  @map("product_name")
+  unitPriceCents Int     @map("unit_price_cents")
   quantity       Int
+  // Which combination was actually bought, if the product has variants.
+  // variantLabel is denormalized (e.g. "الحجم: M، اللون: أحمر") so order
+  // history/receipts still read correctly even if the variant is edited
+  // or deleted later.
+  variantId    String? @map("variant_id")
+  variantLabel String? @map("variant_label")
 
-  order   Order   @relation(fields: [orderId], references: [id])
-  product Product @relation(fields: [productId], references: [id])
+  order   Order           @relation(fields: [orderId], references: [id])
+  product Product         @relation(fields: [productId], references: [id])
+  variant ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
 
   @@map("order_items")
 }

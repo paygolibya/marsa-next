@@ -114,13 +114,23 @@ export default function BoldTemplate({
                   <p className="font-extrabold text-xl mt-2" style={{ color: accent }}>
                     {formatLYD(product.priceCents)}
                   </p>
-                  <button
-                    onClick={() => onAddToCart(product)}
-                    style={{ backgroundColor: primary }}
-                    className="mt-4 rounded-xl text-white py-3 font-extrabold shadow-lg hover:opacity-90 transition-opacity"
-                  >
-                    أضف إلى السلة
-                  </button>
+                  {product.variantOptions?.length ? (
+                    <Link
+                      href={`/store/${slug}/product/${product.id}`}
+                      style={{ backgroundColor: primary }}
+                      className="mt-4 rounded-xl text-white py-3 font-extrabold text-center shadow-lg hover:opacity-90 transition-opacity"
+                    >
+                      اختر الخيارات
+                    </Link>
+                  ) : (
+                    <button
+                      onClick={() => onAddToCart(product)}
+                      style={{ backgroundColor: primary }}
+                      className="mt-4 rounded-xl text-white py-3 font-extrabold shadow-lg hover:opacity-90 transition-opacity"
+                    >
+                      أضف إلى السلة
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
