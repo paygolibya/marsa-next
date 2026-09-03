@@ -57,6 +57,60 @@
 }
 
 /* ============================================
+   MARKETING PAGE MOTION
+   ============================================
+   Three small, reusable pieces — a slow drifting blob (decorative hero
+   shapes), an infinite horizontal marquee (partner logo strip), and a
+   gentle bob (small floating accents). All respect prefers-reduced-motion
+   via the block above (it forces animation-duration to ~0 for anyone who
+   asked for it, so no separate guard is needed here). */
+@keyframes drift {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(3%, -4%) scale(1.05);
+  }
+  66% {
+    transform: translate(-3%, 3%) scale(0.97);
+  }
+}
+.animate-drift {
+  animation: drift 14s ease-in-out infinite;
+}
+.animate-drift-slow {
+  animation: drift 20s ease-in-out infinite reverse;
+}
+
+@keyframes bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+.animate-bob {
+  animation: bob 4s ease-in-out infinite;
+}
+
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    /* RTL layout — the strip is duplicated once, so sliding exactly one
+       copy's width loops seamlessly. */
+    transform: translateX(50%);
+  }
+}
+.animate-marquee {
+  animation: marquee 22s linear infinite;
+}
+
+/* ============================================
    DARK MODE — pragmatic retrofit, not a rewrite
    ============================================
    canvas/canvas-dim/ink (above) cover the primary page background + body
@@ -145,6 +199,9 @@
 }
 .dark .text-harbor\/40 {
   color: rgb(198 213 227 / 0.4);
+}
+.dark .text-harbor\/70 {
+  color: rgb(198 213 227 / 0.7);
 }
 .dark .text-harbor\/80 {
   color: rgb(198 213 227 / 0.8);
