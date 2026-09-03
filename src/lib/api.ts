@@ -58,7 +58,7 @@ export type StoreCustomization = {
   showReviews: boolean;
   showTestimonials: boolean;
   showSocialProof: boolean;
-  template?: { nameAr: string } | null;
+  template?: { slug: string; nameAr: string } | null;
 };
 export type StoreStats = { deliveredOrderCount: number; averageRating: number | null; reviewCount: number };
 export type StoreTestimonial = { buyerName: string; rating: number; reviewText: string | null; productName: string };
