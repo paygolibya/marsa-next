@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
@@ -121,7 +122,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <div className="min-h-screen flex">
       <aside className="w-64 shrink-0 bg-harbor text-canvas flex flex-col">
         <div className="px-6 py-6 border-b border-canvas/10 flex items-center justify-between">
-          <Link href="/" className="font-display text-lg font-extrabold">
+          <Link href="/" className="flex items-center gap-2 font-display text-lg font-extrabold">
+            <Image src="/logo.png" alt="رفقة" width={28} height={28} className="h-7 w-7 object-contain" />
             رفقة <span className="text-canvas/50 font-normal text-sm">من مرسى</span>
           </Link>
           <ThemeToggle className="text-canvas/70 hover:text-canvas transition-colors" />

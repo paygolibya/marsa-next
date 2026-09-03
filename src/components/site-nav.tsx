@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import { isAdminMerchant } from "@/lib/is-admin";
@@ -12,7 +13,7 @@ export function SiteNav() {
     <header className="border-b border-harbor/10 bg-canvas/95 backdrop-blur sticky top-0 z-30">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
         <Link href="/" className="flex items-center gap-2">
-          <span className="stamp h-9 w-9 border-brass text-brass text-xs font-bold">م</span>
+          <Image src="/logo.png" alt="رفقة" width={36} height={36} priority className="h-9 w-9 object-contain" />
           <span className="font-display text-xl font-extrabold text-harbor">
             رفقة <span className="text-rope font-normal text-sm">من مرسى</span>
           </span>

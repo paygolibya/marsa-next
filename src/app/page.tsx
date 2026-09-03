@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
@@ -72,7 +73,7 @@ export default function MarketingPage() {
       <section className="relative overflow-hidden bg-harbor text-canvas">
         <div className="absolute inset-0 bg-compass-ring" aria-hidden />
         <div className="relative mx-auto max-w-6xl px-6 py-24 md:py-32 text-center">
-          <span className="stamp mx-auto mb-8 h-16 w-16 border-brass text-brass text-2xl font-bold">م</span>
+          <Image src="/logo.png" alt="رفقة" width={72} height={72} priority className="mx-auto mb-8 h-16 w-16 object-contain" />
           <h1 className="font-display text-4xl md:text-6xl font-extrabold leading-tight max-w-3xl mx-auto">
             التجارة الإلكترونية في ليبيا أصبحت أسهل مع رفقة
           </h1>
@@ -152,7 +153,7 @@ export default function MarketingPage() {
                 }`}
               >
                 {plan.popular && (
-                  <span className="stamp absolute -top-4 right-8 h-14 w-14 border-brass bg-canvas text-brass text-[11px] font-bold leading-tight text-center">
+                  <span className="stamp absolute -top-4 right-8 h-14 w-14 border-rose bg-rose text-canvas text-[11px] font-bold leading-tight text-center">
                     الأكثر
                     <br />
                     طلبًا

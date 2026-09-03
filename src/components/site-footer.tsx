@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 // The `store` prop is what makes footerStyle "branded" actually different
 // from "standard" — previously this component took no props at all, so a
 // merchant's own store footer was indistinguishable from Rifqa's own
@@ -14,7 +16,7 @@ export function SiteFooter({ store }: { store?: { name: string; tagline?: string
         )}
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-sm">
           <div className="flex items-center gap-2">
-            <span className="stamp h-7 w-7 border-canvas/40 text-canvas/70 text-[10px] font-bold">م</span>
+            <Image src="/logo.png" alt="رفقة" width={28} height={28} className="h-7 w-7 object-contain" />
             <span>رفقة — منتج من مرسى (Marsa)</span>
           </div>
           <p>صُنعت في طرابلس، لتجار ليبيا. © {new Date().getFullYear()}</p>

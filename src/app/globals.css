@@ -4,8 +4,8 @@
 
 @layer base {
   :root {
-    --color-canvas: 239 233 218; /* #EFE9DA */
-    --color-canvas-dim: 228 220 200; /* #E4DCC8 */
+    --color-canvas: 235 233 225; /* #EBE9E1 — the cream from the Rifqa brand palette */
+    --color-canvas-dim: 224 220 207; /* #E0DCCF — one step darker, same offset as before */
     --color-ink: 27 27 24; /* #1B1B18 */
   }
   .dark {

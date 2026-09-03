@@ -25,10 +25,16 @@ const config: Config = {
         canvas: "rgb(var(--color-canvas) / <alpha-value>)",
         "canvas-dim": "rgb(var(--color-canvas-dim) / <alpha-value>)",
         ink: "rgb(var(--color-ink) / <alpha-value>)",
-        brass: "#B8752E", // accent — links, icons, stamps. Works on both themes unchanged.
-        "brass-light": "#D89A55",
-        signal: "#C1443C", // primary CTA red — unchanged across themes.
-        "signal-dark": "#9E332C",
+        brass: "#EFB11D", // accent gold — links, icons, stamps. Matches the
+        // charm/rivet color in the Rifqa bag logo. Works on both themes unchanged.
+        "brass-light": "#F5CC6C",
+        signal: "#E43D12", // primary CTA — the logo's orange-red. Unchanged across themes.
+        "signal-dark": "#B6310E",
+        // The logo's pink bag body — a second brand accent alongside brass/
+        // signal, for badges and highlights that shouldn't compete with the
+        // primary CTA color. Works on both themes unchanged.
+        rose: "#D6536D",
+        "rose-light": "#FFA2B6",
         rope: "#8A7A5C", // muted secondary text — mid-tone enough to stay legible on both themes unchanged.
       },
       fontFamily: {
