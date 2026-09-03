@@ -172,8 +172,8 @@ function PaymentPageContent() {
     return (
       <>
         <SiteNav />
-        <main className="min-h-screen bg-gradient-to-b from-canvas to-harbor/5 flex items-center justify-center px-6">
-          <div className="max-w-md w-full text-center py-16">
+        <main className="min-h-screen flex items-center justify-center px-6">
+          <div className="max-w-md w-full text-center rounded-2xl bg-white/90 shadow-xl p-8">
             <h1 className="mb-2 font-display text-2xl font-extrabold text-harbor">أدخل رمز التحقق</h1>
             <p className="mb-8 text-rope">
               أرسلت {dpayPayMethod ? DPAY_PAY_METHOD_LABELS[dpayPayMethod as DpayPayMethod] : "جهة الدفع"} رمز تحقق إلى هاتفك — أدخله لإتمام دفع{" "}
@@ -211,9 +211,9 @@ function PaymentPageContent() {
   return (
     <>
       <SiteNav />
-      <main className="min-h-screen bg-gradient-to-b from-canvas to-harbor/5">
+      <main className="min-h-screen">
         <div className="mx-auto max-w-2xl px-6 py-16">
-          <div className="mb-12 text-center">
+          <div className="mb-12 text-center rounded-2xl bg-white/90 shadow-xl p-8">
             <h1 className="mb-2 font-display text-3xl font-extrabold text-harbor">أكمل الدفع</h1>
             <p className="text-rope">حول المبلغ إلى حسابنا ثم أرسل إيصال التحويل</p>
           </div>

@@ -34,52 +34,57 @@ export default function LoginPage() {
   return (
     <>
       <SiteNav />
+      {/* Wrapped in its own card now that the page sits on the vivid brand
+          gradient rather than plain cream — the muted rope subtitle text
+          especially needs an opaque backdrop to stay legible. */}
       <main className="mx-auto max-w-md px-6 py-20">
-        <h1 className="font-display text-3xl font-extrabold text-harbor mb-2">تسجيل الدخول</h1>
-        <p className="text-rope mb-8">مرحبًا بعودتك.</p>
+        <div className="rounded-2xl bg-white/90 shadow-xl p-8">
+          <h1 className="font-display text-3xl font-extrabold text-harbor mb-2">تسجيل الدخول</h1>
+          <p className="text-rope mb-8">مرحبًا بعودتك.</p>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <label className="block">
-            <span className="block text-sm font-bold text-harbor mb-1.5">رقم الهاتف</span>
-            <input
-              required
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              className="input"
-              dir="ltr"
-              placeholder="0910000000"
-            />
-          </label>
-          <label className="block">
-            <span className="block text-sm font-bold text-harbor mb-1.5">كلمة المرور</span>
-            <input
-              required
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="input"
-              dir="ltr"
-              placeholder="••••••••"
-            />
-          </label>
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <label className="block">
+              <span className="block text-sm font-bold text-harbor mb-1.5">رقم الهاتف</span>
+              <input
+                required
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                className="input"
+                dir="ltr"
+                placeholder="0910000000"
+              />
+            </label>
+            <label className="block">
+              <span className="block text-sm font-bold text-harbor mb-1.5">كلمة المرور</span>
+              <input
+                required
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="input"
+                dir="ltr"
+                placeholder="••••••••"
+              />
+            </label>
 
-          {error && <p className="text-signal text-sm">{error}</p>}
+            {error && <p className="text-signal text-sm">{error}</p>}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-full bg-signal py-3 font-bold text-canvas hover:bg-signal-dark transition-colors disabled:opacity-60"
-          >
-            {loading ? "جارٍ الدخول..." : "دخول"}
-          </button>
-        </form>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full rounded-full bg-signal py-3 font-bold text-canvas hover:bg-signal-dark transition-colors disabled:opacity-60"
+            >
+              {loading ? "جارٍ الدخول..." : "دخول"}
+            </button>
+          </form>
 
-        <p className="mt-6 text-sm text-rope">
-          ليس لديك حساب؟{" "}
-          <Link href="/register" className="text-brass font-bold">
-            أنشئ حسابًا
-          </Link>
-        </p>
+          <p className="mt-6 text-sm text-rope">
+            ليس لديك حساب؟{" "}
+            <Link href="/register" className="text-brass font-bold">
+              أنشئ حسابًا
+            </Link>
+          </p>
+        </div>
       </main>
     </>
   );

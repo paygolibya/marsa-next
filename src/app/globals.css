@@ -16,6 +16,13 @@
 
   body {
     @apply bg-canvas text-ink font-body;
+    /* Site-wide brand background — sits behind every page that doesn't
+       paint its own opaque background over it (cards, the homepage hero,
+       and every merchant storefront under /store/[slug], which uses the
+       MERCHANT's own chosen colors via inline styles and must never pick
+       this up). Horizontal-only, so it needs no background-attachment
+       trick to stay consistent as the page scrolls vertically. */
+    background-image: linear-gradient(90deg, #f2a93b 0%, #e85a6b 45%, #db3d2e 100%);
   }
   h1,
   h2,
@@ -258,6 +265,9 @@
 }
 .dark .bg-white\/60 {
   background-color: rgb(15 23 42 / 0.8);
+}
+.dark .bg-white\/90 {
+  background-color: rgb(15 23 42 / 0.92);
 }
 .dark .bg-gray-50 {
   background-color: theme("colors.slate.950");

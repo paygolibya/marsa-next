@@ -62,6 +62,7 @@ function TrackPageContent() {
     <>
       <SiteNav />
       <main className="mx-auto max-w-lg px-6 py-16">
+        <div className="rounded-2xl bg-white/90 shadow-xl p-8">
         <h1 className="font-display text-2xl font-extrabold text-harbor mb-2">تتبع طلبك</h1>
         <p className="text-rope mb-8">أدخل رقم الطلب ورقم الهاتف المستخدم عند الشراء.</p>
 
@@ -85,7 +86,7 @@ function TrackPageContent() {
         </form>
 
         {result && (
-          <div className="mt-10 rounded-2xl border border-harbor/10 bg-white/50 p-6 space-y-4 text-right">
+          <div className="mt-10 rounded-2xl border border-harbor/10 bg-white/90 p-6 space-y-4 text-right">
             <Row label="حالة الطلب" value={statusLabels[result.status] ?? result.status} />
             {result.courierStatus && (
               <Row label="حالة الشحنة" value={courierStatusLabels[result.courierStatus] ?? result.courierStatus} />
@@ -110,6 +111,7 @@ function TrackPageContent() {
             </div>
           </div>
         )}
+        </div>
       </main>
     </>
   );

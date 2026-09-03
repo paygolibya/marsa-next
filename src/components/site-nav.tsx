@@ -10,7 +10,10 @@ export function SiteNav() {
   const { merchant, ready } = useAuth();
 
   return (
-    <header className="border-b border-harbor/10 bg-canvas/95 backdrop-blur sticky top-0 z-30">
+    // Transparent by design — it should always show whatever section is
+    // scrolled beneath it (the hero, or the site-wide brand gradient),
+    // not its own solid panel.
+    <header className="sticky top-0 z-30">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
         <Link href="/" className="flex items-center gap-2">
           <Image src="/logo.png" alt="رفقة" width={36} height={36} priority className="h-9 w-9 object-contain" />

@@ -4,9 +4,21 @@ import Image from "next/image";
 // from "standard" — previously this component took no props at all, so a
 // merchant's own store footer was indistinguishable from Rifqa's own
 // platform pages, regardless of what footerStyle was saved.
-export function SiteFooter({ store }: { store?: { name: string; tagline?: string | null } } = {}) {
+//
+// `transparent` is a SEPARATE, Rifqa-only concern: this component is also
+// used on merchant storefronts (store/[slug]/*), which must always keep
+// their own solid dark footer regardless of what Rifqa's own marketing
+// site looks like — so it defaults to false and only Rifqa's own pages
+// (currently just the homepage) opt in explicitly.
+export function SiteFooter({
+  store,
+  transparent = false,
+}: {
+  store?: { name: string; tagline?: string | null };
+  transparent?: boolean;
+} = {}) {
   return (
-    <footer className="border-t border-harbor/10 bg-harbor text-canvas/70">
+    <footer className={`border-t ${transparent ? "border-white/15 text-canvas/80" : "border-harbor/10 bg-harbor text-canvas/70"}`}>
       <div className="mx-auto max-w-6xl px-6 py-10">
         {store && (
           <div className="mb-6 pb-6 border-b border-canvas/10 text-center">

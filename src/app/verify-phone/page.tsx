@@ -71,6 +71,7 @@ function VerifyPhonePageContent() {
     <>
       <SiteNav />
       <main className="mx-auto max-w-md px-6 py-20 text-center">
+        <div className="rounded-2xl bg-white/90 shadow-xl p-8">
         <h1 className="font-display text-2xl font-extrabold text-harbor mb-2">تحقق من رقم هاتفك</h1>
         <p className="text-rope mb-8">
           أرسلنا رمز تحقق مكوّن من 6 أرقام إلى <span dir="ltr" className="font-bold text-harbor">{merchant?.phone}</span>
@@ -107,6 +108,7 @@ function VerifyPhonePageContent() {
           <button onClick={logout} className="text-rope hover:text-harbor transition-colors">
             تسجيل الخروج
           </button>
+        </div>
         </div>
       </main>
     </>

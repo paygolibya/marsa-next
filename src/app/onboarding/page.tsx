@@ -81,6 +81,7 @@ export default function OnboardingPage() {
     <>
       <SiteNav />
       <main className="mx-auto max-w-lg px-6 py-16">
+        <div className="rounded-2xl bg-white/90 shadow-xl p-8">
         <div className="flex items-center gap-3 mb-10">
           <StepDot active={step === 1} label="1" done={step > 1} />
           <div className="h-px flex-1 bg-harbor/15" />
@@ -198,6 +199,7 @@ export default function OnboardingPage() {
             </div>
           </div>
         )}
+        </div>
       </main>
     </>
   );

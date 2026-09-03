@@ -62,10 +62,12 @@ export default function SubscriptionPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 px-4 py-12">
+    <div className="min-h-screen px-4 py-12">
       <div className="mx-auto max-w-6xl">
-        <h1 className="mb-2 text-right text-4xl font-bold">اختر خطتك</h1>
-        <p className="mb-12 text-right text-gray-600">ابدأ مجاناً ورقّب لاحقاً</p>
+        <div className="mb-12 inline-block rounded-2xl bg-white/90 shadow-xl px-8 py-6">
+          <h1 className="mb-2 text-right text-4xl font-bold">اختر خطتك</h1>
+          <p className="text-right text-gray-600">ابدأ مجاناً ورقّب لاحقاً</p>
+        </div>
 
         <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
           {tiers.map((tier) => (

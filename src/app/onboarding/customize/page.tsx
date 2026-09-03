@@ -49,7 +49,7 @@ function CustomizePageContent() {
   if (!storeId || !loaded) return null;
 
   return (
-    <div className="min-h-screen bg-canvas">
+    <div className="min-h-screen">
       <div className="mx-auto max-w-6xl px-4 py-8">
         {/* Used to send new merchants to /subscription to pick a paid plan
             before finishing setup — now that signup grants a 90-day trial

@@ -35,6 +35,7 @@ export default function RegisterPage() {
     <>
       <SiteNav />
       <main className="mx-auto max-w-md px-6 py-20">
+        <div className="rounded-2xl bg-white/90 shadow-xl p-8">
         <h1 className="font-display text-3xl font-extrabold text-harbor mb-2">أنشئ حسابك في رفقة</h1>
         <p className="text-rope mb-8">خطوة واحدة تفصلك عن إنشاء متجرك الأول.</p>
 
@@ -88,6 +89,7 @@ export default function RegisterPage() {
             سجّل الدخول
           </Link>
         </p>
+        </div>
       </main>
     </>
   );

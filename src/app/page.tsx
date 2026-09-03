@@ -77,8 +77,11 @@ export default function MarketingPage() {
       {/* HERO — moved off the flat navy panel onto a warm, light gradient
           that actually echoes the logo's own palette (cream → soft
           rose/gold), with the logo's colors as slow-drifting decorative
-          blobs rather than a solid dark block. */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-canvas via-canvas to-rose-light/10">
+          blobs rather than a solid dark block. Fully opaque at every stop
+          (previously faded to rose-light/10 at the bottom, relying on the
+          plain cream page behind it) so it stays visually identical now
+          that the rest of the site sits on the brand gradient instead. */}
+      <section className="relative overflow-hidden bg-gradient-to-b from-canvas via-canvas to-canvas">
         <div
           className="pointer-events-none absolute -top-24 -right-24 h-96 w-96 rounded-full bg-rose-light/40 blur-3xl animate-drift"
           aria-hidden
@@ -320,7 +323,7 @@ export default function MarketingPage() {
         </Reveal>
       </section>
 
-      <SiteFooter />
+      <SiteFooter transparent />
     </>
   );
 }

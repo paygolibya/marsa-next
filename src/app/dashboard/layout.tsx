@@ -62,8 +62,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   if (merchant && !merchant.phoneVerified) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-canvas px-6">
-        <div className="max-w-md text-center">
+      <div className="min-h-screen flex items-center justify-center px-6">
+        <div className="max-w-md text-center rounded-2xl bg-white/90 shadow-xl p-8">
           <h1 className="font-display text-2xl font-extrabold text-harbor mb-3">تحقق من رقم هاتفك</h1>
           <p className="text-rope mb-8">لم يتم التحقق من رقم هاتفك بعد — أكمل خطوة التحقق للمتابعة.</p>
           <div className="flex items-center justify-center gap-3">
@@ -85,8 +85,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   if (merchant && merchant.subscriptionStatus !== "active") {
     const copy = STATUS_COPY[merchant.subscriptionStatus] ?? STATUS_COPY.pending;
     return (
-      <div className="min-h-screen flex items-center justify-center bg-canvas px-6">
-        <div className="max-w-md text-center">
+      <div className="min-h-screen flex items-center justify-center px-6">
+        <div className="max-w-md text-center rounded-2xl bg-white/90 shadow-xl p-8">
           <h1 className="font-display text-2xl font-extrabold text-harbor mb-3">{copy.title}</h1>
           <p className="text-rope mb-8">{copy.body}</p>
           <div className="flex items-center justify-center gap-3">
@@ -168,6 +168,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
       </aside>
 
+      {/* Kept on the plain cream background, NOT the new brand gradient —
+          every dashboard page below puts its page title/subtitle directly
+          on this background with no card behind it (e.g. dashboard/page.tsx's
+          "نظرة عامة" + store name), and the muted `text-rope` used for
+          those subtitles loses too much contrast against the vivid
+          orange/red gradient to read reliably. Revisit if/when those
+          headers get a proper backdrop treatment. */}
       <main className="flex-1 bg-canvas">
         {trialDaysLeft !== null && trialDaysLeft >= 0 && (
           <div className="bg-brass/10 border-b border-brass/20 px-6 py-3 text-sm text-harbor flex items-center justify-between gap-4">

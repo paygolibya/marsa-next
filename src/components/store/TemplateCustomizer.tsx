@@ -168,7 +168,7 @@ export default function TemplateCustomizer({ storeId, storeName, templateName, o
 
   return (
     <div className="max-w-5xl mx-auto space-y-8 py-8">
-      <div>
+      <div className="inline-block rounded-2xl bg-white/90 shadow-xl px-6 py-4">
         <h1 className="font-display text-3xl font-extrabold text-harbor mb-1">خصص متجرك</h1>
         <p className="text-rope">قالب: {templateName}</p>
       </div>
