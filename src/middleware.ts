@@ -72,6 +72,19 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
+  // The storefront's own internal links (product pages, checkout, ...)
+  // are written as absolute /store/{slug}/... paths — correct on the main
+  // domain (rifqa.ly/store/{slug}/product/x), but on a subdomain the
+  // browser is already at {slug}.rifqa.ly, so clicking one of those links
+  // arrives here with pathname already equal to /store/{slug}/product/x.
+  // Blindly prepending /store/{slug} again produced
+  // /store/{slug}/store/{slug}/product/x — a real 404, confirmed live on
+  // every existing store's product/checkout links. If the path already
+  // targets a real /store/... route, leave it alone.
+  if (req.nextUrl.pathname.startsWith("/store/")) {
+    return NextResponse.next();
+  }
+
   const url = req.nextUrl.clone();
   url.pathname = `/store/${slug}${req.nextUrl.pathname === "/" ? "" : req.nextUrl.pathname}`;
   return NextResponse.rewrite(url);

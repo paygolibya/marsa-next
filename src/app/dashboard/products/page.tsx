@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useCurrentStore } from "@/lib/use-current-store";
 import { api, ApiError, formatLYD, type Product } from "@/lib/api";
+import ProductImageUpload from "@/components/products/ProductImageUpload";
 
 export default function DashboardProductsPage() {
   const { token } = useAuth();
@@ -79,10 +80,7 @@ export default function DashboardProductsPage() {
               dir="ltr"
             />
           </label>
-          <label className="block">
-            <span className="block text-sm font-bold text-harbor mb-1.5">رابط الصورة (اختياري)</span>
-            <input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} className="input" dir="ltr" />
-          </label>
+          <ProductImageUpload imageUrl={imageUrl || null} onChange={(url) => setImageUrl(url || "")} />
 
           <div className="flex items-center justify-between rounded-xl border border-harbor/15 bg-white px-4 py-3">
             <span className="font-bold text-harbor text-sm">تتبع المخزون</span>
@@ -214,18 +212,16 @@ function ProductEditRow({
   return (
     <li className="rounded-xl border border-brass/40 bg-white p-4 space-y-3">
       <input value={name} onChange={(e) => setName(e.target.value)} className="input" placeholder="اسم المنتج" />
-      <div className="grid grid-cols-2 gap-3">
-        <input
-          type="number"
-          step="0.01"
-          value={price}
-          onChange={(e) => setPrice(e.target.value)}
-          className="input"
-          dir="ltr"
-          placeholder="السعر"
-        />
-        <input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} className="input" dir="ltr" placeholder="رابط الصورة" />
-      </div>
+      <input
+        type="number"
+        step="0.01"
+        value={price}
+        onChange={(e) => setPrice(e.target.value)}
+        className="input"
+        dir="ltr"
+        placeholder="السعر"
+      />
+      <ProductImageUpload imageUrl={imageUrl || null} onChange={(url) => setImageUrl(url || "")} />
       <div className="flex items-center justify-between rounded-lg border border-harbor/15 px-3 py-2">
         <span className="text-sm font-bold text-harbor">تتبع المخزون</span>
         <input
