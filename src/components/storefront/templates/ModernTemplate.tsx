@@ -1,7 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { formatLYD } from "@/lib/api";
-import type { StorefrontTemplateProps } from "./types";
+import { normalizeSectionOrder, type SectionKey, type StorefrontTemplateProps } from "./types";
 
 /**
  * "الحديث" (Modern) — the baseline template: clean grid, standard header,
@@ -30,6 +31,145 @@ export default function ModernTemplate({
   const secondary = store.customization?.secondaryColor || "#f0f0f0";
   const accent = store.customization?.accentColor || primary;
   const headerCentered = store.customization?.headerStyle === "centered";
+  const order = normalizeSectionOrder(store.customization?.sectionOrder);
+
+  const statsSection =
+    store.customization?.showSocialProof !== false && stats && (stats.deliveredOrderCount > 0 || stats.reviewCount > 0) ? (
+      <div className="flex flex-wrap gap-3 mb-6">
+        {stats.deliveredOrderCount > 0 && (
+          <span className="rounded-full bg-white px-4 py-1.5 text-sm font-bold border border-harbor/10" style={{ color: accent }}>
+            +{stats.deliveredOrderCount} طلب تم تسليمه
+          </span>
+        )}
+        {stats.averageRating != null && stats.reviewCount > 0 && (
+          <span className="rounded-full bg-white px-4 py-1.5 text-sm font-bold border border-harbor/10" style={{ color: accent }}>
+            ★ {stats.averageRating.toFixed(1)} ({stats.reviewCount} تقييم)
+          </span>
+        )}
+      </div>
+    ) : null;
+
+  const productsSection = (
+    <div>
+      <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="ابحث عن منتج..." className="input mb-8 max-w-sm" />
+
+      {filtered.length === 0 ? (
+        <p className="text-rope text-center py-16">لا توجد منتجات مطابقة حاليًا.</p>
+      ) : (
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filtered.map((product) => (
+            <div key={product.id} className="rounded-2xl border border-harbor/10 bg-white overflow-hidden flex flex-col">
+              <Link href={`/store/${slug}/product/${product.id}`} className="aspect-square bg-harbor/5 flex items-center justify-center text-rope text-sm">
+                {product.imageUrl ? (
+                  <Image src={product.imageUrl} alt={product.name} width={800} height={800} unoptimized className="h-full w-full object-cover" />
+                ) : (
+                  "لا توجد صورة"
+                )}
+              </Link>
+              <div className="p-4 flex flex-col flex-1">
+                <Link href={`/store/${slug}/product/${product.id}`} className="font-bold text-harbor hover:underline">
+                  {product.name}
+                </Link>
+                <p className="font-bold mt-1" style={{ color: primary }}>
+                  {formatLYD(product.priceCents)}
+                </p>
+                {product.variantOptions?.length ? (
+                  <Link
+                    href={`/store/${slug}/product/${product.id}`}
+                    style={{ backgroundColor: primary }}
+                    className="mt-4 rounded-full text-white py-2 font-bold text-sm text-center hover:opacity-90 transition-opacity"
+                  >
+                    اختر الخيارات
+                  </Link>
+                ) : (
+                  <button
+                    onClick={() => onAddToCart(product)}
+                    style={{ backgroundColor: primary }}
+                    className="mt-4 rounded-full text-white py-2 font-bold text-sm hover:opacity-90 transition-opacity"
+                  >
+                    أضف إلى السلة
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
+  const testimonialsSection =
+    store.customization?.showTestimonials && testimonials.length > 0 ? (
+      <div>
+        <h2 className="font-display text-xl font-extrabold text-harbor mb-6">آراء عملائنا</h2>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {testimonials.map((t, i) => (
+            <div key={i} className="rounded-2xl border border-harbor/10 bg-white p-5">
+              <p className="font-bold mb-2" style={{ color: accent }}>
+                {"★".repeat(t.rating)}
+                {"☆".repeat(5 - t.rating)}
+              </p>
+              {t.reviewText && <p className="text-sm text-harbor/80 mb-3">&quot;{t.reviewText}&quot;</p>}
+              <p className="text-xs text-rope">
+                {t.buyerName} — {t.productName}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+    ) : null;
+
+  const newsletterSection = store.customization?.showNewsletter ? (
+    <div className="rounded-2xl border border-dashed border-harbor/20 p-8 text-center max-w-lg mx-auto">
+      <h3 className="font-display font-bold text-harbor mb-2">اشترك ليصلك كل جديد</h3>
+      <p className="text-sm text-rope mb-4">عروض ومنتجات جديدة من {store.name}</p>
+      {newsletterState === "done" ? (
+        <p className="text-sm font-bold text-green-700">✓ تم الاشتراك بنجاح</p>
+      ) : (
+        <form onSubmit={onNewsletterSubmit} className="flex gap-2">
+          <input
+            type="email"
+            required
+            dir="ltr"
+            value={newsletterEmail}
+            onChange={(e) => setNewsletterEmail(e.target.value)}
+            placeholder="بريدك الإلكتروني"
+            className="input flex-1"
+          />
+          <button
+            type="submit"
+            disabled={newsletterState === "loading"}
+            style={{ backgroundColor: primary }}
+            className="rounded-full px-6 py-2.5 font-bold text-white text-sm disabled:opacity-60 hover:opacity-90 transition-opacity"
+          >
+            {newsletterState === "loading" ? "..." : "اشترك"}
+          </button>
+        </form>
+      )}
+      {newsletterState === "error" && <p className="text-signal text-xs mt-2">تعذّر الاشتراك، حاول مجددًا</p>}
+    </div>
+  ) : null;
+
+  const sections: Record<SectionKey, ReactNode> = {
+    stats: statsSection,
+    products: productsSection,
+    testimonials: testimonialsSection,
+    newsletter: newsletterSection,
+  };
+  // Each rendered section carries its own top margin except the first one
+  // actually rendered — keeps consistent spacing regardless of order.
+  let renderedFirst = false;
+  const orderedSections = order.map((key) => {
+    const node = sections[key];
+    if (!node) return null;
+    const spacing = renderedFirst ? "mt-16" : "";
+    renderedFirst = true;
+    return (
+      <div key={key} className={spacing}>
+        {node}
+      </div>
+    );
+  });
 
   return (
     <div style={{ backgroundColor: secondary }} className="min-h-screen">
@@ -57,117 +197,7 @@ export default function ModernTemplate({
 
       <main className="mx-auto max-w-6xl px-6 py-10">
         {store.customization?.description && <p className="text-harbor/80 mb-6 max-w-2xl">{store.customization.description}</p>}
-
-        {store.customization?.showSocialProof !== false && stats && (stats.deliveredOrderCount > 0 || stats.reviewCount > 0) && (
-          <div className="flex flex-wrap gap-3 mb-6">
-            {stats.deliveredOrderCount > 0 && (
-              <span className="rounded-full bg-white px-4 py-1.5 text-sm font-bold border border-harbor/10" style={{ color: accent }}>
-                +{stats.deliveredOrderCount} طلب تم تسليمه
-              </span>
-            )}
-            {stats.averageRating != null && stats.reviewCount > 0 && (
-              <span className="rounded-full bg-white px-4 py-1.5 text-sm font-bold border border-harbor/10" style={{ color: accent }}>
-                ★ {stats.averageRating.toFixed(1)} ({stats.reviewCount} تقييم)
-              </span>
-            )}
-          </div>
-        )}
-
-        <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="ابحث عن منتج..." className="input mb-8 max-w-sm" />
-
-        {filtered.length === 0 ? (
-          <p className="text-rope text-center py-16">لا توجد منتجات مطابقة حاليًا.</p>
-        ) : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filtered.map((product) => (
-              <div key={product.id} className="rounded-2xl border border-harbor/10 bg-white overflow-hidden flex flex-col">
-                <Link href={`/store/${slug}/product/${product.id}`} className="aspect-square bg-harbor/5 flex items-center justify-center text-rope text-sm">
-                  {product.imageUrl ? (
-                    <Image src={product.imageUrl} alt={product.name} width={800} height={800} unoptimized className="h-full w-full object-cover" />
-                  ) : (
-                    "لا توجد صورة"
-                  )}
-                </Link>
-                <div className="p-4 flex flex-col flex-1">
-                  <Link href={`/store/${slug}/product/${product.id}`} className="font-bold text-harbor hover:underline">
-                    {product.name}
-                  </Link>
-                  <p className="font-bold mt-1" style={{ color: primary }}>
-                    {formatLYD(product.priceCents)}
-                  </p>
-                  {product.variantOptions?.length ? (
-                    <Link
-                      href={`/store/${slug}/product/${product.id}`}
-                      style={{ backgroundColor: primary }}
-                      className="mt-4 rounded-full text-white py-2 font-bold text-sm text-center hover:opacity-90 transition-opacity"
-                    >
-                      اختر الخيارات
-                    </Link>
-                  ) : (
-                    <button
-                      onClick={() => onAddToCart(product)}
-                      style={{ backgroundColor: primary }}
-                      className="mt-4 rounded-full text-white py-2 font-bold text-sm hover:opacity-90 transition-opacity"
-                    >
-                      أضف إلى السلة
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {store.customization?.showTestimonials && testimonials.length > 0 && (
-          <div className="mt-16">
-            <h2 className="font-display text-xl font-extrabold text-harbor mb-6">آراء عملائنا</h2>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {testimonials.map((t, i) => (
-                <div key={i} className="rounded-2xl border border-harbor/10 bg-white p-5">
-                  <p className="font-bold mb-2" style={{ color: accent }}>
-                    {"★".repeat(t.rating)}
-                    {"☆".repeat(5 - t.rating)}
-                  </p>
-                  {t.reviewText && <p className="text-sm text-harbor/80 mb-3">&quot;{t.reviewText}&quot;</p>}
-                  <p className="text-xs text-rope">
-                    {t.buyerName} — {t.productName}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {store.customization?.showNewsletter && (
-          <div className="mt-16 rounded-2xl border border-dashed border-harbor/20 p-8 text-center max-w-lg mx-auto">
-            <h3 className="font-display font-bold text-harbor mb-2">اشترك ليصلك كل جديد</h3>
-            <p className="text-sm text-rope mb-4">عروض ومنتجات جديدة من {store.name}</p>
-            {newsletterState === "done" ? (
-              <p className="text-sm font-bold text-green-700">✓ تم الاشتراك بنجاح</p>
-            ) : (
-              <form onSubmit={onNewsletterSubmit} className="flex gap-2">
-                <input
-                  type="email"
-                  required
-                  dir="ltr"
-                  value={newsletterEmail}
-                  onChange={(e) => setNewsletterEmail(e.target.value)}
-                  placeholder="بريدك الإلكتروني"
-                  className="input flex-1"
-                />
-                <button
-                  type="submit"
-                  disabled={newsletterState === "loading"}
-                  style={{ backgroundColor: primary }}
-                  className="rounded-full px-6 py-2.5 font-bold text-white text-sm disabled:opacity-60 hover:opacity-90 transition-opacity"
-                >
-                  {newsletterState === "loading" ? "..." : "اشترك"}
-                </button>
-              </form>
-            )}
-            {newsletterState === "error" && <p className="text-signal text-xs mt-2">تعذّر الاشتراك، حاول مجددًا</p>}
-          </div>
-        )}
+        {orderedSections}
       </main>
     </div>
   );

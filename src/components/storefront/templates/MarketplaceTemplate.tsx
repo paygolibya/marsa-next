@@ -1,7 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { formatLYD } from "@/lib/api";
-import type { StorefrontTemplateProps } from "./types";
+import { normalizeSectionOrder, type SectionKey, type StorefrontTemplateProps } from "./types";
 
 /**
  * "السوق" (Marketplace) — denser than the other three on purpose: a
@@ -30,6 +31,134 @@ export default function MarketplaceTemplate({
   const primary = store.customization?.primaryColor || "#0066cc";
   const secondary = store.customization?.secondaryColor || "#f8fafc";
   const accent = store.customization?.accentColor || primary;
+  const order = normalizeSectionOrder(store.customization?.sectionOrder);
+
+  const productsSection = (
+    <div>
+      {filtered.length === 0 ? (
+        <p className="text-rope text-center py-16">لا توجد منتجات مطابقة حاليًا.</p>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+          {filtered.map((product) => (
+            <div key={product.id} className="rounded-lg border border-harbor/10 bg-white overflow-hidden flex flex-col">
+              <Link href={`/store/${slug}/product/${product.id}`} className="relative aspect-square bg-harbor/5 flex items-center justify-center text-rope text-xs">
+                {product.imageUrl ? (
+                  <Image src={product.imageUrl} alt={product.name} width={600} height={600} unoptimized className="h-full w-full object-cover" />
+                ) : (
+                  "لا توجد صورة"
+                )}
+                {stats?.averageRating != null && stats.reviewCount > 0 && (
+                  <span className="absolute top-1.5 right-1.5 rounded bg-black/70 text-white text-[10px] font-bold px-1.5 py-0.5">
+                    ★ {stats.averageRating.toFixed(1)}
+                  </span>
+                )}
+              </Link>
+              <div className="p-2.5 flex flex-col flex-1">
+                <Link href={`/store/${slug}/product/${product.id}`} className="text-sm font-bold text-harbor hover:underline line-clamp-2">
+                  {product.name}
+                </Link>
+                <p className="font-extrabold text-sm mt-1" style={{ color: primary }}>
+                  {formatLYD(product.priceCents)}
+                </p>
+                {product.variantOptions?.length ? (
+                  <Link
+                    href={`/store/${slug}/product/${product.id}`}
+                    style={{ backgroundColor: primary }}
+                    className="mt-2 rounded text-white py-1.5 text-xs font-bold text-center hover:opacity-90 transition-opacity"
+                  >
+                    اختر الخيارات
+                  </Link>
+                ) : (
+                  <button
+                    onClick={() => onAddToCart(product)}
+                    style={{ backgroundColor: primary }}
+                    className="mt-2 rounded text-white py-1.5 text-xs font-bold hover:opacity-90 transition-opacity"
+                  >
+                    أضف إلى السلة
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
+  const testimonialsSection =
+    store.customization?.showTestimonials && testimonials.length > 0 ? (
+      <div>
+        <h2 className="font-display text-lg font-extrabold text-harbor mb-4">آراء المشترين</h2>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          {testimonials.map((t, i) => (
+            <div key={i} className="rounded-lg border border-harbor/10 bg-white p-3">
+              <p className="text-xs mb-1" style={{ color: accent }}>
+                {"★".repeat(t.rating)}
+                {"☆".repeat(5 - t.rating)}
+              </p>
+              {t.reviewText && <p className="text-xs text-harbor/80 mb-2 line-clamp-3">&quot;{t.reviewText}&quot;</p>}
+              <p className="text-[10px] text-rope">
+                {t.buyerName} — {t.productName}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+    ) : null;
+
+  const newsletterSection = store.customization?.showNewsletter ? (
+    <div className="rounded-lg border border-harbor/10 bg-white p-6 text-center max-w-md mx-auto">
+      <h3 className="font-bold text-harbor mb-1 text-sm">اشترك ليصلك كل جديد</h3>
+      <p className="text-xs text-rope mb-3">عروض ومنتجات جديدة من {store.name}</p>
+      {newsletterState === "done" ? (
+        <p className="text-xs font-bold text-green-700">✓ تم الاشتراك بنجاح</p>
+      ) : (
+        <form onSubmit={onNewsletterSubmit} className="flex gap-2">
+          <input
+            type="email"
+            required
+            dir="ltr"
+            value={newsletterEmail}
+            onChange={(e) => setNewsletterEmail(e.target.value)}
+            placeholder="بريدك الإلكتروني"
+            className="input flex-1 !py-2 text-sm"
+          />
+          <button
+            type="submit"
+            disabled={newsletterState === "loading"}
+            style={{ backgroundColor: primary }}
+            className="rounded-lg px-4 py-2 font-bold text-white text-xs disabled:opacity-60 hover:opacity-90 transition-opacity"
+          >
+            {newsletterState === "loading" ? "..." : "اشترك"}
+          </button>
+        </form>
+      )}
+      {newsletterState === "error" && <p className="text-signal text-xs mt-2">تعذّر الاشتراك، حاول مجددًا</p>}
+    </div>
+  ) : null;
+
+  // "stats" has no entry here — Marketplace shows the social-proof line
+  // inline in its compact sticky header (see below), not as a movable body
+  // section, so it isn't part of this template's drag-and-drop order. The
+  // key still exists in a saved sectionOrder (shared across templates) —
+  // it's simply a no-op here.
+  const sections: Partial<Record<SectionKey, ReactNode>> = {
+    products: productsSection,
+    testimonials: testimonialsSection,
+    newsletter: newsletterSection,
+  };
+  let renderedFirst = false;
+  const orderedSections = order.map((key) => {
+    const node = sections[key];
+    if (!node) return null;
+    const spacing = renderedFirst ? "mt-14" : "";
+    renderedFirst = true;
+    return (
+      <div key={key} className={spacing}>
+        {node}
+      </div>
+    );
+  });
 
   return (
     <div style={{ backgroundColor: secondary }} className="min-h-screen">
@@ -75,105 +204,7 @@ export default function MarketplaceTemplate({
 
       <main className="mx-auto max-w-7xl px-4 py-8">
         {store.customization?.tagline && <p className="text-harbor/70 text-sm mb-6">{store.customization.tagline}</p>}
-
-        {filtered.length === 0 ? (
-          <p className="text-rope text-center py-16">لا توجد منتجات مطابقة حاليًا.</p>
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {filtered.map((product) => (
-              <div key={product.id} className="rounded-lg border border-harbor/10 bg-white overflow-hidden flex flex-col">
-                <Link href={`/store/${slug}/product/${product.id}`} className="relative aspect-square bg-harbor/5 flex items-center justify-center text-rope text-xs">
-                  {product.imageUrl ? (
-                    <Image src={product.imageUrl} alt={product.name} width={600} height={600} unoptimized className="h-full w-full object-cover" />
-                  ) : (
-                    "لا توجد صورة"
-                  )}
-                  {stats?.averageRating != null && stats.reviewCount > 0 && (
-                    <span className="absolute top-1.5 right-1.5 rounded bg-black/70 text-white text-[10px] font-bold px-1.5 py-0.5">
-                      ★ {stats.averageRating.toFixed(1)}
-                    </span>
-                  )}
-                </Link>
-                <div className="p-2.5 flex flex-col flex-1">
-                  <Link href={`/store/${slug}/product/${product.id}`} className="text-sm font-bold text-harbor hover:underline line-clamp-2">
-                    {product.name}
-                  </Link>
-                  <p className="font-extrabold text-sm mt-1" style={{ color: primary }}>
-                    {formatLYD(product.priceCents)}
-                  </p>
-                  {product.variantOptions?.length ? (
-                    <Link
-                      href={`/store/${slug}/product/${product.id}`}
-                      style={{ backgroundColor: primary }}
-                      className="mt-2 rounded text-white py-1.5 text-xs font-bold text-center hover:opacity-90 transition-opacity"
-                    >
-                      اختر الخيارات
-                    </Link>
-                  ) : (
-                    <button
-                      onClick={() => onAddToCart(product)}
-                      style={{ backgroundColor: primary }}
-                      className="mt-2 rounded text-white py-1.5 text-xs font-bold hover:opacity-90 transition-opacity"
-                    >
-                      أضف إلى السلة
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {store.customization?.showTestimonials && testimonials.length > 0 && (
-          <div className="mt-14">
-            <h2 className="font-display text-lg font-extrabold text-harbor mb-4">آراء المشترين</h2>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              {testimonials.map((t, i) => (
-                <div key={i} className="rounded-lg border border-harbor/10 bg-white p-3">
-                  <p className="text-xs mb-1" style={{ color: accent }}>
-                    {"★".repeat(t.rating)}
-                    {"☆".repeat(5 - t.rating)}
-                  </p>
-                  {t.reviewText && <p className="text-xs text-harbor/80 mb-2 line-clamp-3">&quot;{t.reviewText}&quot;</p>}
-                  <p className="text-[10px] text-rope">
-                    {t.buyerName} — {t.productName}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {store.customization?.showNewsletter && (
-          <div className="mt-14 rounded-lg border border-harbor/10 bg-white p-6 text-center max-w-md mx-auto">
-            <h3 className="font-bold text-harbor mb-1 text-sm">اشترك ليصلك كل جديد</h3>
-            <p className="text-xs text-rope mb-3">عروض ومنتجات جديدة من {store.name}</p>
-            {newsletterState === "done" ? (
-              <p className="text-xs font-bold text-green-700">✓ تم الاشتراك بنجاح</p>
-            ) : (
-              <form onSubmit={onNewsletterSubmit} className="flex gap-2">
-                <input
-                  type="email"
-                  required
-                  dir="ltr"
-                  value={newsletterEmail}
-                  onChange={(e) => setNewsletterEmail(e.target.value)}
-                  placeholder="بريدك الإلكتروني"
-                  className="input flex-1 !py-2 text-sm"
-                />
-                <button
-                  type="submit"
-                  disabled={newsletterState === "loading"}
-                  style={{ backgroundColor: primary }}
-                  className="rounded-lg px-4 py-2 font-bold text-white text-xs disabled:opacity-60 hover:opacity-90 transition-opacity"
-                >
-                  {newsletterState === "loading" ? "..." : "اشترك"}
-                </button>
-              </form>
-            )}
-            {newsletterState === "error" && <p className="text-signal text-xs mt-2">تعذّر الاشتراك، حاول مجددًا</p>}
-          </div>
-        )}
+        {orderedSections}
       </main>
     </div>
   );

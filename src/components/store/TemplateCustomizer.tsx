@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { HexColorPicker } from "react-colorful";
 import { useAuth } from "@/lib/auth-context";
 import { api, ApiError } from "@/lib/api";
+import { DEFAULT_SECTION_ORDER, normalizeSectionOrder, type SectionKey } from "@/components/storefront/templates/types";
 
 interface Customization {
   primaryColor: string;
@@ -19,7 +20,15 @@ interface Customization {
   showReviews: boolean;
   showTestimonials: boolean;
   showSocialProof: boolean;
+  sectionOrder: SectionKey[];
 }
+
+const SECTION_LABELS: Record<SectionKey, { title: string; hint: string; toggleKey?: keyof Customization }> = {
+  stats: { title: "شارات الثقة", hint: "عدد الطلبات المُسلَّمة ومتوسط التقييم", toggleKey: "showSocialProof" },
+  products: { title: "شبكة المنتجات", hint: "قسم أساسي — يظهر دائمًا" },
+  testimonials: { title: "آراء العملاء", hint: "من تقييمات حقيقية 4★ فأكثر", toggleKey: "showTestimonials" },
+  newsletter: { title: "الاشتراك بالنشرة", hint: "نموذج جمع بريد الزوار", toggleKey: "showNewsletter" },
+};
 
 interface TemplateCustomizerProps {
   storeId: string;
@@ -42,6 +51,7 @@ const DEFAULTS: Customization = {
   showReviews: true,
   showTestimonials: false,
   showSocialProof: true,
+  sectionOrder: DEFAULT_SECTION_ORDER,
 };
 
 export default function TemplateCustomizer({ storeId, storeName, templateName, onSave }: TemplateCustomizerProps) {
@@ -54,19 +64,39 @@ export default function TemplateCustomizer({ storeId, storeName, templateName, o
   const [showColorPicker, setShowColorPicker] = useState<"primary" | "secondary" | "accent" | null>(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingFavicon, setUploadingFavicon] = useState(false);
+  const [draggedSection, setDraggedSection] = useState<SectionKey | null>(null);
+  const [dragOverSection, setDragOverSection] = useState<SectionKey | null>(null);
 
   useEffect(() => {
     fetch(`/api/stores/${storeId}/customize`)
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data?.customization) {
-          setCustomization((prev) => ({ ...prev, ...data.customization }));
+          setCustomization((prev) => ({
+            ...prev,
+            ...data.customization,
+            // A store customized before this feature shipped has no
+            // sectionOrder saved at all — normalize falls back to the
+            // default order rather than leaving it undefined.
+            sectionOrder: normalizeSectionOrder(data.customization.sectionOrder),
+          }));
         }
       });
   }, [storeId]);
 
   function set<K extends keyof Customization>(key: K, value: Customization[K]) {
     setCustomization((prev) => ({ ...prev, [key]: value }));
+    setSaved(false);
+  }
+
+  function moveSection(dragged: SectionKey, target: SectionKey) {
+    if (dragged === target) return;
+    setCustomization((prev) => {
+      const withoutDragged = prev.sectionOrder.filter((k) => k !== dragged);
+      const targetIndex = withoutDragged.indexOf(target);
+      const next = [...withoutDragged.slice(0, targetIndex), dragged, ...withoutDragged.slice(targetIndex)];
+      return { ...prev, sectionOrder: next };
+    });
     setSaved(false);
   }
 
@@ -251,6 +281,52 @@ export default function TemplateCustomizer({ storeId, storeName, templateName, o
           </div>
 
           <div className="rounded-2xl border border-harbor/10 bg-white/60 p-6">
+            <h2 className="font-display text-lg font-bold text-harbor mb-1">ترتيب أقسام المتجر</h2>
+            <p className="text-xs text-rope mb-4">اسحب الأقسام لإعادة ترتيبها — الترتيب هنا هو نفسه الذي سيراه الزوار في متجرك</p>
+            <div className="space-y-2">
+              {customization.sectionOrder.map((key, i) => {
+                const meta = SECTION_LABELS[key];
+                const enabled = meta.toggleKey ? Boolean(customization[meta.toggleKey]) : true;
+                return (
+                  <div
+                    key={key}
+                    draggable
+                    onDragStart={() => setDraggedSection(key)}
+                    onDragEnd={() => {
+                      setDraggedSection(null);
+                      setDragOverSection(null);
+                    }}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      if (draggedSection && draggedSection !== key) setDragOverSection(key);
+                    }}
+                    onDragLeave={() => setDragOverSection((prev) => (prev === key ? null : prev))}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      if (draggedSection) moveSection(draggedSection, key);
+                      setDraggedSection(null);
+                      setDragOverSection(null);
+                    }}
+                    className={`flex items-center gap-3 rounded-xl border p-3 bg-white cursor-move transition-colors ${
+                      dragOverSection === key ? "border-brass border-dashed bg-brass/5" : "border-harbor/10"
+                    } ${draggedSection === key ? "opacity-40" : ""} ${!enabled ? "opacity-50" : ""}`}
+                  >
+                    <span className="text-rope select-none" aria-hidden>
+                      ⠿
+                    </span>
+                    <span className="flex items-center justify-center w-6 h-6 rounded-full bg-harbor/5 text-xs font-bold text-harbor shrink-0">{i + 1}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-harbor">{meta.title}</p>
+                      <p className="text-xs text-rope truncate">{meta.hint}</p>
+                    </div>
+                    {!enabled && <span className="text-[11px] font-bold text-rope shrink-0">غير مفعّل</span>}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-harbor/10 bg-white/60 p-6">
             <h2 className="font-display text-lg font-bold text-harbor mb-4">الميزات</h2>
             <div className="space-y-3">
               <label className="flex items-center gap-3">
@@ -312,41 +388,56 @@ export default function TemplateCustomizer({ storeId, storeName, templateName, o
               <div className="p-4">
                 {customization.description && <p className="text-xs mb-3" style={{ color: customization.primaryColor }}>{customization.description}</p>}
 
-                {customization.showSocialProof && (
-                  <div className="mb-3 flex gap-2 text-[11px] font-bold" style={{ color: customization.accentColor || customization.primaryColor }}>
-                    <span className="rounded-full bg-white px-2 py-1">+120 طلب مُسلَّم</span>
-                    <span className="rounded-full bg-white px-2 py-1">★ 4.8</span>
-                  </div>
-                )}
-
-                <div className="grid grid-cols-2 gap-2">
-                  {[1, 2].map((i) => (
-                    <div key={i} className="rounded-lg bg-white border border-black/5 overflow-hidden">
-                      <div className="aspect-square bg-black/5 flex items-center justify-center text-[10px] text-rope">لا توجد صورة</div>
-                      <div className="p-2">
-                        <p className="text-[11px] font-bold" style={{ color: customization.primaryColor }}>
-                          منتج {i}
-                        </p>
-                        <button className="mt-1.5 w-full rounded-full text-white text-[10px] font-bold py-1" style={{ backgroundColor: customization.primaryColor }}>
-                          أضف إلى السلة
-                        </button>
+                {(() => {
+                  const previewSections: Partial<Record<SectionKey, React.ReactNode>> = {
+                    stats: customization.showSocialProof ? (
+                      <div className="flex gap-2 text-[11px] font-bold" style={{ color: customization.accentColor || customization.primaryColor }}>
+                        <span className="rounded-full bg-white px-2 py-1">+120 طلب مُسلَّم</span>
+                        <span className="rounded-full bg-white px-2 py-1">★ 4.8</span>
                       </div>
-                    </div>
-                  ))}
-                </div>
-
-                {customization.showTestimonials && (
-                  <div className="mt-3 rounded-lg bg-white p-2 border border-black/5">
-                    <p className="text-[10px] font-bold" style={{ color: customization.accentColor || customization.primaryColor }}>★★★★★</p>
-                    <p className="text-[10px] text-rope mt-0.5">&quot;منتج ممتاز وخدمة سريعة&quot; — عميل</p>
-                  </div>
-                )}
-
-                {customization.showNewsletter && (
-                  <div className="mt-3 rounded-lg border border-dashed border-black/10 p-2 text-center">
-                    <p className="text-[10px] text-rope">اشترك ليصلك كل جديد</p>
-                  </div>
-                )}
+                    ) : null,
+                    products: (
+                      <div className="grid grid-cols-2 gap-2">
+                        {[1, 2].map((i) => (
+                          <div key={i} className="rounded-lg bg-white border border-black/5 overflow-hidden">
+                            <div className="aspect-square bg-black/5 flex items-center justify-center text-[10px] text-rope">لا توجد صورة</div>
+                            <div className="p-2">
+                              <p className="text-[11px] font-bold" style={{ color: customization.primaryColor }}>
+                                منتج {i}
+                              </p>
+                              <button className="mt-1.5 w-full rounded-full text-white text-[10px] font-bold py-1" style={{ backgroundColor: customization.primaryColor }}>
+                                أضف إلى السلة
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ),
+                    testimonials: customization.showTestimonials ? (
+                      <div className="rounded-lg bg-white p-2 border border-black/5">
+                        <p className="text-[10px] font-bold" style={{ color: customization.accentColor || customization.primaryColor }}>★★★★★</p>
+                        <p className="text-[10px] text-rope mt-0.5">&quot;منتج ممتاز وخدمة سريعة&quot; — عميل</p>
+                      </div>
+                    ) : null,
+                    newsletter: customization.showNewsletter ? (
+                      <div className="rounded-lg border border-dashed border-black/10 p-2 text-center">
+                        <p className="text-[10px] text-rope">اشترك ليصلك كل جديد</p>
+                      </div>
+                    ) : null,
+                  };
+                  let renderedFirst = false;
+                  return customization.sectionOrder.map((key) => {
+                    const node = previewSections[key];
+                    if (!node) return null;
+                    const spacing = renderedFirst ? "mt-3" : "";
+                    renderedFirst = true;
+                    return (
+                      <div key={key} className={spacing}>
+                        {node}
+                      </div>
+                    );
+                  });
+                })()}
               </div>
 
               <footer className="p-3 text-center" style={{ backgroundColor: customization.primaryColor }}>

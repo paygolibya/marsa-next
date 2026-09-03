@@ -58,6 +58,7 @@ export type StoreCustomization = {
   showReviews: boolean;
   showTestimonials: boolean;
   showSocialProof: boolean;
+  sectionOrder?: string[];
   template?: { slug: string; nameAr: string } | null;
 };
 export type StoreStats = { deliveredOrderCount: number; averageRating: number | null; reviewCount: number };

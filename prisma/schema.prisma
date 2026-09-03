@@ -65,6 +65,13 @@ model TemplateCustomization {
   showReviews      Boolean @default(true) @map("show_reviews")
   showTestimonials Boolean @default(false) @map("show_testimonials")
   showSocialProof  Boolean @default(true) @map("show_social_proof")
+  // Drag-and-drop section order from the customizer, e.g.
+  // ["stats","products","testimonials","newsletter"]. Stored as the
+  // literal keys the storefront templates render — see
+  // src/components/storefront/templates/types.ts (SECTION_KEYS). Missing/
+  // unrecognized values are normalized back to the default order at render
+  // time, so older customizations with no sectionOrder saved yet still work.
+  sectionOrder     String[] @default(["stats", "products", "testimonials", "newsletter"]) @map("section_order")
 
   store    Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
   template Template? @relation(fields: [templateId], references: [id])

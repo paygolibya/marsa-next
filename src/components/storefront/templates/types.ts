@@ -23,3 +23,23 @@ export type StorefrontTemplateProps = {
   newsletterState: "idle" | "loading" | "done" | "error";
   onNewsletterSubmit: (e: React.FormEvent) => void;
 };
+
+// The set of body sections a merchant can drag into any order from the
+// customizer (see ProductCustomizer's "ترتيب الأقسام" panel). "products" is
+// always one of them — even though it's the commerce-critical block, real
+// storefront builders (Shopify included) let it move relative to banners/
+// testimonials/newsletter, so it isn't special-cased as a fixed anchor.
+export const SECTION_KEYS = ["stats", "products", "testimonials", "newsletter"] as const;
+export type SectionKey = (typeof SECTION_KEYS)[number];
+export const DEFAULT_SECTION_ORDER: SectionKey[] = ["stats", "products", "testimonials", "newsletter"];
+
+// A saved sectionOrder can predate this feature (undefined), or in theory
+// carry stale/unknown values if the known keys ever change later — this
+// always returns a complete, valid permutation of SECTION_KEYS so templates
+// never have to guard against a missing or malformed section.
+export function normalizeSectionOrder(saved: string[] | null | undefined): SectionKey[] {
+  const valid = (saved ?? []).filter((key): key is SectionKey => (SECTION_KEYS as readonly string[]).includes(key));
+  const deduped = Array.from(new Set(valid));
+  const missing = SECTION_KEYS.filter((key) => !deduped.includes(key));
+  return [...deduped, ...missing];
+}
