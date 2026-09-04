@@ -1,19 +1,24 @@
 import type { Metadata } from "next";
-import { Cairo, Tajawal } from "next/font/google";
+import { Almarai } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
 import { ThemeProvider, THEME_INIT_SCRIPT } from "@/lib/theme-context";
 import ChatWidget from "@/components/layout/ChatWidget";
 
-const cairo = Cairo({
-  subsets: ["arabic", "latin"],
-  weight: ["600", "700", "800"],
+// One Arabic font (Almarai) for the whole site now, loaded into both CSS
+// variable slots tailwind.config.ts already expects (font-display and
+// font-body) — previously Cairo (display) + Tajawal (body). Two separate
+// next/font instances because each needs its own `variable` name; Almarai
+// doesn't have a 600 or 500 weight, so those drop out of the requested sets.
+const almaraiDisplay = Almarai({
+  subsets: ["arabic"],
+  weight: ["700", "800"],
   variable: "--font-cairo",
 });
 
-const tajawal = Tajawal({
-  subsets: ["arabic", "latin"],
-  weight: ["400", "500", "700"],
+const almaraiBody = Almarai({
+  subsets: ["arabic"],
+  weight: ["300", "400", "700"],
   variable: "--font-tajawal",
 });
 
@@ -24,7 +29,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ar" dir="rtl" className={`${cairo.variable} ${tajawal.variable}`} suppressHydrationWarning>
+    <html lang="ar" dir="rtl" className={`${almaraiDisplay.variable} ${almaraiBody.variable}`} suppressHydrationWarning>
       <head>
         {/* Must run before hydration — sets .dark on <html> synchronously
             so the first paint already has the right theme, matching the

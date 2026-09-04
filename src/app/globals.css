@@ -6,7 +6,9 @@
   :root {
     --color-canvas: 235 233 225; /* #EBE9E1 — the cream from the Rifqa brand palette */
     --color-canvas-dim: 224 220 207; /* #E0DCCF — one step darker, same offset as before */
-    --color-ink: 27 27 24; /* #1B1B18 */
+    --color-ink: 14 42 63; /* #0E2A3F — same navy as `harbor`, so default body
+    text matches the site's own headings/brand color instead of a generic
+    near-black unrelated to the palette. */
   }
   .dark {
     --color-canvas: 16 24 33; /* near-black navy page background */
