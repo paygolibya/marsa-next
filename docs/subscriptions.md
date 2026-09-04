@@ -81,6 +81,41 @@ gets a direct "اشترك الآن" link to `/subscription`.
   payouts.
 - The 90-day trial tier is hardcoded to `"advanced"` (`TRIAL_TIER` in
   `register/route.ts`) — not configurable per merchant or via env var.
+  This is now purely a legacy label anyway (see below).
 - No warning email/SMS is sent as a trial approaches expiry — the
   merchant only finds out via the dashboard banner (so only if they log
   in) or by hitting the gate once it's actually over.
+
+## One plan, billing periods instead of tiers
+
+The three feature-gated tiers (basic/professional/advanced — different
+payment methods, API access, etc. per tier) were replaced with **one
+plan with every feature included**; the only thing that varies now is
+the **billing period**: 1 month (150 د.ل), 3 months (400 د.ل, ~133/mo),
+or 12 months (1,500 د.ل, ~125/mo). See `src/lib/checkout-features.ts`'s
+`subscriptionPeriods` for the pricing and `PLATFORM_FEATURES` for the
+single shared feature checklist (used by both the homepage pricing
+section and `/subscription`).
+
+`SubscriptionTier`/`subscriptionTier` and the old per-tier feature flags
+(`dpayEnabled`, `apiAccessEnabled`, etc.) are kept in the schema and in
+`getPlanFeatureFlags`/`getSubscriptionState`/`getCheckoutPaymentMethods`
+purely for backward compatibility (existing DB rows, the admin's legacy
+manual-accept-with-tier picker) — those functions now return the same
+full feature set regardless of which tier string comes in. New
+`Payment.periodMonths` and `Merchant.subscriptionPeriodMonths` record
+which billing period was actually purchased; `finalizeSubscriptionPayment`
+(`src/lib/payment/dpay-subscription.ts`) advances `subscriptionEndDate`
+by real calendar months (`setMonth`), not `periodMonths * 30 days`, so a
+12-month period doesn't drift short.
+
+A migration backfilled every **existing** merchant's feature flags to
+`true` too — the new plan is "everything included" for everyone, not
+just new signups/payments going forward.
+
+The manual bank-transfer + receipt-upload payment flow was removed
+entirely once DPay was confirmed working — `/api/payments/upload-receipt`
+no longer exists, and `/payment` is DPay-only. `/api/admin/payments/[id]/approve`
+and the admin's pending-payments review UI are untouched (they can still
+process any already-`pending` receipt rows from before the flow was
+removed), they just never receive new ones.

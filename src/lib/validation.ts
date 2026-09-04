@@ -144,7 +144,7 @@ export const setCustomDomainSchema = z.object({
 });
 
 export const dpaySubscriptionCheckoutSchema = z.object({
-  tier: z.enum(["basic", "professional", "advanced"]),
+  period: z.enum(["1m", "3m", "12m"]),
   dpayPayMethod: z.enum(DPAY_PAY_METHODS),
   dpayCustomerMobile: z.string().optional(),
   dpayBirthYear: z.string().optional(),

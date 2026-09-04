@@ -7,10 +7,10 @@ const MAX_SIZE_BYTES = 2 * 1024 * 1024; // 2MB — generous enough for a logo/fa
 const ALLOWED_TYPES = ["image/png", "image/jpeg", "image/webp", "image/svg+xml", "image/x-icon", "image/vnd.microsoft.icon"];
 
 // POST /api/uploads/image — Bearer auth, multipart {file}. Generic image
-// upload to Vercel Blob, same mechanism as /api/payments/upload-receipt.
-// Used by the theme customizer for a store's logo/favicon — previously
-// those inputs existed in the UI but only ever console.logged the
-// selected file, never actually uploading or saving anything.
+// upload to Vercel Blob. Used by the theme customizer for a store's
+// logo/favicon and by the product gallery uploader — previously those
+// inputs existed in the UI but only ever console.logged the selected
+// file, never actually uploading or saving anything.
 export async function POST(req: Request) {
   const merchantId = getAuthMerchantId(req);
   if (!merchantId) return NextResponse.json({ error: "Missing or invalid token" }, { status: 401 });

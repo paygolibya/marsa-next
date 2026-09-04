@@ -21,8 +21,9 @@ export async function POST(req: Request) {
     }
 
     // The admin can pick a tier explicitly; otherwise keep whatever the
-    // merchant already selected (e.g. via their receipt upload) instead of
-    // silently falling back to "basic".
+    // merchant already had on file instead of silently falling back to
+    // "basic". Purely a legacy label at this point — every tier gets the
+    // same full feature set (see getPlanFeatureFlags).
     const resolvedTier = normalizeSubscriptionTier(tier ?? target.subscriptionTier);
 
     await prisma.merchant.update({

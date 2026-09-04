@@ -349,7 +349,7 @@ export const api = {
   subscriptionDpayCheckout: (
     token: string,
     body: {
-      tier: "basic" | "professional" | "advanced";
+      period: "1m" | "3m" | "12m";
       dpayPayMethod: DpayPayMethod;
       dpayCustomerMobile?: string;
       dpayBirthYear?: string;

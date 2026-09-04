@@ -110,6 +110,12 @@ model Merchant {
   subscriptionStatus     String    @default("inactive") @map("subscription_status")
   subscriptionStartDate  DateTime? @map("subscription_start_date")
   subscriptionEndDate    DateTime? @map("subscription_end_date")
+  // Which billing period (1/3/12 months) the CURRENT subscriptionEndDate
+  // was purchased at — see Payment.periodMonths for the record on each
+  // individual payment; this is just "what the merchant is on right now",
+  // for dashboard/renewal display. Null for merchants on the free trial
+  // or predating this field.
+  subscriptionPeriodMonths Int?    @map("subscription_period_months")
   // Set once at registration for new signups (see /api/auth/register).
   // subscriptionEndDate is the one field that actually gates access — this
   // is kept alongside it purely so the UI/admin can tell "still on the
@@ -145,7 +151,8 @@ model Payment {
   merchantId        String    @map("merchant_id")
   merchant          Merchant  @relation(fields: [merchantId], references: [id], onDelete: Cascade)
 
-  tier              String
+  tier              String // legacy — "standard" for every new payment now that there's one plan; kept non-null since old rows have real basic/professional/advanced values
+  periodMonths      Int       @default(1) @map("period_months") // 1, 3, or 12 — which billing period this payment is for
   amount            Int // whole LYD, NOT cents — existing convention on this model, kept as-is rather than migrated
   currency          String    @default("LYD")
   status            String    @default("pending") // 'pending' | 'approved' | 'rejected'

@@ -2,17 +2,17 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthMerchantId } from "@/lib/auth";
 import { dpaySubscriptionCheckoutSchema } from "@/lib/validation";
-import { subscriptionPlans } from "@/lib/checkout-features";
+import { subscriptionPeriods } from "@/lib/checkout-features";
 import { openDpaySession, DpayApiError } from "@/lib/payment/dpay-client";
 import { finalizeSubscriptionPayment } from "@/lib/payment/dpay-subscription";
 
-// POST /api/payments/dpay-checkout — { tier, dpayPayMethod, ... } (Bearer
+// POST /api/payments/dpay-checkout — { period, dpayPayMethod, ... } (Bearer
 // auth). Opens a real DPay session for the merchant's own subscription fee
-// — the automatic counterpart to the manual receipt-upload flow
-// (/api/payments/upload-receipt): same Payment row, same eventual
-// activation (src/lib/payment/dpay-subscription.ts mirrors
+// — now the ONLY way to pay a subscription (the manual receipt-upload
+// flow was removed once DPay was live). Same eventual activation as a
+// manual admin approval (src/lib/payment/dpay-subscription.ts mirrors
 // /api/admin/payments/[id]/approve exactly), just confirmed by DPay
-// instead of an admin.
+// instead of a human.
 export async function POST(req: Request) {
   const merchantId = getAuthMerchantId(req);
   if (!merchantId) return NextResponse.json({ error: "Missing or invalid token" }, { status: 401 });
@@ -23,13 +23,13 @@ export async function POST(req: Request) {
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "بيانات غير صالحة" }, { status: 400 });
     }
-    const { tier, dpayPayMethod, dpayCustomerMobile, dpayBirthYear, dpayCardNumber } = parsed.data;
+    const { period, dpayPayMethod, dpayCustomerMobile, dpayBirthYear, dpayCardNumber } = parsed.data;
 
-    const plan = subscriptionPlans[tier];
-    const amountCents = plan.price * 100; // Payment.amount is whole LYD; DPay's client takes cents like everywhere else
+    const plan = subscriptionPeriods[period];
+    const amountCents = plan.totalPriceLYD * 100; // Payment.amount is whole LYD; DPay's client takes cents like everywhere else
 
     const payment = await prisma.payment.create({
-      data: { merchantId, tier, amount: plan.price, currency: "LYD", status: "pending", method: "dpay" },
+      data: { merchantId, tier: "standard", periodMonths: plan.months, amount: plan.totalPriceLYD, currency: "LYD", status: "pending", method: "dpay" },
     });
 
     let session;

@@ -3,6 +3,9 @@ import Link from "next/link";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { Reveal } from "@/components/reveal";
+import { subscriptionPeriods } from "@/lib/checkout-features";
+
+const periodList = Object.values(subscriptionPeriods);
 
 const partners = [
   { label: "Moamalat" },
@@ -37,35 +40,6 @@ const features = [
     eyebrow: "الشحن",
     title: "إرسال تلقائي لشركات التوصيل",
     body: "بمجرد تأكيد الطلب، يُرسَل مباشرة إلى فانكس أو دريب السبيل، ويعود رقم التتبع فورًا للعميل.",
-  },
-];
-
-const plans = [
-  {
-    name: "الأساسية",
-    price: "150",
-    tagline: "لمن يبدأ متجره الأول",
-    features: ["حتى 10,000 د.ل مبيعات شهريًا", "حتى 150 طلب شهريًا", "دفع عند الاستلام + دي‑باي", "دعم عبر واتساب"],
-    popular: false,
-  },
-  {
-    name: "الاحترافية",
-    price: "280",
-    tagline: "الأكثر اختيارًا من التجار",
-    features: [
-      "حتى 40,000 د.ل مبيعات شهريًا",
-      "حتى 600 طلب شهريًا",
-      "نطاق مخصص لمتجرك",
-      "إرسال تلقائي عبر API لشركات الشحن",
-    ],
-    popular: true,
-  },
-  {
-    name: "المتقدمة",
-    price: "450",
-    tagline: "لمن يدير فريقًا كاملاً",
-    features: ["مبيعات وطلبات غير محدودة", "10 مقاعد لأعضاء الفريق", "دعم VIP بأولوية قصوى", "تقارير أداء متقدمة"],
-    popular: false,
   },
 ];
 
@@ -254,72 +228,75 @@ export default function MarketingPage() {
         </div>
       </section>
 
-      {/* PRICING — restyled to actually use the site's own brand gradient
-          (not a disconnected flat navy block) for the popular plan, and a
-          gradient top-edge accent on the other two, so this section reads
-          as part of the same identity as the hero/CTA band instead of a
-          separate, plainer design language. */}
+      {/* PRICING — one plan, every feature included; only the billing
+          PERIOD varies now (was three feature-gated tiers). Kept the
+          brand-gradient popular-card treatment from that redesign, just
+          swapped what the three cards represent. */}
       <section id="pricing">
         <div className="mx-auto max-w-6xl px-6 py-24">
           <Reveal>
             <div className="max-w-xl mb-14 rounded-2xl bg-white/90 shadow-xl px-8 py-6 inline-block">
               <p className="text-brass font-bold text-sm mb-2">الاشتراك</p>
               <h2 className="font-display text-3xl md:text-4xl font-extrabold text-harbor">
-                خطة واحدة تناسب حجم متجرك
+                خطة واحدة، بكل الميزات — اختر المدة فقط
               </h2>
-              <p className="mt-3 text-rope">جميع الأسعار شهرية بالدينار الليبي، بلا رسوم خفية.</p>
+              <p className="mt-3 text-rope">DPay، فانكس، رسائل SMS وبريد إلكتروني، منتجات وطلبات غير محدودة — من أول يوم، بأي مدة تختارها.</p>
             </div>
           </Reveal>
 
           <div className="grid md:grid-cols-3 gap-6 items-stretch">
-            {plans.map((plan, i) => (
-              <Reveal key={plan.name} delayMs={i * 100}>
-                <div
-                  className={`relative h-full rounded-2xl p-8 flex flex-col transition-all duration-300 hover:-translate-y-1.5 overflow-hidden ${
-                    plan.popular
-                      ? "bg-gradient-to-br from-signal via-rose to-brass text-white shadow-2xl scale-[1.03] hover:shadow-[0_25px_50px_-12px_rgba(219,61,46,0.5)]"
-                      : "bg-white/95 text-harbor shadow-md hover:shadow-xl"
-                  }`}
-                >
-                  {/* Non-popular cards get the brand gradient as a top accent
-                      bar instead of a plain border, tying them visually to
-                      the popular card's full gradient treatment. */}
-                  {!plan.popular && (
-                    <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-l from-signal via-rose to-brass" aria-hidden />
-                  )}
-                  {plan.popular && (
-                    <span className="stamp absolute -top-4 right-8 h-14 w-14 border-white bg-white text-signal text-[11px] font-bold leading-tight text-center animate-bob shadow-lg">
-                      الأكثر
-                      <br />
-                      طلبًا
-                    </span>
-                  )}
-                  <h3 className="font-display text-xl font-bold">{plan.name}</h3>
-                  <p className={`text-sm mt-1 ${plan.popular ? "text-white/80" : "text-rope"}`}>{plan.tagline}</p>
-                  <p className="mt-6 mb-6">
-                    <span className="font-display text-4xl font-extrabold">{plan.price}</span>
-                    <span className="text-sm"> د.ل / شهر</span>
-                  </p>
-                  <ul className="space-y-3 flex-1 text-sm">
-                    {plan.features.map((f) => (
-                      <li key={f} className="flex items-start gap-2">
-                        <span className={plan.popular ? "text-white" : "text-signal"}>•</span>
-                        <span>{f}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <Link
-                    href="/register"
-                    className={`mt-8 block text-center rounded-full py-3 font-bold transition-colors ${
-                      plan.popular ? "bg-white text-signal hover:bg-white/90" : "bg-harbor text-canvas hover:bg-harbor-deep"
+            {periodList.map((period, i) => {
+              const popular = period.id === "3m";
+              return (
+                <Reveal key={period.id} delayMs={i * 100}>
+                  <div
+                    className={`relative h-full rounded-2xl p-8 flex flex-col transition-all duration-300 hover:-translate-y-1.5 overflow-hidden ${
+                      popular
+                        ? "bg-gradient-to-br from-signal via-rose to-brass text-white shadow-2xl scale-[1.03] hover:shadow-[0_25px_50px_-12px_rgba(219,61,46,0.5)]"
+                        : "bg-white/95 text-harbor shadow-md hover:shadow-xl"
                     }`}
                   >
-                    ابدأ مع {plan.name}
-                  </Link>
-                </div>
-              </Reveal>
-            ))}
+                    {/* Non-popular cards get the brand gradient as a top accent
+                        bar instead of a plain border, tying them visually to
+                        the popular card's full gradient treatment. */}
+                    {!popular && <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-l from-signal via-rose to-brass" aria-hidden />}
+                    {period.badge && (
+                      <span className="absolute -top-3 right-6 rounded-full bg-white px-4 py-1 text-xs font-bold text-signal shadow-lg animate-bob whitespace-nowrap">
+                        {period.badge}
+                      </span>
+                    )}
+                    <h3 className="font-display text-xl font-bold">{period.label}</h3>
+                    <p className={`text-sm mt-1 ${popular ? "text-white/80" : "text-rope"}`}>{period.tagline}</p>
+                    <p className="mt-6 mb-1">
+                      <span className="font-display text-4xl font-extrabold">{period.totalPriceLYD}</span>
+                      <span className="text-sm"> د.ل</span>
+                    </p>
+                    <p className={`text-sm mb-6 ${popular ? "text-white/80" : "text-rope"}`}>= {period.monthlyEquivalentLYD} د.ل / شهر</p>
+                    {period.savingsLabel && (
+                      <p className={`mb-6 inline-block w-fit rounded-full px-3 py-1 text-xs font-bold ${popular ? "bg-white/20 text-white" : "bg-signal/10 text-signal"}`}>
+                        {period.savingsLabel}
+                      </p>
+                    )}
+                    <div className="flex-1" />
+                    <Link
+                      href="/register"
+                      className={`mt-8 block text-center rounded-full py-3 font-bold transition-colors ${
+                        popular ? "bg-white text-signal hover:bg-white/90" : "bg-harbor text-canvas hover:bg-harbor-deep"
+                      }`}
+                    >
+                      ابدأ بـ{period.label}
+                    </Link>
+                  </div>
+                </Reveal>
+              );
+            })}
           </div>
+
+          <Reveal delayMs={300}>
+            <p className="mt-10 text-center rounded-2xl bg-white/90 shadow-xl px-6 py-4 mx-auto max-w-xl font-bold text-harbor">
+              🎁 بونص: أول 3 أشهر مجانًا عند التسجيل — بدون بطاقة ائتمان.
+            </p>
+          </Reveal>
         </div>
       </section>
 

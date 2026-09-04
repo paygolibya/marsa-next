@@ -113,15 +113,18 @@ it rather than duplicating it:
   `Payment.amount` stays in whole LYD (that model's existing convention,
   predating this work) — only converted to cents at the `openDpaySession`
   call site, same as everywhere else that talks to DPay.
-- The manual receipt-upload path is untouched and still works exactly as
-  before — this is a new alternative on the same page, not a replacement.
+- The manual receipt-upload path was untouched at the time this was
+  written — a new alternative on the same page, not a replacement. **No
+  longer true**: once DPay was confirmed working end to end, the
+  receipt-upload flow was removed entirely (see `docs/subscriptions.md`)
+  — `/payment` is DPay-only now, DPay isn't "an alternative" anymore.
 
-Don't confuse this with the *other* DPay-labeled control on the same
-page, for the professional tier: that one picks which checkout method the
-merchant's **own store** offers **its** customers
-(`getCheckoutPaymentMethods` in `checkout-features.ts`) — a completely
-different, already-working feature that predates any real DPay
-integration and has nothing to do with paying the subscription itself.
+The *other* DPay-labeled control that used to sit on the same page (for
+the professional tier: which checkout method the merchant's own store
+offers its customers) predates any real DPay integration and has
+nothing to do with paying the subscription itself — see
+`docs/subscriptions.md` for why tiers (and that control) don't exist
+anymore either.
 
 ## Idempotency and races
 

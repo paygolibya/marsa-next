@@ -1,8 +1,16 @@
+// One platform plan — every merchant gets the full feature set (all
+// payment methods, API access, analytics, priority support). What used
+// to vary was three tiers with different FEATURES (basic/professional/
+// advanced); what varies now is only the BILLING PERIOD (1/3/12 months)
+// — see subscriptionPeriods below. `SubscriptionTier` is kept only for
+// backward compatibility with data already in the DB (Merchant.subscriptionTier,
+// Payment.tier) and the admin's legacy manual-accept picker
+// (src/app/admin/merchants/page.tsx) — it no longer affects which
+// features a merchant gets.
 export type SubscriptionTier = "basic" | "professional" | "advanced";
 
 export interface SubscriptionState {
   tier: SubscriptionTier;
-  monthlyPrice: number;
   directWireEnabled: boolean;
   receiptUploadEnabled: boolean;
   codEnabled: boolean;
@@ -18,121 +26,111 @@ export function normalizeSubscriptionTier(tier?: string | null): SubscriptionTie
 }
 
 // The merchant.* boolean feature flags (dpayEnabled, apiAccessEnabled, ...)
-// have real (non-null) defaults in the DB, so they never fall back to a
-// plan's defaults on their own — whatever tier a merchant is approved on,
-// this must be applied explicitly or the flags just stay at their defaults
-// forever regardless of tier.
-export function getPlanFeatureFlags(tier?: string | null) {
-  const plan = subscriptionPlans[normalizeSubscriptionTier(tier)];
+// have real (non-null) defaults in the DB, so they never fall back to
+// this on their own — this must be applied explicitly whenever a
+// merchant's subscription activates (registration, DPay payment,
+// admin approval) or the flags just stay at their defaults forever.
+// Every tier now maps to the same full feature set — kept as a function
+// of `tier` (rather than a bare constant) only so every existing call
+// site (register, dpay-subscription, admin approve/accept) keeps
+// working unchanged.
+export function getPlanFeatureFlags(_tier?: string | null) {
   return {
-    directWireEnabled: plan.directWire,
-    receiptUploadEnabled: plan.receiptUpload,
-    codEnabled: plan.cod,
-    dpayEnabled: Boolean(plan.dpay),
-    allowMultiplePaymentMethods: plan.multiplePayments,
-    apiAccessEnabled: plan.apiAccess,
+    directWireEnabled: true,
+    receiptUploadEnabled: true,
+    codEnabled: true,
+    dpayEnabled: true,
+    allowMultiplePaymentMethods: true,
+    apiAccessEnabled: true,
   };
 }
 
-export const subscriptionPlans = {
-  basic: {
-    id: "basic",
-    name: "المبتدئ",
-    displayName: "المبتدئ (Basic)",
-    price: 150,
-    monthlyOrders: "حتى 50 طلب/شهر",
-    directWire: true,
-    receiptUpload: true,
-    cod: true,
-    dpay: false,
-    multiplePayments: false,
-    apiAccess: false,
-    analytics: false,
-    prioritySupport: false,
-    description: "خطة مناسبة للمتاجر الصغيرة مع طرق دفع يدويّة فقط",
-    checkoutMessage: "✅ Basic Plan - Manual Payments\nDirect wire, cash on delivery, receipt upload\n📌 Limited to manual payment methods",
-  },
-  professional: {
-    id: "professional",
-    name: "المتقدم",
-    displayName: "المتقدم (Professional)",
-    price: 280,
-    monthlyOrders: "حتى 500 طلب/شهر",
-    directWire: true,
-    receiptUpload: true,
-    cod: true,
-    dpay: "select_one",
-    multiplePayments: false,
-    apiAccess: false,
-    analytics: false,
-    prioritySupport: false,
-    description: "اختر طريقة دفع واحدة: DPay أو تحويل بنكي مباشر",
-    checkoutMessage: "⚡ Professional Plan - Automate One Method\nChoose DPay OR Direct Transfer\nInstant payment processing + automated verification\n🔒 Upgrade to Advanced for all payment methods",
-  },
-  advanced: {
-    id: "advanced",
-    name: "الاحترافي",
-    displayName: "الاحترافي (Advanced)",
-    price: 450,
-    monthlyOrders: "غير محدود",
-    directWire: true,
-    receiptUpload: true,
-    cod: true,
-    dpay: true,
-    multiplePayments: true,
-    apiAccess: true,
-    analytics: true,
-    prioritySupport: true,
-    description: "الحد الأقصى من طرق الدفع والتحليلات المتقدمة",
-    checkoutMessage: "🚀 Advanced Plan - Maximum Conversions\nAll payment methods active\nDPay + Direct Wire + COD simultaneously\nAdvanced analytics & API access",
-  },
-} as const;
-
-export function getCheckoutPaymentMethods(subscription: SubscriptionState) {
-  const paymentMethods = {
-    directWire: true,
-    receiptUpload: true,
-    cod: true,
-    dpay: false,
-  };
-
-  if (subscription.tier === "basic") {
-    return paymentMethods;
-  }
-
-  if (subscription.tier === "professional") {
-    if (subscription.selectedPaymentMethod === "dpay" && subscription.dpayEnabled) {
-      paymentMethods.dpay = true;
-      paymentMethods.directWire = false;
-    } else if (subscription.selectedPaymentMethod === "direct_transfer") {
-      paymentMethods.directWire = true;
-    }
-    return paymentMethods;
-  }
-
-  if (subscription.tier === "advanced") {
-    paymentMethods.dpay = subscription.dpayEnabled;
-    paymentMethods.directWire = true;
-    paymentMethods.receiptUpload = true;
-    paymentMethods.cod = true;
-  }
-
-  return paymentMethods;
+export function getCheckoutPaymentMethods(_subscription: SubscriptionState) {
+  // Every merchant's storefront offers every payment method to their own
+  // buyers now — no more tier-gated "choose one automated method".
+  return { directWire: true, receiptUpload: true, cod: true, dpay: true };
 }
 
 export function getSubscriptionState(merchant: { subscriptionTier?: string | null; directWireEnabled?: boolean | null; receiptUploadEnabled?: boolean | null; codEnabled?: boolean | null; dpayEnabled?: boolean | null; allowMultiplePaymentMethods?: boolean | null; apiAccessEnabled?: boolean | null; selectedPaymentMethod?: string | null; subscriptionEndDate?: Date | string | null }): SubscriptionState {
   const tier = normalizeSubscriptionTier(merchant.subscriptionTier);
-  const plan = subscriptionPlans[tier] ?? subscriptionPlans.basic;
+  const flags = getPlanFeatureFlags(tier);
 
   return {
     tier,
-    monthlyPrice: plan.price,
-    directWireEnabled: merchant.directWireEnabled ?? plan.directWire,
-    receiptUploadEnabled: merchant.receiptUploadEnabled ?? plan.receiptUpload,
-    codEnabled: merchant.codEnabled ?? plan.cod,
-    dpayEnabled: merchant.dpayEnabled ?? Boolean(plan.dpay),
-    allowMultiplePaymentMethods: merchant.allowMultiplePaymentMethods ?? plan.multiplePayments,
-    apiAccessEnabled: merchant.apiAccessEnabled ?? plan.apiAccess,
+    directWireEnabled: merchant.directWireEnabled ?? flags.directWireEnabled,
+    receiptUploadEnabled: merchant.receiptUploadEnabled ?? flags.receiptUploadEnabled,
+    codEnabled: merchant.codEnabled ?? flags.codEnabled,
+    dpayEnabled: merchant.dpayEnabled ?? flags.dpayEnabled,
+    allowMultiplePaymentMethods: merchant.allowMultiplePaymentMethods ?? flags.allowMultiplePaymentMethods,
+    apiAccessEnabled: merchant.apiAccessEnabled ?? flags.apiAccessEnabled,
     selectedPaymentMethod: merchant.selectedPaymentMethod ?? null,
   };
 }
+
+// ---------------------------------------------------------------------
+// Billing periods — the one axis that actually varies now.
+// ---------------------------------------------------------------------
+
+export type SubscriptionPeriod = "1m" | "3m" | "12m";
+
+export interface SubscriptionPeriodInfo {
+  id: SubscriptionPeriod;
+  months: number;
+  label: string;
+  totalPriceLYD: number;
+  monthlyEquivalentLYD: number;
+  tagline: string;
+  savingsLabel: string | null;
+  badge: string | null;
+}
+
+export const subscriptionPeriods: Record<SubscriptionPeriod, SubscriptionPeriodInfo> = {
+  "1m": {
+    id: "1m",
+    months: 1,
+    label: "شهر واحد",
+    totalPriceLYD: 150,
+    monthlyEquivalentLYD: 150,
+    tagline: "مرونة شهرية — ألغِ في أي وقت",
+    savingsLabel: null,
+    badge: null,
+  },
+  "3m": {
+    id: "3m",
+    months: 3,
+    label: "3 أشهر",
+    totalPriceLYD: 400,
+    monthlyEquivalentLYD: 133,
+    tagline: "الأفضل لتجربة المنصة",
+    savingsLabel: "وفّر 50 د.ل (22%)",
+    badge: "الأفضل قيمة",
+  },
+  "12m": {
+    id: "12m",
+    months: 12,
+    label: "سنة كاملة",
+    totalPriceLYD: 1500,
+    monthlyEquivalentLYD: 125,
+    tagline: "الأفضل للالتزام طويل المدى",
+    savingsLabel: "وفّر 300 د.ل (20%)",
+    badge: "الأفضل قيمة سنوية",
+  },
+};
+
+export function normalizeSubscriptionPeriod(period?: string | null): SubscriptionPeriod {
+  if (period === "3m" || period === "12m") return period;
+  return "1m";
+}
+
+// The single "what's included" checklist — the same for every period
+// since there's only one plan now. Shared by the homepage pricing
+// section and /subscription so the two never drift apart.
+export const PLATFORM_FEATURES: string[] = [
+  "طرق دفع جاهزة: DPay (معاملات، ساحارة باي، سداد، إدفعلي) + الدفع عند الاستلام",
+  "شحن جاهز عبر فانكس: إنشاء شحنة تلقائي وتتبع لحظي",
+  "رسائل SMS وبريد إلكتروني جاهزة: تحقق وإشعارات وتأكيدات",
+  "منتجات وطلبات ومبيعات غير محدودة",
+  "لوحة تحكم احترافية وإدارة كاملة للطلبات والتوصيل والمخزون",
+  "نطاق فرعي مجاني (متجرك.rifqa.ly) ودعم ربط نطاق مخصص",
+  "دعم مباشر على مدار الساعة بالعربية والإنجليزية",
+];

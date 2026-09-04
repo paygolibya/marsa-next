@@ -1,9 +1,16 @@
 import { prisma } from "@/lib/prisma";
 import { getPlanFeatureFlags } from "@/lib/checkout-features";
 
-const SUBSCRIPTION_PERIOD_MS = 30 * 24 * 60 * 60 * 1000;
-
 export type FinalizeSubscriptionPaymentResult = { updated: boolean };
+
+// Real calendar-month arithmetic (not periodMonths * 30 days) so a
+// 12-month period lands on the same date next year rather than drifting
+// ~5 days short from treating every month as exactly 30 days.
+function addMonths(date: Date, months: number): Date {
+  const result = new Date(date);
+  result.setMonth(result.getMonth() + months);
+  return result;
+}
 
 /**
  * The single place a DPay-paid subscription Payment's status is ever
@@ -38,9 +45,10 @@ export async function finalizeSubscriptionPayment(paymentId: string, outcome: "p
     where: { id: payment.merchantId },
     data: {
       subscriptionTier: payment.tier,
+      subscriptionPeriodMonths: payment.periodMonths,
       subscriptionStatus: "active",
       subscriptionStartDate: new Date(),
-      subscriptionEndDate: new Date(Date.now() + SUBSCRIPTION_PERIOD_MS),
+      subscriptionEndDate: addMonths(new Date(), payment.periodMonths),
       ...getPlanFeatureFlags(payment.tier),
     },
   });
