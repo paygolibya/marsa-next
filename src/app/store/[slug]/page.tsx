@@ -6,25 +6,8 @@ import { api, type Product, type Store, type StoreStats, type StoreTestimonial }
 import { useCart } from "@/lib/use-cart";
 import { CartDrawer } from "@/components/cart-drawer";
 import { SiteFooter } from "@/components/site-footer";
+import { STOREFRONT_TEMPLATES } from "@/components/storefront/templates/registry";
 import ModernTemplate from "@/components/storefront/templates/ModernTemplate";
-import BoldTemplate from "@/components/storefront/templates/BoldTemplate";
-import LuxuryTemplate from "@/components/storefront/templates/LuxuryTemplate";
-import MarketplaceTemplate from "@/components/storefront/templates/MarketplaceTemplate";
-import type { StorefrontTemplateProps } from "@/components/storefront/templates/types";
-
-// Each Template row's componentPath ("free/modern", "paid/luxury", ...)
-// signals real per-template components were always the intent — this is
-// that mapping actually existing. Previously every store rendered the
-// identical layout regardless of which template was picked, just with
-// different starting colors; two merchants paying for different
-// "premium" templates got the same page. Falls back to Modern for a
-// store with no template set at all (pre-template-system stores).
-const TEMPLATES: Record<string, (props: StorefrontTemplateProps) => React.ReactElement> = {
-  modern: ModernTemplate,
-  bold: BoldTemplate,
-  luxury: LuxuryTemplate,
-  marketplace: MarketplaceTemplate,
-};
 
 export default function StorefrontPage() {
   const params = useParams<{ slug: string }>();
@@ -95,7 +78,7 @@ export default function StorefrontPage() {
 
   const filtered = products.filter((p) => p.name.includes(query));
   const footerBranded = store.customization?.footerStyle === "branded";
-  const Template = TEMPLATES[store.customization?.template?.slug ?? "modern"] ?? ModernTemplate;
+  const Template = STOREFRONT_TEMPLATES[store.customization?.template?.slug ?? "modern"] ?? ModernTemplate;
 
   return (
     <>

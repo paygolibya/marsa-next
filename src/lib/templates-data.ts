@@ -9,7 +9,7 @@ export const templatesData = [
     price: 0,
     billingType: "free",
     category: "all",
-    thumbnail: "/templates/modern-thumb.jpg",
+    thumbnail: "/templates/modern-thumb.png",
     previewUrl: "/preview/modern",
     features: ["Fast Loading", "Mobile Optimized", "RTL Support", "High Conversion"],
     defaultColors: {
@@ -33,7 +33,7 @@ export const templatesData = [
     price: 0,
     billingType: "free",
     category: "all",
-    thumbnail: "/templates/bold-thumb.jpg",
+    thumbnail: "/templates/bold-thumb.png",
     previewUrl: "/preview/bold",
     features: ["Animated Sections", "Strong Typography", "Mobile First", "Visual Storytelling"],
     defaultColors: {
@@ -57,7 +57,7 @@ export const templatesData = [
     price: 20,
     billingType: "monthly",
     category: "premium",
-    thumbnail: "/templates/luxury-thumb.jpg",
+    thumbnail: "/templates/luxury-thumb.png",
     previewUrl: "/preview/luxury",
     features: ["Dark Mode", "Gold Accents", "Advanced Animations", "Wishlist Feature"],
     defaultColors: {
@@ -81,7 +81,7 @@ export const templatesData = [
     price: 100,
     billingType: "one-time",
     category: "premium",
-    thumbnail: "/templates/marketplace-thumb.jpg",
+    thumbnail: "/templates/marketplace-thumb.png",
     previewUrl: "/preview/marketplace",
     features: ["Category Pages", "Bulk Orders", "Wholesale Pricing", "RFQ Feature"],
     defaultColors: {

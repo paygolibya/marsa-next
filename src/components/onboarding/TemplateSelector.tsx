@@ -45,7 +45,7 @@ export default function TemplateSelector({ templates, onSelect, selectedId }: Te
           <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-bold">مجاني</span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {freeTemplates.map((template) => (
             <TemplateCard key={template.id} template={template} isSelected={selectedId === template.id} onSelect={onSelect} />
           ))}
@@ -59,7 +59,7 @@ export default function TemplateSelector({ templates, onSelect, selectedId }: Te
             <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-bold">مميز</span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {paidTemplates.map((template) => (
               <TemplateCard key={template.id} template={template} isSelected={selectedId === template.id} onSelect={onSelect} isPaid />
             ))}
@@ -96,8 +96,8 @@ function TemplateCard({
         isSelected ? "border-blue-600 shadow-lg ring-2 ring-blue-500 ring-offset-2" : "border-gray-200 hover:border-gray-400"
       }`}
     >
-      <div className="relative aspect-video bg-gray-100 overflow-hidden">
-        <Image src={template.thumbnail} alt={template.nameAr} fill className="object-cover" />
+      <div className="relative aspect-[4/3] bg-gray-100 overflow-hidden">
+        <Image src={template.thumbnail} alt={template.nameAr} fill sizes="(min-width: 768px) 50vw, 100vw" className="object-cover object-top" />
         {template.isNew && (
           <div className="absolute top-2 left-2 bg-green-500 text-white px-3 py-1 rounded-full text-xs font-bold">جديد ✨</div>
         )}

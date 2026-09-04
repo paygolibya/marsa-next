@@ -1,68 +1,147 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import { useParams, notFound } from "next/navigation";
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { templatesData } from "@/lib/templates-data";
+import { STOREFRONT_TEMPLATES } from "@/components/storefront/templates/registry";
+import type { Product, Store, StoreStats, StoreTestimonial } from "@/lib/api";
 
-export default async function TemplatePreviewPage({
-  params,
-}: {
-  params: Promise<{ templateSlug: string }>;
-}) {
-  const { templateSlug } = await params;
+// Real sample data driving the ACTUAL template component — this used to
+// be a generic color-swatch/feature-list mockup with no relationship to
+// what the template really looks like. Every section a template can
+// render (stats banner, testimonials, newsletter) gets real content here
+// so nothing is hidden behind a default-off toggle; product images are
+// deliberately left empty rather than filled with unrelated stock photos
+// — every template already has a real "لا توجد صورة" placeholder state,
+// and layout/color/typography (not photography) is what a template
+// preview needs to actually show.
+const MOCK_PRODUCTS: Array<{ id: string; name: string; priceCents: number }> = [
+  { id: "p1", name: "قميص قطني كلاسيكي", priceCents: 8500 },
+  { id: "p2", name: "حقيبة يد جلدية", priceCents: 15000 },
+  { id: "p3", name: "ساعة يد أنيقة", priceCents: 22000 },
+  { id: "p4", name: "نظارة شمسية", priceCents: 6000 },
+  { id: "p5", name: "حذاء رياضي", priceCents: 12000 },
+  { id: "p6", name: "عطر فاخر", priceCents: 18000 },
+];
+
+const MOCK_TESTIMONIALS: StoreTestimonial[] = [
+  { buyerName: "سارة أحمد", rating: 5, reviewText: "جودة ممتازة وتوصيل سريع، تجربة شراء رائعة!", productName: "قميص قطني كلاسيكي" },
+  { buyerName: "محمد علي", rating: 4, reviewText: "منتج مطابق للوصف تمامًا، سأطلب مرة أخرى.", productName: "حقيبة يد جلدية" },
+  { buyerName: "ليلى سالم", rating: 5, reviewText: "خدمة عملاء ممتازة وسرعة في الاستجابة.", productName: "ساعة يد أنيقة" },
+];
+
+const MOCK_STATS: StoreStats = { deliveredOrderCount: 312, averageRating: 4.8, reviewCount: 96 };
+
+export default function TemplatePreviewPage() {
+  const { templateSlug } = useParams<{ templateSlug: string }>();
   const template = templatesData.find((t) => t.slug === templateSlug);
+  const Template = template ? STOREFRONT_TEMPLATES[template.slug] : null;
 
-  if (!template) {
+  const [query, setQuery] = useState("");
+  const [cartTotalItems, setCartTotalItems] = useState(0);
+  const [newsletterEmail, setNewsletterEmail] = useState("");
+  const [newsletterState, setNewsletterState] = useState<"idle" | "loading" | "done" | "error">("idle");
+
+  const products = useMemo<Product[]>(
+    () =>
+      MOCK_PRODUCTS.map((p) => ({
+        id: p.id,
+        storeId: "preview-store",
+        name: p.name,
+        priceCents: p.priceCents,
+        imageUrl: null,
+        images: [],
+        variantOptions: null,
+        variants: [],
+        active: true,
+        createdAt: new Date().toISOString(),
+        trackInventory: false,
+        stockQty: 0,
+        lowStockThreshold: 0,
+      })),
+    []
+  );
+
+  const store = useMemo<Store | null>(() => {
+    if (!template) return null;
+    return {
+      id: "preview-store",
+      merchantId: "preview-merchant",
+      name: "متجر تجريبي",
+      slug: "preview",
+      theme: "souk",
+      courier: "vanex",
+      codEnabled: true,
+      walletProvider: null,
+      currency: "LYD",
+      createdAt: new Date().toISOString(),
+      aboutText: null,
+      returnPolicy: null,
+      shippingPolicy: null,
+      businessHours: null,
+      customization: {
+        primaryColor: template.defaultColors.primaryColor,
+        secondaryColor: template.defaultColors.secondaryColor,
+        accentColor: null,
+        logo: null,
+        favicon: null,
+        tagline: "هذا مثال حي — تصفّح متجرًا تجريبيًا بهذا القالب بالضبط",
+        description: "منتجات مختارة بعناية لتجربة تسوّق مريحة وسريعة.",
+        headerStyle: "standard",
+        footerStyle: "standard",
+        showNewsletter: true,
+        showReviews: true,
+        showTestimonials: true,
+        showSocialProof: true,
+        template: { slug: template.slug, nameAr: template.nameAr },
+      },
+    };
+  }, [template]);
+
+  if (!template || !Template || !store) {
     notFound();
   }
 
+  const filtered = products.filter((p) => p.name.includes(query));
+
+  function handleNewsletterSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!newsletterEmail.trim()) return;
+    setNewsletterState("loading");
+    // No real backend behind this preview — just enough feedback to show
+    // the template's own newsletter section actually working end to end.
+    setTimeout(() => {
+      setNewsletterState("done");
+      setNewsletterEmail("");
+    }, 400);
+  }
+
   return (
-    <main className="mx-auto max-w-4xl px-6 py-12">
-      <div className="rounded-2xl border border-harbor/10 bg-white p-8">
-        <h1 className="font-display text-3xl font-extrabold text-harbor mb-3">
-          معاينة قالب: {template.nameAr}
-        </h1>
-        <p className="text-rope mb-6">{template.descriptionAr}</p>
-
-        <div className="grid sm:grid-cols-2 gap-4 mb-8">
-          <div className="rounded-xl border border-harbor/10 p-4">
-            <p className="text-sm text-rope mb-1">اللون الأساسي</p>
-            <div
-              className="h-10 rounded-md border"
-              style={{ backgroundColor: template.defaultColors.primaryColor }}
-            />
-          </div>
-          <div className="rounded-xl border border-harbor/10 p-4">
-            <p className="text-sm text-rope mb-1">اللون الثانوي</p>
-            <div
-              className="h-10 rounded-md border"
-              style={{ backgroundColor: template.defaultColors.secondaryColor }}
-            />
-          </div>
-        </div>
-
-        <div className="rounded-xl bg-harbor/5 p-4 mb-8">
-          <h2 className="font-bold text-harbor mb-2">مميزات القالب</h2>
-          <ul className="list-disc pr-5 space-y-1 text-rope">
-            {template.features.map((feature) => (
-              <li key={feature}>{feature}</li>
-            ))}
-          </ul>
-        </div>
-
-        <div className="flex gap-3">
-          <Link
-            href="/onboarding"
-            className="rounded-full bg-signal px-6 py-3 text-canvas font-bold hover:bg-signal-dark transition-colors"
-          >
-            اختر هذا القالب
-          </Link>
-          <Link
-            href="/"
-            className="rounded-full border border-harbor/20 px-6 py-3 text-harbor font-bold hover:bg-harbor/5 transition-colors"
-          >
-            العودة للرئيسية
-          </Link>
-        </div>
+    <>
+      <div className="sticky top-0 z-40 bg-harbor text-canvas text-sm flex items-center justify-between px-6 py-2.5">
+        <span>👀 معاينة حية لقالب &quot;{template.nameAr}&quot; ببيانات تجريبية</span>
+        <Link href="/onboarding" className="rounded-full bg-signal px-4 py-1.5 font-bold text-canvas hover:bg-signal-dark transition-colors">
+          اختر هذا القالب
+        </Link>
       </div>
-    </main>
+      <Template
+        slug="preview"
+        store={store}
+        products={products}
+        filtered={filtered}
+        query={query}
+        setQuery={setQuery}
+        stats={MOCK_STATS}
+        testimonials={MOCK_TESTIMONIALS}
+        cartTotalItems={cartTotalItems}
+        onOpenCart={() => {}}
+        onAddToCart={() => setCartTotalItems((n) => n + 1)}
+        newsletterEmail={newsletterEmail}
+        setNewsletterEmail={setNewsletterEmail}
+        newsletterState={newsletterState}
+        onNewsletterSubmit={handleNewsletterSubmit}
+      />
+    </>
   );
 }

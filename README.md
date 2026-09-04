@@ -19,7 +19,9 @@ storefront/dashboard UI is a separate, later task.
 
 **Nothing changed** about: the courier dispatch flow, the wallet/COD payment
 logic, server-side price recalculation at checkout, or the mock-until-you-
-have-real-credentials pattern for Vanex / Dareeb Sabil / Shaheen / DPay.
+have-real-credentials pattern for Vanex / DPay. (Dareeb Sabil and Shaheen
+were evaluated early on and later removed entirely — Vanex is the only
+real courier integration now, see `src/lib/integrations/couriers.ts`.)
 
 ## Setup
 
@@ -60,12 +62,12 @@ route marked "needs auth".
 creation, price calculation (done server-side so a buyer can't fake a
 cheaper price), Postgres persistence via Prisma, Zod-validated inputs.
 
-**Mocked (clearly marked with TODOs in the code):** actual calls to Vanex,
-Dareeb Sabil, Shaheen, and DPay. Each one returns a realistic fake response
-so you can build and test the full order flow today. Swapping in a real
-courier or DPay call later is a small, contained change — not a rewrite —
-because everything funnels through `src/lib/integrations/couriers.ts` and
-`src/lib/integrations/payments.ts`.
+**Mocked (clearly marked with TODOs in the code):** actual calls to Vanex
+and DPay when no real API credentials are configured — each one returns a
+realistic fake response so you can build and test the full order flow
+today. Swapping in a real courier or DPay call later is a small, contained
+change — not a rewrite — because everything funnels through
+`src/lib/integrations/couriers.ts` and `src/lib/payment/dpay-client.ts`.
 
 ## Frontend (added)
 

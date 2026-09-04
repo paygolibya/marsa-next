@@ -2,18 +2,35 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { isAdminMerchant } from "@/lib/is-admin";
 import ThemeToggle from "@/components/layout/ThemeToggle";
 
 export function SiteNav() {
   const { merchant, ready } = useAuth();
+  // Transparent at the very top (showing the hero/gradient behind it), but
+  // a solid backdrop once the page scrolls — a fully transparent header
+  // stayed readable over the hero's own light background, but nav links
+  // became hard to read once real content (white cards, product grids)
+  // started scrolling underneath a still-transparent bar.
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    function onScroll() {
+      setScrolled(window.scrollY > 8);
+    }
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   return (
-    // Transparent by design — it should always show whatever section is
-    // scrolled beneath it (the hero, or the site-wide brand gradient),
-    // not its own solid panel.
-    <header className="sticky top-0 z-30">
+    <header
+      className={`sticky top-0 z-30 transition-colors duration-300 ${
+        scrolled ? "bg-canvas/90 backdrop-blur shadow-sm border-b border-harbor/10" : "bg-transparent"
+      }`}
+    >
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
         <Link href="/" className="flex items-center gap-2">
           <Image src="/logo.png" alt="رفقة" width={36} height={36} priority className="h-9 w-9 object-contain" />
