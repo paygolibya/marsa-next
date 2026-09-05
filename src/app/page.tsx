@@ -160,6 +160,50 @@ export default function MarketingPage() {
         </div>
       </section>
 
+      {/* VANEX PARTNERSHIP — a real, working integration (auto shipment
+          creation on order confirmation, live tracking via their webhook,
+          production API as of this section shipping — see docs/vanex.md
+          equivalent in the codebase), not a logo dropped in for
+          decoration. The "+115 مدينة" figure is the real count synced
+          from Vanex's own /city/all endpoint against the live production
+          account, kept as a safely-round "+115" rather than the exact
+          117 so it doesn't need editing every time their coverage shifts
+          by a city or two. */}
+      <section className="bg-harbor">
+        <div className="mx-auto max-w-6xl px-6 py-20">
+          <Reveal>
+            <div className="grid md:grid-cols-2 gap-10 items-center">
+              <div className="text-center md:text-right">
+                <div className="flex items-center justify-center md:justify-start gap-3 mb-4">
+                  <Image src="/marketing/vanex-logo.jpg" alt="Vanex" width={40} height={40} className="h-10 w-10 rounded-xl object-cover" />
+                  <span className="text-canvas/60 text-sm font-bold">بالشراكة مع</span>
+                </div>
+                <h2 className="font-display text-2xl md:text-3xl font-extrabold text-canvas mb-4">
+                  شحن حقيقي وسريع مع فانكس، في كل ليبيا
+                </h2>
+                <p className="text-canvas/70 leading-relaxed max-w-md mx-auto md:mx-0 mb-8">
+                  متجرك متصل مباشرة بفانكس — فور تأكيد أي طلب، تُنشأ الشحنة تلقائيًا
+                  ويحصل عميلك على رقم تتبع لحظي حتى وصول طرده لبابه، بلا تدخل يدوي
+                  منك أو من فريقك.
+                </p>
+                <div className="flex flex-wrap justify-center md:justify-start gap-3">
+                  <span className="rounded-full bg-canvas/10 px-4 py-2 text-sm font-bold text-canvas">+115 مدينة ومنطقة</span>
+                  <span className="rounded-full bg-canvas/10 px-4 py-2 text-sm font-bold text-canvas">إنشاء شحنة تلقائي</span>
+                  <span className="rounded-full bg-canvas/10 px-4 py-2 text-sm font-bold text-canvas">تتبع لحظي</span>
+                  <span className="rounded-full bg-canvas/10 px-4 py-2 text-sm font-bold text-canvas">دفع عند الاستلام</span>
+                </div>
+              </div>
+              <div className="relative mx-auto max-w-sm">
+                <div className="absolute -inset-6 rounded-full bg-signal/20 blur-3xl" aria-hidden />
+                <div className="relative rounded-[2rem] overflow-hidden border-4 border-canvas/10 shadow-2xl">
+                  <Image src="/marketing/vanex-van.jpg" alt="شحنات فانكس" width={480} height={420} className="w-full h-auto object-cover" />
+                </div>
+              </div>
+            </div>
+          </Reveal>
+        </div>
+      </section>
+
       {/* SHOWCASE — the two illustrations, each paired with a real part of
           the merchant journey rather than dropped in as generic decoration.
           Sits directly on the site's own brand gradient now (no washed-out
