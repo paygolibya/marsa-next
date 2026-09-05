@@ -55,6 +55,14 @@ async function authenticate(): Promise<string> {
 }
 
 async function getToken(): Promise<string> {
+  // A pre-issued personal access token from Vanex's own dashboard (real
+  // production account) — no /authenticate call, no expiry tracking, just
+  // used directly as-is. Takes priority over the email/password login flow
+  // below, which is kept as a fallback for accounts provisioned the other
+  // way (and is what a test/sandbox account without a dashboard token used).
+  const staticToken = process.env.VANEX_ACCESS_TOKEN?.trim();
+  if (staticToken) return staticToken;
+
   if (cachedToken && Date.now() < cachedTokenExpiry) return cachedToken;
   return authenticate();
 }
@@ -62,9 +70,12 @@ async function getToken(): Promise<string> {
 /**
  * Authenticated request against the Vanex API. `path` is relative to
  * VANEX_API_BASE (e.g. "/city/all"). Retries once on a 401 in case the
- * cached token expired early or was invalidated server-side.
+ * cached token expired early or was invalidated server-side — not
+ * applicable to a static VANEX_ACCESS_TOKEN, which is always the same
+ * value, so retrying would just fail the exact same way again.
  */
 export async function vanexRequest(path: string, init: RequestInit = {}, _retried = false): Promise<VanexEnvelope> {
+  const usingStaticToken = Boolean(process.env.VANEX_ACCESS_TOKEN?.trim());
   const token = await getToken();
   const headers = new Headers(init.headers);
   headers.set("Accept", "application/json");
@@ -72,7 +83,7 @@ export async function vanexRequest(path: string, init: RequestInit = {}, _retrie
 
   const res = await fetch(`${API_BASE}${path}`, { ...init, headers });
 
-  if (res.status === 401 && !_retried) {
+  if (res.status === 401 && !_retried && !usingStaticToken) {
     cachedToken = null;
     return vanexRequest(path, init, true);
   }
