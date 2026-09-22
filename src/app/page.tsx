@@ -151,7 +151,7 @@ export default function MarketingPage() {
                 <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-brass/15 text-2xl mb-5 group-hover:scale-110 transition-transform">
                   {f.icon}
                 </span>
-                <p className="text-brass text-xs font-bold tracking-widest uppercase mb-3">{f.eyebrow}</p>
+                <p className="text-signal text-xs font-bold tracking-widest uppercase mb-3">{f.eyebrow}</p>
                 <h3 className="font-display text-xl font-bold text-harbor mb-2">{f.title}</h3>
                 <p className="text-rope leading-relaxed">{f.body}</p>
               </div>
