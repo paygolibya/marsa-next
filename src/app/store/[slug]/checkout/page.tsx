@@ -1,15 +1,26 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { api, ApiError, formatLYD, type Store, type VanexCity } from "@/lib/api";
 import { useCart } from "@/lib/use-cart";
-import { DPAY_PAY_METHODS, DPAY_PAY_METHOD_LABELS, DPAY_REQUIRED_FIELDS, type DpayPayMethod } from "@/lib/payment/dpay-client";
+import { DPAY_PAY_METHOD_LABELS, DPAY_REQUIRED_FIELDS, type DpayPayMethod } from "@/lib/payment/dpay-client";
 
 const courierLabels: Record<string, string> = {
   vanex: "Vanex",
 };
+
+// Only these two DPay gateways are actually offered at checkout — the
+// other 5 in DPAY_PAY_METHODS still exist (used elsewhere, e.g. the
+// merchant subscription payment page) but aren't real, working options
+// for buyers here. Each gets its own logo button instead of a plain
+// text radio row.
+const CHECKOUT_DPAY_METHODS: { id: DpayPayMethod; logo: string }[] = [
+  { id: "moamalat", logo: "/payment-logos/moamalat.png" },
+  { id: "sadad", logo: "/payment-logos/sadad.png" },
+];
 
 export default function CheckoutPage() {
   const params = useParams<{ slug: string }>();
@@ -181,10 +192,12 @@ export default function CheckoutPage() {
   if (cart.ready && cart.lines.length === 0 && !pendingOtpOrder) {
     return (
       <main className="mx-auto max-w-md px-6 py-24 text-center">
-        <h1 className="font-display text-2xl font-bold text-harbor">سلتك فارغة</h1>
-        <Link href={`/store/${slug}`} className="text-brass font-bold mt-4 inline-block">
-          العودة إلى المتجر
-        </Link>
+        <div className="rounded-2xl bg-white shadow-xl p-8">
+          <h1 className="font-display text-2xl font-bold text-harbor">سلتك فارغة</h1>
+          <Link href={`/store/${slug}`} className="text-brass font-bold mt-4 inline-block">
+            العودة إلى المتجر
+          </Link>
+        </div>
       </main>
     );
   }
@@ -192,41 +205,43 @@ export default function CheckoutPage() {
   if (pendingOtpOrder) {
     return (
       <main className="mx-auto max-w-md px-6 py-24 text-center">
-        <h1 className="font-display text-2xl font-extrabold text-harbor mb-2">أدخل رمز التحقق</h1>
-        <p className="text-rope mb-8">
-          أرسلت {dpayPayMethod ? DPAY_PAY_METHOD_LABELS[dpayPayMethod as DpayPayMethod] : "جهة الدفع"} رمز تحقق إلى هاتفك — أدخله لإتمام دفع{" "}
-          {formatLYD(pendingOtpOrder.totalCents)}.
-        </p>
-        <form onSubmit={handleVerifyOtp} className="space-y-4">
-          <input
-            required
-            dir="ltr"
-            inputMode="numeric"
-            autoFocus
-            value={otp}
-            onChange={(e) => setOtp(e.target.value)}
-            className="input text-center text-2xl tracking-[0.5em]"
-            placeholder="••••••"
-          />
-          {otpError && <p className="text-signal text-sm">{otpError}</p>}
-          <button
-            type="submit"
-            disabled={otpSubmitting || !otp.trim()}
-            className="w-full rounded-full bg-signal py-3 font-bold text-canvas hover:bg-signal-dark transition-colors disabled:opacity-60"
-          >
-            {otpSubmitting ? "جارٍ التحقق..." : "تأكيد الدفع"}
-          </button>
-          <button type="button" onClick={() => setPendingOtpOrder(null)} className="w-full text-rope hover:text-harbor transition-colors text-sm">
-            العودة لتغيير طريقة الدفع
-          </button>
-        </form>
+        <div className="rounded-2xl bg-white shadow-xl p-8">
+          <h1 className="font-display text-2xl font-extrabold text-harbor mb-2">أدخل رمز التحقق</h1>
+          <p className="text-rope mb-8">
+            أرسلت {dpayPayMethod ? DPAY_PAY_METHOD_LABELS[dpayPayMethod as DpayPayMethod] : "جهة الدفع"} رمز تحقق إلى هاتفك — أدخله لإتمام دفع{" "}
+            {formatLYD(pendingOtpOrder.totalCents)}.
+          </p>
+          <form onSubmit={handleVerifyOtp} className="space-y-4">
+            <input
+              required
+              dir="ltr"
+              inputMode="numeric"
+              autoFocus
+              value={otp}
+              onChange={(e) => setOtp(e.target.value)}
+              className="input text-center text-2xl tracking-[0.5em]"
+              placeholder="••••••"
+            />
+            {otpError && <p className="text-signal text-sm">{otpError}</p>}
+            <button
+              type="submit"
+              disabled={otpSubmitting || !otp.trim()}
+              className="w-full rounded-full bg-signal py-3 font-bold text-canvas hover:bg-signal-dark transition-colors disabled:opacity-60"
+            >
+              {otpSubmitting ? "جارٍ التحقق..." : "تأكيد الدفع"}
+            </button>
+            <button type="button" onClick={() => setPendingOtpOrder(null)} className="w-full text-rope hover:text-harbor transition-colors text-sm">
+              العودة لتغيير طريقة الدفع
+            </button>
+          </form>
+        </div>
       </main>
     );
   }
 
   return (
-    <main className="mx-auto max-w-2xl px-6 py-16 grid md:grid-cols-[1.2fr_1fr] gap-10">
-      <div>
+    <main className="mx-auto max-w-4xl px-6 py-16 grid md:grid-cols-[1.2fr_1fr] gap-8 items-start">
+      <div className="rounded-2xl bg-white shadow-xl p-8">
         <h1 className="font-display text-2xl font-extrabold text-harbor mb-6">إتمام الطلب</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
           <label className="block">
@@ -306,7 +321,7 @@ export default function CheckoutPage() {
 
           <div>
             <span className="block text-sm font-bold text-harbor mb-1.5">شركة الشحن</span>
-            <p className="rounded-xl border border-harbor/15 bg-white px-4 py-3 text-sm text-rope">
+            <p className="rounded-xl border border-harbor/15 bg-canvas px-4 py-3 text-sm text-rope">
               {courierLabels[store.courier] ?? store.courier}
             </p>
           </div>
@@ -315,45 +330,57 @@ export default function CheckoutPage() {
             <span className="block text-sm font-bold text-harbor mb-2">طريقة الدفع</span>
             <div className="space-y-2">
               {store.codEnabled && (
-                <label className="flex items-center gap-2 rounded-xl border border-harbor/15 bg-white px-4 py-3 cursor-pointer">
+                <label
+                  className={`flex items-center gap-2 rounded-xl border-2 px-4 py-3 cursor-pointer transition-colors ${
+                    paymentMethod === "cod" ? "border-signal bg-signal/5" : "border-harbor/15 bg-canvas hover:border-harbor/25"
+                  }`}
+                >
                   <input
                     type="radio"
                     name="pm"
                     checked={paymentMethod === "cod"}
                     onChange={() => setPaymentMethod("cod")}
-                    className="accent-brass"
+                    className="accent-signal"
                   />
-                  الدفع عند الاستلام
+                  <span className="font-bold text-harbor text-sm">الدفع عند الاستلام</span>
                 </label>
               )}
               {walletAvailable && (
-                <label className="flex items-center gap-2 rounded-xl border border-harbor/15 bg-white px-4 py-3 cursor-pointer">
+                <label
+                  className={`flex items-center gap-2 rounded-xl border-2 px-4 py-3 cursor-pointer transition-colors ${
+                    paymentMethod === "wallet" ? "border-signal bg-signal/5" : "border-harbor/15 bg-canvas hover:border-harbor/25"
+                  }`}
+                >
                   <input
                     type="radio"
                     name="pm"
                     checked={paymentMethod === "wallet"}
                     onChange={() => setPaymentMethod("wallet")}
-                    className="accent-brass"
+                    className="accent-signal"
                   />
-                  الدفع الإلكتروني
+                  <span className="font-bold text-harbor text-sm">الدفع الإلكتروني</span>
                 </label>
               )}
             </div>
 
             {paymentMethod === "wallet" && walletAvailable && (
-              <div className="mt-3 rounded-xl border border-harbor/15 bg-white p-4 space-y-3">
+              <div className="mt-3 rounded-xl border border-harbor/15 bg-canvas p-4 space-y-4">
                 <span className="block text-sm font-bold text-harbor">اختر جهة الدفع</span>
-                <div className="grid grid-cols-2 gap-2">
-                  {DPAY_PAY_METHODS.map((m) => (
-                    <label
-                      key={m}
-                      className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm cursor-pointer ${
-                        dpayPayMethod === m ? "border-brass bg-brass/5" : "border-harbor/10"
+                <div className="grid grid-cols-2 gap-3">
+                  {CHECKOUT_DPAY_METHODS.map((m) => (
+                    <button
+                      key={m.id}
+                      type="button"
+                      onClick={() => setDpayPayMethod(m.id)}
+                      className={`flex flex-col items-center gap-2 rounded-xl border-2 bg-white p-4 transition-all ${
+                        dpayPayMethod === m.id ? "border-signal shadow-md scale-[1.02]" : "border-harbor/10 hover:border-harbor/25"
                       }`}
                     >
-                      <input type="radio" name="dpay-method" checked={dpayPayMethod === m} onChange={() => setDpayPayMethod(m)} className="accent-brass" />
-                      {DPAY_PAY_METHOD_LABELS[m]}
-                    </label>
+                      <Image src={m.logo} alt={DPAY_PAY_METHOD_LABELS[m.id]} width={120} height={40} className="h-10 w-auto object-contain" />
+                      <span className={`text-xs font-bold ${dpayPayMethod === m.id ? "text-signal" : "text-harbor"}`}>
+                        {DPAY_PAY_METHOD_LABELS[m.id]}
+                      </span>
+                    </button>
                   ))}
                 </div>
 
@@ -407,18 +434,18 @@ export default function CheckoutPage() {
           <button
             type="submit"
             disabled={loading || (usesVanexPricing && !selectedArea) || (paymentMethod === "wallet" && !dpayPayMethod)}
-            className="w-full rounded-full bg-signal py-3 font-bold text-canvas hover:bg-signal-dark transition-colors disabled:opacity-60"
+            className="w-full rounded-full bg-signal py-3.5 font-bold text-canvas shadow-lg shadow-signal/20 hover:bg-signal-dark hover:-translate-y-0.5 transition-all disabled:opacity-60 disabled:translate-y-0"
           >
             {loading ? "جارٍ التأكيد..." : `تأكيد الطلب — ${formatLYD(grandTotalCents)}`}
           </button>
         </form>
       </div>
 
-      <aside className="rounded-2xl border border-harbor/10 bg-white/50 p-6 h-fit">
+      <aside className="rounded-2xl bg-white shadow-xl p-6 h-fit">
         <h2 className="font-display font-bold text-harbor mb-4">ملخص الطلب</h2>
         <ul className="space-y-3 text-sm">
           {cart.lines.map((line) => (
-            <li key={line.productId} className="flex justify-between">
+            <li key={line.productId} className="flex justify-between text-harbor/90">
               <span>
                 {line.name} × {line.quantity}
               </span>
@@ -451,7 +478,7 @@ export default function CheckoutPage() {
         </div>
 
         {usesVanexPricing && (
-          <div className="flex justify-between text-sm mt-3 pt-3 border-t border-harbor/10">
+          <div className="flex justify-between text-sm mt-3 pt-3 border-t border-harbor/10 text-harbor/90">
             <span>الشحن</span>
             <span>{selectedArea ? formatLYD(shippingCents) : "—"}</span>
           </div>
@@ -462,7 +489,7 @@ export default function CheckoutPage() {
             <span>-{formatLYD(discountCents)}</span>
           </div>
         )}
-        <div className="border-t border-harbor/10 mt-4 pt-4 flex justify-between font-bold text-harbor">
+        <div className="border-t border-harbor/10 mt-4 pt-4 flex justify-between font-bold text-harbor text-lg">
           <span>الإجمالي</span>
           <span>{formatLYD(grandTotalCents)}</span>
         </div>
