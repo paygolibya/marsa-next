@@ -137,8 +137,8 @@ export default function MarketingPage() {
       {/* FEATURES */}
       <section id="features" className="mx-auto max-w-6xl px-6 py-24">
         <Reveal>
-          <div className="max-w-xl mb-14 text-center lg:text-right mx-auto lg:mx-0">
-            <p className="text-brass font-bold text-sm mb-2">لماذا رفقة</p>
+          <div className="max-w-xl mb-14 mx-auto lg:mx-0 rounded-2xl bg-white/90 shadow-xl px-8 py-6 text-center lg:text-right">
+            <p className="text-signal font-bold text-sm mb-2">لماذا رفقة</p>
             <h2 className="font-display text-3xl md:text-4xl font-extrabold text-harbor">
               كل ما يحتاجه متجرك، مبني لسوق ليبيا تحديدًا
             </h2>
@@ -279,7 +279,7 @@ export default function MarketingPage() {
         <div className="mx-auto max-w-6xl px-6 py-24">
           <Reveal>
             <div className="max-w-xl mb-14 rounded-2xl bg-white/90 shadow-xl px-8 py-6 inline-block">
-              <p className="text-brass font-bold text-sm mb-2">الاشتراك</p>
+              <p className="text-signal font-bold text-sm mb-2">الاشتراك</p>
               <h2 className="font-display text-3xl md:text-4xl font-extrabold text-harbor">
                 خطة واحدة، بكل الميزات — اختر المدة فقط
               </h2>
