@@ -39,18 +39,27 @@ const TIER_LABELS: Record<string, string> = {
 };
 
 export default function MerchantsPage() {
-  const { token } = useAuth();
+  const { token, ready } = useAuth();
   const [merchants, setMerchants] = useState<Merchant[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [selectedMerchant, setSelectedMerchant] = useState<Merchant | null>(null);
   const [showDetails, setShowDetails] = useState(false);
   const [acceptingMerchant, setAcceptingMerchant] = useState<Merchant | null>(null);
 
   useEffect(() => {
+    // Wait for the auth context to actually finish reading the token from
+    // localStorage — firing before `ready` sends the request with no
+    // Authorization header at all, which used to fail silently (this
+    // effect's dependency on `token` does make it refire once the real
+    // token shows up, but a request made too early failing was never
+    // surfaced to the merchant, just left the list looking empty).
+    if (!ready) return;
     void fetchMerchants();
-  }, [token]);
+  }, [ready, token]);
 
   async function fetchMerchants() {
+    setFetchError(null);
     try {
       const response = await fetch("/api/admin/merchants", {
         headers: token ? { Authorization: `Bearer ${token}` } : undefined,
@@ -58,9 +67,17 @@ export default function MerchantsPage() {
       if (response.ok) {
         const data = await response.json();
         setMerchants(data.merchants || []);
+      } else {
+        const data = await response.json().catch(() => null);
+        setFetchError(
+          response.status === 403
+            ? "هذا الحساب غير مصرّح له بعرض لوحة الإدارة — تحقق من تسجيل الدخول بالحساب الصحيح."
+            : data?.error || `تعذّر تحميل التجار (${response.status})`
+        );
       }
     } catch (error) {
       console.error("Error fetching merchants:", error);
+      setFetchError("تعذّر الاتصال بالخادم، تحقق من الإنترنت وحاول مجددًا.");
     } finally {
       setLoading(false);
     }
@@ -222,9 +239,22 @@ export default function MerchantsPage() {
         />
       )}
 
+      {fetchError && (
+        <div className="mb-6 flex items-center justify-between rounded-lg border border-red-200 bg-red-50 px-6 py-4 text-red-800">
+          <span>{fetchError}</span>
+          <button
+            type="button"
+            onClick={() => void fetchMerchants()}
+            className="rounded-lg bg-red-600 px-4 py-2 text-sm font-bold text-white hover:bg-red-700"
+          >
+            إعادة المحاولة
+          </button>
+        </div>
+      )}
+
       {loading ? (
         <p className="text-rope">جاري التحميل...</p>
-      ) : (
+      ) : fetchError ? null : (
         <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
           <table className="w-full">
             <thead className="border-b bg-gray-50">
