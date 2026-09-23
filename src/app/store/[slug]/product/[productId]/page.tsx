@@ -198,6 +198,11 @@ export default function ProductDetailPage() {
         lines={cart.lines}
         subtotalCents={cart.subtotalCents}
         setQuantity={cart.setQuantity}
+        theme={{
+          primaryColor: store?.customization?.primaryColor || "#0066cc",
+          secondaryColor: store?.customization?.secondaryColor || "#f0f0f0",
+          accentColor: store?.customization?.accentColor,
+        }}
       />
     </>
   );

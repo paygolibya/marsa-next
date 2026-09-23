@@ -112,6 +112,16 @@ export default function StorefrontPage() {
         lines={cart.lines}
         subtotalCents={cart.subtotalCents}
         setQuantity={cart.setQuantity}
+        theme={{
+          // Same fallback the Modern template itself uses when a store has
+          // no customization row at all (this store's own header/buttons
+          // are already that blue) — matching it here, not the platform's
+          // own harbor/signal colors, so the drawer always echoes whatever
+          // the storefront around it is actually showing.
+          primaryColor: store.customization?.primaryColor || "#0066cc",
+          secondaryColor: store.customization?.secondaryColor || "#f0f0f0",
+          accentColor: store.customization?.accentColor,
+        }}
       />
     </>
   );
