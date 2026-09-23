@@ -6,7 +6,11 @@ import { useAuth } from "@/lib/auth-context";
 import { useCurrentStore } from "@/lib/use-current-store";
 import { api, formatLYD } from "@/lib/api";
 
-const COLORS = { harbor: "#0E2A3F", brass: "#B8752E", signal: "#C1443C", canvasDim: "#E4DCC8" };
+// Kept in sync with tailwind.config.ts's actual brand tokens — this was
+// still pointing at the pre-rebrand brass/signal hex values (the muted
+// #B8752E/#C1443C), so the charts quietly kept showing the old palette
+// after the rest of the site moved to the vivid orange/gold brand.
+const COLORS = { harbor: "#0E2A3F", brass: "#EFB11D", signal: "#E43D12", canvasDim: "#E0DCCF" };
 
 type Analytics = {
   byDay: { date: string; orders: number; revenueCents: number }[];
@@ -31,8 +35,8 @@ export default function DashboardAnalyticsPage() {
   const totalOrders = data?.byDay.reduce((sum, d) => sum + d.orders, 0) ?? 0;
 
   return (
-    <div className="p-10">
-      <div className="flex items-center justify-between mb-8">
+    <div className="p-4 sm:p-6 lg:p-10">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-8">
         <h1 className="font-display text-2xl font-extrabold text-harbor">التحليلات</h1>
         <div className="flex gap-2">
           {[7, 30, 90].map((d) => (
@@ -40,7 +44,7 @@ export default function DashboardAnalyticsPage() {
               key={d}
               onClick={() => setDays(d)}
               className={`rounded-full px-4 py-1.5 text-sm font-bold transition-colors ${
-                days === d ? "bg-harbor text-canvas" : "bg-white/60 text-harbor border border-harbor/10"
+                days === d ? "bg-harbor text-canvas" : "bg-white text-harbor border border-harbor/10 shadow-sm"
               }`}
             >
               {d} يومًا
@@ -49,18 +53,18 @@ export default function DashboardAnalyticsPage() {
         </div>
       </div>
 
-      <div className="grid sm:grid-cols-2 gap-6 mb-10">
-        <div className="rounded-2xl border border-harbor/10 bg-white/50 p-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-10">
+        <div className="rounded-2xl border border-harbor/10 bg-white shadow-sm p-6">
           <p className="text-rope text-sm">إجمالي المبيعات</p>
           <p className="font-display text-3xl font-extrabold text-harbor mt-2">{formatLYD(totalRevenueCents)}</p>
         </div>
-        <div className="rounded-2xl border border-harbor/10 bg-white/50 p-6">
+        <div className="rounded-2xl border border-harbor/10 bg-white shadow-sm p-6">
           <p className="text-rope text-sm">عدد الطلبات</p>
           <p className="font-display text-3xl font-extrabold text-harbor mt-2">{totalOrders}</p>
         </div>
       </div>
 
-      <div className="rounded-2xl border border-harbor/10 bg-white/50 p-6 mb-10">
+      <div className="rounded-2xl border border-harbor/10 bg-white shadow-sm p-4 sm:p-6 mb-10">
         <h2 className="font-bold text-harbor mb-4">المبيعات عبر الوقت</h2>
         <div style={{ width: "100%", height: 280 }}>
           <ResponsiveContainer>
@@ -75,7 +79,7 @@ export default function DashboardAnalyticsPage() {
         </div>
       </div>
 
-      <div className="rounded-2xl border border-harbor/10 bg-white/50 p-6">
+      <div className="rounded-2xl border border-harbor/10 bg-white shadow-sm p-4 sm:p-6">
         <h2 className="font-bold text-harbor mb-4">أفضل المنتجات مبيعًا</h2>
         {data?.topProducts.length ? (
           <div style={{ width: "100%", height: 280 }}>

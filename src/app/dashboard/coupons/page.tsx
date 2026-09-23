@@ -62,7 +62,7 @@ export default function DashboardCouponsPage() {
   if (!store) return null;
 
   return (
-    <div className="p-10 grid md:grid-cols-[1fr_1.4fr] gap-10">
+    <div className="p-4 sm:p-6 lg:p-10 grid grid-cols-1 lg:grid-cols-[1fr_1.4fr] gap-6 lg:gap-10">
       <div>
         <h1 className="font-display text-2xl font-extrabold text-harbor mb-6">أنشئ كوبونًا</h1>
         <form onSubmit={handleCreate} className="space-y-4">
@@ -124,7 +124,7 @@ export default function DashboardCouponsPage() {
         ) : (
           <ul className="space-y-3">
             {coupons.map((c) => (
-              <li key={c.id} className="flex items-center justify-between rounded-xl border border-harbor/10 bg-white/50 px-5 py-3">
+              <li key={c.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-harbor/10 bg-white shadow-sm px-4 sm:px-5 py-3">
                 <div>
                   <p className="font-bold text-harbor" dir="ltr">
                     {c.code}

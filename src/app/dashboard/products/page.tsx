@@ -60,7 +60,7 @@ export default function DashboardProductsPage() {
   if (!store) return null;
 
   return (
-    <div className="p-10 grid md:grid-cols-[1fr_1.4fr] gap-10">
+    <div className="p-4 sm:p-6 lg:p-10 grid grid-cols-1 lg:grid-cols-[1fr_1.4fr] gap-6 lg:gap-10">
       <div>
         <h1 className="font-display text-2xl font-extrabold text-harbor mb-6">أضف منتجًا</h1>
         <form onSubmit={handleAdd} className="space-y-4">
@@ -143,16 +143,16 @@ export default function DashboardProductsPage() {
               ) : (
                 <li
                   key={p.id}
-                  className="flex items-center justify-between rounded-xl border border-harbor/10 bg-white/50 px-5 py-3"
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-harbor/10 bg-white shadow-sm px-4 sm:px-5 py-3"
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
                     {p.imageUrl && (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={p.imageUrl} alt="" className="h-12 w-12 rounded-lg object-cover border border-harbor/10 shrink-0" />
                     )}
-                    <div>
-                      <p className="font-bold text-harbor flex items-center gap-2">
-                        {p.name}
+                    <div className="min-w-0">
+                      <p className="font-bold text-harbor flex flex-wrap items-center gap-2">
+                        <span className="truncate">{p.name}</span>
                         {p.trackInventory && p.stockQty <= p.lowStockThreshold && (
                           <span className="stamp h-6 px-2 border-signal text-signal text-[11px] font-bold">مخزون منخفض</span>
                         )}
@@ -319,13 +319,13 @@ function CsvImport({ token, storeId, onImported }: { token: string | null; store
   }
 
   return (
-    <div className="mt-8 rounded-xl border border-harbor/10 bg-white/50 p-4">
+    <div className="mt-8 rounded-xl border border-harbor/10 bg-white shadow-sm p-4">
       <h3 className="font-bold text-harbor mb-2">استيراد من CSV</h3>
       <p className="text-xs text-rope mb-3" dir="ltr">
         columns: name, price, imageUrl, stock
       </p>
-      <div className="flex items-center gap-3">
-        <input type="file" accept=".csv" onChange={(e) => setFile(e.target.files?.[0] ?? null)} className="text-sm" />
+      <div className="flex flex-wrap items-center gap-3">
+        <input type="file" accept=".csv" onChange={(e) => setFile(e.target.files?.[0] ?? null)} className="text-sm max-w-full" />
         <button
           onClick={handleImport}
           disabled={!file || importing}

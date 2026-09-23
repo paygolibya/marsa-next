@@ -90,12 +90,12 @@ export default function DomainSettings({ storeId }: { storeId: string }) {
           <form onSubmit={handleSave} className="space-y-3">
             <label className="block">
               <span className="block text-sm font-bold text-harbor mb-1.5">نطاق مخصص (اختياري)</span>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <input
                   dir="ltr"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  className="input flex-1"
+                  className="input flex-1 min-w-[12rem]"
                   placeholder="shop.example.com"
                 />
                 <button

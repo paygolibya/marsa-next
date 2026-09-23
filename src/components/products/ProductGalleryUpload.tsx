@@ -54,8 +54,10 @@ export default function ProductGalleryUpload({ images, onChange }: { images: str
 
   return (
     <div>
-      <span className="block text-sm font-bold text-harbor mb-1.5">صور المنتج</span>
-      <p className="text-xs text-rope mb-2">أول صورة هي التي تظهر في قائمة المتجر — اسحب لإعادة الترتيب.</p>
+      <span className="block text-sm font-bold text-harbor mb-1.5">صور المنتج ({images.length}/{MAX_IMAGES})</span>
+      <p className="text-xs text-rope mb-2">
+        يمكنك رفع حتى {MAX_IMAGES} صور دفعة واحدة — أول صورة هي التي تظهر في قائمة المتجر، اسحب الصور لإعادة ترتيبها.
+      </p>
 
       <div className="flex flex-wrap gap-3">
         {images.map((url, i) => (
@@ -68,7 +70,7 @@ export default function ProductGalleryUpload({ images, onChange }: { images: str
               if (dragIndex !== null) moveTo(dragIndex, i);
               setDragIndex(null);
             }}
-            className="relative h-20 w-20 rounded-lg border border-harbor/10 overflow-hidden cursor-move group shrink-0"
+            className="relative h-24 w-24 rounded-xl border border-harbor/10 overflow-hidden cursor-move group shrink-0 shadow-sm"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={url} alt="" className="h-full w-full object-cover" />
@@ -76,7 +78,7 @@ export default function ProductGalleryUpload({ images, onChange }: { images: str
             <button
               type="button"
               onClick={() => removeAt(i)}
-              className="absolute top-1 left-1 h-5 w-5 rounded-full bg-black/60 text-white text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+              className="absolute top-1 left-1 h-6 w-6 rounded-full bg-black/60 text-white text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
             >
               ✕
             </button>
@@ -84,8 +86,15 @@ export default function ProductGalleryUpload({ images, onChange }: { images: str
         ))}
 
         {images.length < MAX_IMAGES && (
-          <label className="h-20 w-20 rounded-lg border border-dashed border-harbor/20 flex items-center justify-center text-xs text-rope cursor-pointer hover:border-brass/50 transition-colors shrink-0">
-            {uploading ? "..." : "+ إضافة"}
+          <label className="h-24 w-24 rounded-xl border-2 border-dashed border-harbor/20 flex flex-col items-center justify-center gap-1 text-rope cursor-pointer hover:border-brass/50 hover:bg-brass/5 transition-colors shrink-0">
+            {uploading ? (
+              <span className="text-xs">...</span>
+            ) : (
+              <>
+                <span className="text-xl leading-none">+</span>
+                <span className="text-[10px]">إضافة صور</span>
+              </>
+            )}
             <input
               type="file"
               accept="image/png,image/jpeg,image/webp"

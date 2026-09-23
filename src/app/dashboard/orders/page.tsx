@@ -44,7 +44,7 @@ export default function DashboardOrdersPage() {
   const visible = filter === "all" ? orders : orders.filter((o) => o.status === filter);
 
   return (
-    <div className="p-10">
+    <div className="p-4 sm:p-6 lg:p-10">
       <h1 className="font-display text-2xl font-extrabold text-harbor mb-6">الطلبات</h1>
 
       <div className="flex gap-2 mb-6 flex-wrap">
@@ -53,7 +53,7 @@ export default function DashboardOrdersPage() {
             key={f.value}
             onClick={() => setFilter(f.value)}
             className={`rounded-full px-4 py-1.5 text-sm font-bold transition-colors ${
-              filter === f.value ? "bg-harbor text-canvas" : "bg-white/60 text-harbor border border-harbor/10"
+              filter === f.value ? "bg-harbor text-canvas" : "bg-white text-harbor border border-harbor/10 shadow-sm"
             }`}
           >
             {f.label}
@@ -64,7 +64,7 @@ export default function DashboardOrdersPage() {
       {visible.length === 0 ? (
         <p className="text-rope">لا توجد طلبات مطابقة.</p>
       ) : (
-        <div className="overflow-x-auto rounded-2xl border border-harbor/10 bg-white/50">
+        <div className="overflow-x-auto rounded-2xl border border-harbor/10 bg-white shadow-sm">
           <table className="w-full text-sm text-right">
             <thead className="border-b border-harbor/10 text-rope">
               <tr>

@@ -49,7 +49,7 @@ export default function DashboardSettingsPage() {
   if (!store) return null;
 
   return (
-    <div className="p-10 max-w-2xl">
+    <div className="p-4 sm:p-6 lg:p-10 max-w-2xl">
       <h1 className="font-display text-2xl font-extrabold text-harbor mb-6">إعدادات المتجر</h1>
 
       <form onSubmit={handleSubmit} className="space-y-5">

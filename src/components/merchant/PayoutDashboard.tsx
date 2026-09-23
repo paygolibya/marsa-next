@@ -32,19 +32,19 @@ export default function PayoutDashboard() {
   if (!summary) return null;
 
   return (
-    <div className="p-10">
+    <div className="p-4 sm:p-6 lg:p-10">
       <h1 className="font-display text-2xl font-extrabold text-harbor mb-2">المستحقات المالية</h1>
       <p className="mb-6 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
         ⚡ تُحتسب مستحقاتك تلقائيًا فور تسليم كل طلب — لا حاجة لأي إجراء من طرفك. تصلك 99% من قيمة كل عملية بيع
         عبر المحفظة الإلكترونية، وتُجمَّع الدفعات أسبوعيًا استعدادًا للتحويل.
       </p>
 
-      <div className="grid sm:grid-cols-3 gap-6 mb-10">
-        <div className="rounded-2xl border border-harbor/10 bg-white/50 p-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-10">
+        <div className="rounded-2xl border border-harbor/10 bg-white shadow-sm p-6">
           <p className="text-rope text-sm">المستحقات المعلّقة</p>
           <p className="font-display text-3xl font-extrabold text-harbor mt-2">{formatLYD(summary.pendingAmountCents)}</p>
         </div>
-        <div className="rounded-2xl border border-harbor/10 bg-white/50 p-6">
+        <div className="rounded-2xl border border-harbor/10 bg-white shadow-sm p-6">
           <p className="text-rope text-sm">آخر دفعة</p>
           {summary.lastPayout ? (
             <>
@@ -57,14 +57,14 @@ export default function PayoutDashboard() {
             <p className="text-rope mt-2">لا توجد دفعات بعد</p>
           )}
         </div>
-        <div className="rounded-2xl border border-harbor/10 bg-white/50 p-6">
+        <div className="rounded-2xl border border-harbor/10 bg-white shadow-sm p-6">
           <p className="text-rope text-sm">نسبة عمولة رفقة (رسوم الدفع الإلكتروني)</p>
           <p className="font-display text-3xl font-extrabold text-harbor mt-2">{(summary.commissionRate * 100).toFixed(0)}%</p>
           <p className="text-xs text-rope mt-1">تحصل على {(100 - summary.commissionRate * 100).toFixed(0)}% من كل عملية بيع</p>
         </div>
       </div>
 
-      <div className="rounded-2xl border border-harbor/10 bg-white/50 p-6">
+      <div className="rounded-2xl border border-harbor/10 bg-white shadow-sm p-6">
         <h2 className="font-bold text-harbor mb-4">سجل الدفعات</h2>
         {summary.history.length === 0 ? (
           <p className="text-rope text-sm">لا توجد دفعات بعد.</p>

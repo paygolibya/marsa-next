@@ -33,31 +33,33 @@ export default function DashboardOverviewPage() {
   ];
 
   return (
-    <div className="p-10">
+    <div className="p-4 sm:p-6 lg:p-10">
       <h1 className="font-display text-2xl font-extrabold text-harbor mb-1">نظرة عامة</h1>
       <p className="text-rope mb-8">{store.name}</p>
 
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-10">
         {stats.map((s) => (
-          <div key={s.label} className="rounded-2xl border border-harbor/10 bg-white/50 p-6">
-            <p className="text-rope text-sm">{s.label}</p>
-            <p className="font-display text-3xl font-extrabold text-harbor mt-2">{s.value}</p>
+          <div key={s.label} className="rounded-2xl border border-harbor/10 bg-white shadow-sm p-4 sm:p-6">
+            <p className="text-rope text-xs sm:text-sm">{s.label}</p>
+            <p className="font-display text-2xl sm:text-3xl font-extrabold text-harbor mt-2">{s.value}</p>
           </div>
         ))}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
         {stores.map((storeItem) => {
-          const storeUrl = `${window.location.origin}/store/${storeItem.slug}`;
+          // The subdomain, not the old /store/{slug} path — this is the
+          // link merchants are meant to actually share with customers now.
+          const storeUrl = `https://${storeItem.slug}.rifqa.ly`;
           return (
-            <div key={storeItem.id} className="rounded-2xl border border-harbor/10 bg-white/50 p-6">
+            <div key={storeItem.id} className="rounded-2xl border border-harbor/10 bg-white shadow-sm p-6">
               <h3 className="font-bold text-harbor mb-4 text-right">{storeItem.name}</h3>
               <div className="flex flex-col gap-3 sm:flex-row">
                 <a
                   href={storeUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="flex-1 rounded-full bg-brass px-4 py-2 text-center font-bold text-canvas transition hover:bg-brass/90"
+                  className="flex-1 rounded-full bg-brass px-4 py-2.5 text-center font-bold text-canvas transition hover:bg-brass/90"
                 >
                   👁️ عرض المتجر
                 </a>
@@ -66,25 +68,27 @@ export default function DashboardOverviewPage() {
                     navigator.clipboard.writeText(storeUrl);
                     alert("تم نسخ الرابط!");
                   }}
-                  className="flex-1 rounded-full border border-harbor/15 px-4 py-2 font-bold text-harbor transition hover:bg-harbor/5"
+                  className="flex-1 rounded-full border border-harbor/15 px-4 py-2.5 font-bold text-harbor transition hover:bg-harbor/5"
                 >
                   🔗 نسخ الرابط
                 </button>
               </div>
-              <p className="mt-3 break-all text-sm text-rope">{storeUrl}</p>
+              <p className="mt-3 break-all text-sm text-rope" dir="ltr">
+                {storeUrl}
+              </p>
             </div>
           );
         })}
       </div>
 
-      <div className="rounded-2xl border border-harbor/10 bg-white/50 p-6 mt-8">
+      <div className="rounded-2xl border border-harbor/10 bg-white shadow-sm p-6 mt-8">
         <h2 className="font-bold text-harbor mb-4">أحدث الطلبات</h2>
         {orders.length === 0 ? (
           <p className="text-rope text-sm">لا توجد طلبات بعد.</p>
         ) : (
           <ul className="divide-y divide-harbor/5">
             {orders.slice(0, 5).map((o) => (
-              <li key={o.id} className="py-3 flex items-center justify-between text-sm">
+              <li key={o.id} className="py-3 flex flex-wrap items-center justify-between gap-2 text-sm">
                 <span className="text-harbor font-bold">{o.buyerName}</span>
                 <span className="text-rope">{formatLYD(o.totalCents)}</span>
                 <StatusChip status={o.status} />
