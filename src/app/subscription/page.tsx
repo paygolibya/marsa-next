@@ -58,7 +58,7 @@ export default function SubscriptionPage() {
                 className={`relative cursor-pointer h-full rounded-2xl p-8 flex flex-col transition-all duration-300 ${
                   popular
                     ? "bg-gradient-to-br from-signal via-rose to-brass text-white shadow-2xl scale-[1.03]"
-                    : "bg-white/95 text-harbor shadow-md"
+                    : "bg-white border border-harbor/10 text-harbor shadow-md"
                 } ${selected ? "ring-4 ring-harbor/20" : ""}`}
               >
                 {period.badge && (

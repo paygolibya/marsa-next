@@ -296,13 +296,9 @@ export default function MarketingPage() {
                     className={`relative h-full rounded-2xl p-8 flex flex-col transition-all duration-300 hover:-translate-y-1.5 overflow-hidden ${
                       popular
                         ? "bg-gradient-to-br from-signal via-rose to-brass text-white shadow-2xl scale-[1.03] hover:shadow-[0_25px_50px_-12px_rgba(219,61,46,0.5)]"
-                        : "bg-white/95 text-harbor shadow-md hover:shadow-xl"
+                        : "bg-white border border-harbor/10 text-harbor shadow-md hover:shadow-xl"
                     }`}
                   >
-                    {/* Non-popular cards get the brand gradient as a top accent
-                        bar instead of a plain border, tying them visually to
-                        the popular card's full gradient treatment. */}
-                    {!popular && <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-l from-signal via-rose to-brass" aria-hidden />}
                     {period.badge && (
                       <span className="absolute -top-3 right-6 rounded-full bg-white px-4 py-1 text-xs font-bold text-signal shadow-lg animate-bob whitespace-nowrap">
                         {period.badge}
