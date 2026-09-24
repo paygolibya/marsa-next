@@ -39,10 +39,29 @@ function computeSecureHash(fields: Record<string, string>, secretKeyHex: string)
   return crypto.createHmac("sha256", key).update(message, "utf8").digest("hex").toUpperCase();
 }
 
+// yyyyMMddHHmm — 12 characters, no seconds, Confirmed by docs.moamalat.net.
+// Must be Libya's own local time (UTC+2, no DST since 2013), computed
+// explicitly via Africa/Tripoli rather than the server's local clock —
+// Date.prototype.getHours() etc. use the SERVER's timezone, which is UTC
+// on Vercel. That 2-hour skew was silently fine when tested against a
+// local dev server (close enough to pass), but caused Moamalat's widget
+// to reject every real request once deployed ("Something went wrong"),
+// since a valid session evidently requires the timestamp to be close to
+// Moamalat's own clock in real Libyan time.
 function formatTrxDateTime(date: Date): string {
-  const pad = (n: number) => String(n).padStart(2, "0");
-  // yyyyMMddHHmm — 12 characters, no seconds. Confirmed by docs.moamalat.net.
-  return `${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}${pad(date.getHours())}${pad(date.getMinutes())}`;
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Africa/Tripoli",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(date);
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
+  // hour12:false can render midnight as "24" in some ICU builds — normalize.
+  const hour = get("hour") === "24" ? "00" : get("hour");
+  return `${get("year")}${get("month")}${get("day")}${hour}${get("minute")}`;
 }
 
 // Moamalat's AmountTrxn is in the smallest currency subunit — their own
