@@ -57,7 +57,7 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
     const store = await prisma.store.findFirst({ where: { id: product.storeId, merchantId } });
     if (!store) return NextResponse.json({ error: "Not found or not yours" }, { status: 403 });
 
-    await prisma.product.update({ where: { id }, data: { active: false } });
+    await prisma.product.update({ where: { id }, data: { active: false, deletedAt: new Date() } });
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error(err);
