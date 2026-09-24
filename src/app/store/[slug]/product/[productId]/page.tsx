@@ -90,6 +90,7 @@ export default function ProductDetailPage() {
   if (!store || !product) return null;
 
   const primary = store.customization?.primaryColor || "#0066cc";
+  const secondary = store.customization?.secondaryColor || "#f0f0f0";
   const activeImageUrl = gallery[activeImage] ?? gallery[0];
 
   function handleAddToCart() {
@@ -103,7 +104,7 @@ export default function ProductDetailPage() {
   }
 
   return (
-    <>
+    <div className="min-h-screen" style={{ backgroundColor: secondary }}>
       <main className="mx-auto max-w-4xl px-6 py-12">
         <Link href={`/store/${slug}`} className="text-sm text-rope hover:text-harbor">
           ← العودة إلى المتجر
@@ -204,7 +205,7 @@ export default function ProductDetailPage() {
           accentColor: store?.customization?.accentColor,
         }}
       />
-    </>
+    </div>
   );
 }
 

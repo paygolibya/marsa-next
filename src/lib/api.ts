@@ -211,12 +211,23 @@ export const api = {
     request<{ success: boolean }>("/api/newsletter/subscribe", { method: "POST", body: JSON.stringify({ storeSlug, email }) }),
 
   uploadImage: async (token: string, file: File): Promise<{ url: string }> => {
-    const formData = new FormData();
-    formData.append("file", file);
-    const res = await fetch("/api/uploads/image", { method: "POST", headers: authHeaders(token), body: formData });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new ApiError((data as { error?: string }).error ?? "فشل رفع الصورة", res.status);
-    return data;
+    // Client upload: the browser talks to Vercel Blob directly — this
+    // server only ever issues a short-lived signed token (see
+    // /api/uploads/image's onBeforeGenerateToken). Avoids proxying the
+    // file bytes through a Serverless Function, which has its own
+    // unchangeable ~4.5MB request-body limit regardless of our own size
+    // check — real phone-camera photos routinely blew past that.
+    const { upload } = await import("@vercel/blob/client");
+    try {
+      const blob = await upload(file.name, file, {
+        access: "public",
+        handleUploadUrl: "/api/uploads/image",
+        headers: authHeaders(token) as Record<string, string>,
+      });
+      return { url: blob.url };
+    } catch (err) {
+      throw new ApiError(err instanceof Error ? err.message : "فشل رفع الصورة", 400);
+    }
   },
 
   createProduct: (token: string, body: { storeId: string; name: string; priceCents: number; images?: string[] }) =>

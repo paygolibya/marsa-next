@@ -1,9 +1,9 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams, useParams } from "next/navigation";
 import Link from "next/link";
-import { formatLYD } from "@/lib/api";
+import { api, formatLYD, type Store } from "@/lib/api";
 
 const courierLabels: Record<string, string> = {
   vanex: "Vanex",
@@ -20,6 +20,11 @@ export default function ConfirmationPage() {
 function ConfirmationPageContent() {
   const params = useParams<{ slug: string }>();
   const search = useSearchParams();
+  const [store, setStore] = useState<Store | null>(null);
+
+  useEffect(() => {
+    api.publicStore(params.slug).then(({ store }) => setStore(store)).catch(() => {});
+  }, [params.slug]);
 
   const orderId = search.get("orderId");
   const totalCents = Number(search.get("totalCents") ?? 0);
@@ -27,48 +32,53 @@ function ConfirmationPageContent() {
   const trackingId = search.get("trackingId");
   const courier = search.get("courier") ?? "";
   const paymentStatus = search.get("paymentStatus");
+  const secondary = store?.customization?.secondaryColor || "#f0f0f0";
 
   if (!orderId) {
     return (
-      <main className="mx-auto max-w-md px-6 py-24 text-center">
-        <h1 className="font-display text-2xl font-bold text-harbor">لا يوجد طلب لعرضه</h1>
-        <Link href={`/store/${params.slug}`} className="text-brass font-bold mt-4 inline-block">
-          العودة إلى المتجر
-        </Link>
-      </main>
+      <div className="min-h-screen" style={{ backgroundColor: secondary }}>
+        <main className="mx-auto max-w-md px-6 py-24 text-center">
+          <h1 className="font-display text-2xl font-bold text-harbor">لا يوجد طلب لعرضه</h1>
+          <Link href={`/store/${params.slug}`} className="text-brass font-bold mt-4 inline-block">
+            العودة إلى المتجر
+          </Link>
+        </main>
+      </div>
     );
   }
 
   return (
-    <main className="mx-auto max-w-lg px-6 py-20 text-center">
-      <span className="stamp mx-auto mb-6 h-16 w-16 border-brass text-brass text-2xl font-bold">✓</span>
-      <h1 className="font-display text-3xl font-extrabold text-harbor">تم تأكيد طلبك</h1>
-      <p className="text-rope mt-2">سيصلك المندوب قريبًا. احتفظ برقم التتبع أدناه لمتابعة الشحنة.</p>
+    <div className="min-h-screen" style={{ backgroundColor: secondary }}>
+      <main className="mx-auto max-w-lg px-6 py-20 text-center">
+        <span className="stamp mx-auto mb-6 h-16 w-16 border-brass text-brass text-2xl font-bold">✓</span>
+        <h1 className="font-display text-3xl font-extrabold text-harbor">تم تأكيد طلبك</h1>
+        <p className="text-rope mt-2">سيصلك المندوب قريبًا. احتفظ برقم التتبع أدناه لمتابعة الشحنة.</p>
 
-      <dl className="mt-10 rounded-2xl border border-harbor/10 bg-white/50 p-6 text-right space-y-4">
-        <Row label="رقم الطلب" value={orderId} mono />
-        <Row label="رقم التتبع" value={trackingId ?? "—"} mono />
-        <Row label="شركة الشحن" value={courierLabels[courier] ?? courier} />
-        {shippingCents > 0 && <Row label="تكلفة الشحن" value={formatLYD(shippingCents)} />}
-        <Row label="الإجمالي" value={formatLYD(totalCents)} />
-        <Row label="حالة الدفع" value={paymentStatus === "paid" ? "مدفوع" : "قيد الدفع عند الاستلام"} />
-      </dl>
+        <dl className="mt-10 rounded-2xl border border-harbor/10 bg-white/50 p-6 text-right space-y-4">
+          <Row label="رقم الطلب" value={orderId} mono />
+          <Row label="رقم التتبع" value={trackingId ?? "—"} mono />
+          <Row label="شركة الشحن" value={courierLabels[courier] ?? courier} />
+          {shippingCents > 0 && <Row label="تكلفة الشحن" value={formatLYD(shippingCents)} />}
+          <Row label="الإجمالي" value={formatLYD(totalCents)} />
+          <Row label="حالة الدفع" value={paymentStatus === "paid" ? "مدفوع" : "قيد الدفع عند الاستلام"} />
+        </dl>
 
-      <div className="mt-10 flex items-center justify-center gap-4">
-        <Link
-          href={`/store/${params.slug}`}
-          className="inline-block rounded-full bg-harbor text-canvas px-8 py-3 font-bold hover:bg-harbor-deep transition-colors"
-        >
-          متابعة التسوق
-        </Link>
-        <Link
-          href={`/track?orderId=${orderId}`}
-          className="inline-block rounded-full border border-harbor/20 px-8 py-3 font-bold text-harbor hover:bg-harbor/5 transition-colors"
-        >
-          تتبع طلبك
-        </Link>
-      </div>
-    </main>
+        <div className="mt-10 flex items-center justify-center gap-4">
+          <Link
+            href={`/store/${params.slug}`}
+            className="inline-block rounded-full bg-harbor text-canvas px-8 py-3 font-bold hover:bg-harbor-deep transition-colors"
+          >
+            متابعة التسوق
+          </Link>
+          <Link
+            href={`/track?orderId=${orderId}`}
+            className="inline-block rounded-full border border-harbor/20 px-8 py-3 font-bold text-harbor hover:bg-harbor/5 transition-colors"
+          >
+            تتبع طلبك
+          </Link>
+        </div>
+      </main>
+    </div>
   );
 }
 
