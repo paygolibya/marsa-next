@@ -5,12 +5,8 @@ import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, R
 import { useAuth } from "@/lib/auth-context";
 import { useCurrentStore } from "@/lib/use-current-store";
 import { api, formatLYD } from "@/lib/api";
-
-// Kept in sync with tailwind.config.ts's actual brand tokens — this was
-// still pointing at the pre-rebrand brass/signal hex values (the muted
-// #B8752E/#C1443C), so the charts quietly kept showing the old palette
-// after the rest of the site moved to the vivid orange/gold brand.
-const COLORS = { harbor: "#0E2A3F", brass: "#EFB11D", signal: "#E43D12", canvasDim: "#E0DCCF" };
+import { CHART_COLORS } from "@/lib/design-tokens";
+import { Card, EmptyState, Skeleton } from "@/components/ui";
 
 type Analytics = {
   byDay: { date: string; orders: number; revenueCents: number }[];
@@ -25,6 +21,7 @@ export default function DashboardAnalyticsPage() {
 
   useEffect(() => {
     if (!token || !store) return;
+    setData(null);
     api.analytics(token, store.id, days).then(setData);
   }, [token, store, days]);
 
@@ -54,49 +51,59 @@ export default function DashboardAnalyticsPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-10">
-        <div className="rounded-2xl border border-harbor/10 bg-white shadow-sm p-6">
+        <Card className="p-6">
           <p className="text-rope text-sm">إجمالي المبيعات</p>
-          <p className="font-display text-3xl font-extrabold text-harbor mt-2">{formatLYD(totalRevenueCents)}</p>
-        </div>
-        <div className="rounded-2xl border border-harbor/10 bg-white shadow-sm p-6">
+          {data === null ? (
+            <Skeleton className="h-9 w-32 mt-2" />
+          ) : (
+            <p className="font-display text-3xl font-extrabold text-harbor mt-2">{formatLYD(totalRevenueCents)}</p>
+          )}
+        </Card>
+        <Card className="p-6">
           <p className="text-rope text-sm">عدد الطلبات</p>
-          <p className="font-display text-3xl font-extrabold text-harbor mt-2">{totalOrders}</p>
-        </div>
+          {data === null ? <Skeleton className="h-9 w-16 mt-2" /> : <p className="font-display text-3xl font-extrabold text-harbor mt-2">{totalOrders}</p>}
+        </Card>
       </div>
 
-      <div className="rounded-2xl border border-harbor/10 bg-white shadow-sm p-4 sm:p-6 mb-10">
+      <Card className="p-4 sm:p-6 mb-10">
         <h2 className="font-bold text-harbor mb-4">المبيعات عبر الوقت</h2>
-        <div style={{ width: "100%", height: 280 }}>
-          <ResponsiveContainer>
-            <AreaChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke={COLORS.canvasDim} />
-              <XAxis dataKey="label" stroke={COLORS.harbor} fontSize={12} />
-              <YAxis stroke={COLORS.harbor} fontSize={12} />
-              <Tooltip formatter={(value) => `${Number(value).toFixed(2)} د.ل`} />
-              <Area type="monotone" dataKey="revenue" stroke={COLORS.brass} fill={COLORS.brass} fillOpacity={0.2} />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
+        {data === null ? (
+          <Skeleton className="h-[280px] w-full" />
+        ) : (
+          <div style={{ width: "100%", height: 280 }}>
+            <ResponsiveContainer>
+              <AreaChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke={CHART_COLORS.canvasDim} />
+                <XAxis dataKey="label" stroke={CHART_COLORS.harbor} fontSize={12} />
+                <YAxis stroke={CHART_COLORS.harbor} fontSize={12} />
+                <Tooltip formatter={(value) => `${Number(value).toFixed(2)} د.ل`} />
+                <Area type="monotone" dataKey="revenue" stroke={CHART_COLORS.brass} fill={CHART_COLORS.brass} fillOpacity={0.2} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+      </Card>
 
-      <div className="rounded-2xl border border-harbor/10 bg-white shadow-sm p-4 sm:p-6">
+      <Card className="p-4 sm:p-6">
         <h2 className="font-bold text-harbor mb-4">أفضل المنتجات مبيعًا</h2>
-        {data?.topProducts.length ? (
+        {data === null ? (
+          <Skeleton className="h-[280px] w-full" />
+        ) : data.topProducts.length ? (
           <div style={{ width: "100%", height: 280 }}>
             <ResponsiveContainer>
               <BarChart data={data.topProducts.map((p) => ({ ...p, revenue: p.revenueCents / 100 }))} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" stroke={COLORS.canvasDim} />
-                <XAxis type="number" stroke={COLORS.harbor} fontSize={12} />
-                <YAxis type="category" dataKey="name" width={120} stroke={COLORS.harbor} fontSize={12} />
+                <CartesianGrid strokeDasharray="3 3" stroke={CHART_COLORS.canvasDim} />
+                <XAxis type="number" stroke={CHART_COLORS.harbor} fontSize={12} />
+                <YAxis type="category" dataKey="name" width={120} stroke={CHART_COLORS.harbor} fontSize={12} />
                 <Tooltip formatter={(value) => `${Number(value).toFixed(2)} د.ل`} />
-                <Bar dataKey="revenue" fill={COLORS.signal} radius={[0, 6, 6, 0]} />
+                <Bar dataKey="revenue" fill={CHART_COLORS.signal} radius={[0, 6, 6, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         ) : (
-          <p className="text-rope text-sm">لا توجد بيانات كافية بعد.</p>
+          <EmptyState title="لا توجد بيانات كافية بعد" className="py-8" />
         )}
-      </div>
+      </Card>
     </div>
   );
 }

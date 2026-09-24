@@ -5,6 +5,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useCurrentStore } from "@/lib/use-current-store";
 import { api, ApiError } from "@/lib/api";
 import DomainSettings from "@/components/store/DomainSettings";
+import { Button } from "@/components/ui";
 
 export default function DashboardSettingsPage() {
   const { token } = useAuth();
@@ -94,13 +95,9 @@ export default function DashboardSettingsPage() {
         {error && <p className="text-signal text-sm">{error}</p>}
         {saved && <p className="text-sm text-green-700">✓ تم الحفظ</p>}
 
-        <button
-          type="submit"
-          disabled={saving}
-          className="rounded-full bg-signal px-6 py-2.5 font-bold text-canvas hover:bg-signal-dark transition-colors disabled:opacity-60"
-        >
-          {saving ? "جارٍ الحفظ..." : "حفظ الإعدادات"}
-        </button>
+        <Button type="submit" loading={saving} loadingText="جارٍ الحفظ...">
+          حفظ الإعدادات
+        </Button>
       </form>
 
       <DomainSettings storeId={store.id} />

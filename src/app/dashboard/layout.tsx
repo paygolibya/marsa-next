@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/auth-context";
 import { isAdminMerchant } from "@/lib/is-admin";
 import { useCurrentStore } from "@/lib/use-current-store";
 import ThemeToggle from "@/components/layout/ThemeToggle";
+import { ToastProvider } from "@/components/ui";
 
 const navItems = [
   { href: "/dashboard", label: "نظرة عامة", icon: "📊" },
@@ -190,58 +191,60 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   );
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row">
-      {/* Mobile top bar — only the parts a phone actually needs: a menu
-          toggle and the store switcher/name, not the full sidebar. */}
-      <div className="lg:hidden sticky top-0 z-30 flex items-center justify-between bg-harbor text-canvas px-4 py-3">
-        <button type="button" onClick={() => setSidebarOpen(true)} aria-label="فتح القائمة" className="p-1.5">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-            <line x1="3" y1="6" x2="21" y2="6" />
-            <line x1="3" y1="12" x2="21" y2="12" />
-            <line x1="3" y1="18" x2="21" y2="18" />
-          </svg>
-        </button>
-        <span className="font-display font-extrabold text-sm truncate">{store?.name ?? "رفقة"}</span>
-        <ThemeToggle className="text-canvas/70 hover:text-canvas p-1.5" />
-      </div>
+    <ToastProvider>
+      <div className="min-h-screen flex flex-col lg:flex-row">
+        {/* Mobile top bar — only the parts a phone actually needs: a menu
+            toggle and the store switcher/name, not the full sidebar. */}
+        <div className="lg:hidden sticky top-0 z-30 flex items-center justify-between bg-harbor text-canvas px-4 py-3">
+          <button type="button" onClick={() => setSidebarOpen(true)} aria-label="فتح القائمة" className="p-1.5">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <line x1="3" y1="6" x2="21" y2="6" />
+              <line x1="3" y1="12" x2="21" y2="12" />
+              <line x1="3" y1="18" x2="21" y2="18" />
+            </svg>
+          </button>
+          <span className="font-display font-extrabold text-sm truncate">{store?.name ?? "رفقة"}</span>
+          <ThemeToggle className="text-canvas/70 hover:text-canvas p-1.5" />
+        </div>
 
-      {sidebarOpen && (
-        <div className="lg:hidden fixed inset-0 bg-black/40 z-40" onClick={() => setSidebarOpen(false)} aria-hidden />
-      )}
-
-      <aside
-        className={`bg-harbor text-canvas flex flex-col fixed lg:sticky top-0 right-0 h-screen w-72 lg:w-64 shrink-0 z-50 transition-transform duration-300 ${
-          sidebarOpen ? "translate-x-0" : "translate-x-full lg:translate-x-0"
-        }`}
-      >
-        {sidebarContent}
-      </aside>
-
-      {/* Kept on the plain cream background, NOT the new brand gradient —
-          every dashboard page below puts its page title/subtitle directly
-          on this background with no card behind it (e.g. dashboard/page.tsx's
-          "نظرة عامة" + store name), and the muted `text-rope` used for
-          those subtitles loses too much contrast against the vivid
-          orange/red gradient to read reliably. Revisit if/when those
-          headers get a proper backdrop treatment. */}
-      <main className="flex-1 bg-canvas min-w-0">
-        {trialDaysLeft !== null && trialDaysLeft >= 0 && (
-          <div className="bg-brass/10 border-b border-brass/20 px-4 sm:px-6 py-3 text-sm text-harbor flex flex-wrap items-center justify-between gap-2">
-            <span>
-              ⏳ أنت في الفترة التجريبية المجانية —{" "}
-              {trialDaysLeft === 0 ? "تنتهي اليوم" : `تنتهي خلال ${trialDaysLeft} يوم`}
-            </span>
-            <Link href="/subscription" className="font-bold text-brass hover:underline whitespace-nowrap">
-              اشترك الآن
-            </Link>
-          </div>
+        {sidebarOpen && (
+          <div className="lg:hidden fixed inset-0 bg-black/40 z-40" onClick={() => setSidebarOpen(false)} aria-hidden />
         )}
-        {!loading && store ? (
-          children
-        ) : loading ? (
-          <p className="p-10 text-rope">جارٍ التحميل...</p>
-        ) : null}
-      </main>
-    </div>
+
+        <aside
+          className={`bg-harbor text-canvas flex flex-col fixed lg:sticky top-0 right-0 h-screen w-72 lg:w-64 shrink-0 z-50 transition-transform duration-300 ${
+            sidebarOpen ? "translate-x-0" : "translate-x-full lg:translate-x-0"
+          }`}
+        >
+          {sidebarContent}
+        </aside>
+
+        {/* Kept on the plain cream background, NOT the new brand gradient —
+            every dashboard page below puts its page title/subtitle directly
+            on this background with no card behind it (e.g. dashboard/page.tsx's
+            "نظرة عامة" + store name), and the muted `text-rope` used for
+            those subtitles loses too much contrast against the vivid
+            orange/red gradient to read reliably. Revisit if/when those
+            headers get a proper backdrop treatment. */}
+        <main className="flex-1 bg-canvas min-w-0">
+          {trialDaysLeft !== null && trialDaysLeft >= 0 && (
+            <div className="bg-brass/10 border-b border-brass/20 px-4 sm:px-6 py-3 text-sm text-harbor flex flex-wrap items-center justify-between gap-2">
+              <span>
+                ⏳ أنت في الفترة التجريبية المجانية —{" "}
+                {trialDaysLeft === 0 ? "تنتهي اليوم" : `تنتهي خلال ${trialDaysLeft} يوم`}
+              </span>
+              <Link href="/subscription" className="font-bold text-brass hover:underline whitespace-nowrap">
+                اشترك الآن
+              </Link>
+            </div>
+          )}
+          {!loading && store ? (
+            children
+          ) : loading ? (
+            <p className="p-10 text-rope">جارٍ التحميل...</p>
+          ) : null}
+        </main>
+      </div>
+    </ToastProvider>
   );
 }

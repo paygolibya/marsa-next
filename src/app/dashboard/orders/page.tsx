@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useCurrentStore } from "@/lib/use-current-store";
 import { api, formatLYD, type Order } from "@/lib/api";
+import { DataTable, type DataTableColumn, EmptyState, SkeletonRow } from "@/components/ui";
 
 const statusLabels: Record<Order["status"], string> = {
   pending: "قيد الانتظار",
@@ -31,17 +32,45 @@ const filters: { value: Order["status"] | "all"; label: string }[] = [
 export default function DashboardOrdersPage() {
   const { token } = useAuth();
   const { store } = useCurrentStore();
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [orders, setOrders] = useState<Order[] | null>(null);
   const [filter, setFilter] = useState<Order["status"] | "all">("all");
 
   useEffect(() => {
     if (!token || !store) return;
+    setOrders(null);
     api.ordersByStore(token, store.id).then(setOrders);
   }, [token, store]);
 
   if (!store) return null;
 
-  const visible = filter === "all" ? orders : orders.filter((o) => o.status === filter);
+  const visible = orders === null ? [] : filter === "all" ? orders : orders.filter((o) => o.status === filter);
+
+  const columns: DataTableColumn<Order>[] = [
+    { key: "buyerName", header: "العميل", accessor: (o) => o.buyerName, sortable: true, render: (o) => <span className="font-bold text-harbor">{o.buyerName}</span> },
+    { key: "buyerCity", header: "المدينة", accessor: (o) => o.buyerCity },
+    { key: "totalCents", header: "الإجمالي", accessor: (o) => o.totalCents, sortable: true, render: (o) => formatLYD(o.totalCents) },
+    {
+      key: "payment",
+      header: "الدفع",
+      render: (o) => (o.paymentMethod === "cod" ? "عند الاستلام" : o.paymentStatus === "paid" ? "مدفوع" : "قيد الدفع"),
+    },
+    { key: "shipping", header: "الشحن", render: (o) => (o.shippingCents > 0 ? formatLYD(o.shippingCents) : "—") },
+    {
+      key: "status",
+      header: "الحالة",
+      render: (o) => <span className="stamp h-7 px-3 border-brass text-brass text-xs font-bold">{statusLabels[o.status]}</span>,
+    },
+    { key: "courierStatus", header: "حالة الشحنة", render: (o) => courierStatusLabels[o.courierStatus ?? ""] ?? o.courierStatus ?? "—" },
+    {
+      key: "trackingId",
+      header: "رقم التتبع",
+      render: (o) => (
+        <span className="font-mono" dir="ltr">
+          {o.courierTrackingId ?? "—"}
+        </span>
+      ),
+    },
+  ];
 
   return (
     <div className="p-4 sm:p-6 lg:p-10">
@@ -61,47 +90,22 @@ export default function DashboardOrdersPage() {
         ))}
       </div>
 
-      {visible.length === 0 ? (
-        <p className="text-rope">لا توجد طلبات مطابقة.</p>
-      ) : (
-        <div className="overflow-x-auto rounded-2xl border border-harbor/10 bg-white shadow-sm">
-          <table className="w-full text-sm text-right">
-            <thead className="border-b border-harbor/10 text-rope">
-              <tr>
-                <th className="px-5 py-3 font-bold">العميل</th>
-                <th className="px-5 py-3 font-bold">المدينة</th>
-                <th className="px-5 py-3 font-bold">الإجمالي</th>
-                <th className="px-5 py-3 font-bold">الدفع</th>
-                <th className="px-5 py-3 font-bold">الشحن</th>
-                <th className="px-5 py-3 font-bold">الحالة</th>
-                <th className="px-5 py-3 font-bold">حالة الشحنة</th>
-                <th className="px-5 py-3 font-bold">رقم التتبع</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-harbor/5">
-              {visible.map((o) => (
-                <tr key={o.id}>
-                  <td className="px-5 py-3 font-bold text-harbor">{o.buyerName}</td>
-                  <td className="px-5 py-3 text-rope">{o.buyerCity}</td>
-                  <td className="px-5 py-3">{formatLYD(o.totalCents)}</td>
-                  <td className="px-5 py-3 text-rope">
-                    {o.paymentMethod === "cod" ? "عند الاستلام" : o.paymentStatus === "paid" ? "مدفوع" : "قيد الدفع"}
-                  </td>
-                  <td className="px-5 py-3 text-rope">{o.shippingCents > 0 ? formatLYD(o.shippingCents) : "—"}</td>
-                  <td className="px-5 py-3">
-                    <span className="stamp h-7 px-3 border-brass text-brass text-xs font-bold">
-                      {statusLabels[o.status]}
-                    </span>
-                  </td>
-                  <td className="px-5 py-3 text-rope">{courierStatusLabels[o.courierStatus ?? ""] ?? o.courierStatus ?? "—"}</td>
-                  <td className="px-5 py-3 text-rope font-mono" dir="ltr">
-                    {o.courierTrackingId ?? "—"}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {orders === null ? (
+        <div className="rounded-2xl border border-harbor/10 bg-white shadow-sm divide-y divide-harbor/5">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <SkeletonRow key={i} columns={6} />
+          ))}
         </div>
+      ) : (
+        <DataTable
+          columns={columns}
+          rows={visible}
+          rowKey={(o) => o.id}
+          searchPlaceholder="ابحث باسم العميل أو المدينة..."
+          searchText={(o) => `${o.buyerName} ${o.buyerCity}`}
+          pageSize={15}
+          emptyState={<EmptyState title="لا توجد طلبات مطابقة" />}
+        />
       )}
     </div>
   );

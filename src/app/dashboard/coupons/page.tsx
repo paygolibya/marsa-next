@@ -4,11 +4,12 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useCurrentStore } from "@/lib/use-current-store";
 import { api, ApiError, formatLYD, type Coupon } from "@/lib/api";
+import { Badge, Button, Card, EmptyState, SkeletonCard } from "@/components/ui";
 
 export default function DashboardCouponsPage() {
   const { token } = useAuth();
   const { store } = useCurrentStore();
-  const [coupons, setCoupons] = useState<Coupon[]>([]);
+  const [coupons, setCoupons] = useState<Coupon[] | null>(null);
   const [code, setCode] = useState("");
   const [discountType, setDiscountType] = useState<"percent" | "fixed">("percent");
   const [discountValue, setDiscountValue] = useState("");
@@ -107,27 +108,30 @@ export default function DashboardCouponsPage() {
 
           {error && <p className="text-signal text-sm">{error}</p>}
 
-          <button
-            type="submit"
-            disabled={saving}
-            className="rounded-full bg-signal px-6 py-2.5 font-bold text-canvas hover:bg-signal-dark transition-colors disabled:opacity-60"
-          >
-            {saving ? "جارٍ الإنشاء..." : "إنشاء الكوبون"}
-          </button>
+          <Button type="submit" loading={saving} loadingText="جارٍ الإنشاء...">
+            إنشاء الكوبون
+          </Button>
         </form>
       </div>
 
       <div>
         <h2 className="font-display text-2xl font-extrabold text-harbor mb-6">الكوبونات</h2>
-        {coupons.length === 0 ? (
-          <p className="text-rope">لا توجد كوبونات بعد.</p>
+        {coupons === null ? (
+          <div className="space-y-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <SkeletonCard key={i} />
+            ))}
+          </div>
+        ) : coupons.length === 0 ? (
+          <EmptyState title="لا توجد كوبونات بعد" description="أنشئ أول كوبون من النموذج على اليمين." />
         ) : (
           <ul className="space-y-3">
             {coupons.map((c) => (
-              <li key={c.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-harbor/10 bg-white shadow-sm px-4 sm:px-5 py-3">
+              <Card key={c.id} className="flex flex-wrap items-center justify-between gap-3 px-4 sm:px-5 py-3">
                 <div>
-                  <p className="font-bold text-harbor" dir="ltr">
+                  <p className="font-bold text-harbor flex items-center gap-2" dir="ltr">
                     {c.code}
+                    <Badge tone={c.active ? "success" : "neutral"}>{c.active ? "مفعّل" : "متوقف"}</Badge>
                   </p>
                   <p className="text-rope text-sm">
                     {c.discountType === "percent" ? `${c.discountValue}%` : formatLYD(c.discountValue)} · استُخدم {c.usageCount}
@@ -142,7 +146,7 @@ export default function DashboardCouponsPage() {
                     حذف
                   </button>
                 </div>
-              </li>
+              </Card>
             ))}
           </ul>
         )}

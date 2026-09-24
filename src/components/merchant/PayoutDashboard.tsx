@@ -4,16 +4,14 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { api, formatLYD } from "@/lib/api";
 import type { MerchantPayoutSummary } from "@/types/payment";
+import { Badge, Card, DataTable, type DataTableColumn, EmptyState, Skeleton, SkeletonCard } from "@/components/ui";
 
 const STATUS_LABELS: Record<string, string> = {
   ready_for_transfer: "قيد الانتظار",
   transferred: "تم التحويل",
 };
 
-const STATUS_CLASSES: Record<string, string> = {
-  ready_for_transfer: "bg-yellow-100 text-yellow-800",
-  transferred: "bg-green-100 text-green-800",
-};
+type PayoutRow = MerchantPayoutSummary["history"][number];
 
 export default function PayoutDashboard() {
   const { token } = useAuth();
@@ -28,8 +26,38 @@ export default function PayoutDashboard() {
       .finally(() => setLoading(false));
   }, [token]);
 
-  if (loading) return <p className="p-10 text-rope">جارٍ التحميل...</p>;
+  if (loading) {
+    return (
+      <div className="p-4 sm:p-6 lg:p-10">
+        <Skeleton className="h-8 w-48 mb-6" />
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <SkeletonCard key={i} />
+          ))}
+        </div>
+      </div>
+    );
+  }
   if (!summary) return null;
+
+  const columns: DataTableColumn<PayoutRow>[] = [
+    {
+      key: "period",
+      header: "الفترة",
+      accessor: (p) => p.periodStart,
+      sortable: true,
+      render: (p) => `${new Date(p.periodStart).toLocaleDateString("ar-LY")} – ${new Date(p.periodEnd).toLocaleDateString("ar-LY")}`,
+    },
+    { key: "orderCount", header: "عدد الطلبات", accessor: (p) => p.orderCount, sortable: true },
+    { key: "totalSalesCents", header: "إجمالي المبيعات", accessor: (p) => p.totalSalesCents, sortable: true, render: (p) => formatLYD(p.totalSalesCents) },
+    { key: "commissionCents", header: "العمولة", render: (p) => formatLYD(p.commissionCents) },
+    { key: "amountCents", header: "المستحق", accessor: (p) => p.amountCents, sortable: true, render: (p) => <span className="font-bold text-harbor">{formatLYD(p.amountCents)}</span> },
+    {
+      key: "status",
+      header: "الحالة",
+      render: (p) => <Badge tone={p.status === "transferred" ? "success" : "warning"}>{STATUS_LABELS[p.status] ?? p.status}</Badge>,
+    },
+  ];
 
   return (
     <div className="p-4 sm:p-6 lg:p-10">
@@ -40,11 +68,11 @@ export default function PayoutDashboard() {
       </p>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-10">
-        <div className="rounded-2xl border border-harbor/10 bg-white shadow-sm p-6">
+        <Card className="p-6">
           <p className="text-rope text-sm">المستحقات المعلّقة</p>
           <p className="font-display text-3xl font-extrabold text-harbor mt-2">{formatLYD(summary.pendingAmountCents)}</p>
-        </div>
-        <div className="rounded-2xl border border-harbor/10 bg-white shadow-sm p-6">
+        </Card>
+        <Card className="p-6">
           <p className="text-rope text-sm">آخر دفعة</p>
           {summary.lastPayout ? (
             <>
@@ -56,53 +84,24 @@ export default function PayoutDashboard() {
           ) : (
             <p className="text-rope mt-2">لا توجد دفعات بعد</p>
           )}
-        </div>
-        <div className="rounded-2xl border border-harbor/10 bg-white shadow-sm p-6">
+        </Card>
+        <Card className="p-6">
           <p className="text-rope text-sm">نسبة عمولة رفقة (رسوم الدفع الإلكتروني)</p>
           <p className="font-display text-3xl font-extrabold text-harbor mt-2">{(summary.commissionRate * 100).toFixed(0)}%</p>
           <p className="text-xs text-rope mt-1">تحصل على {(100 - summary.commissionRate * 100).toFixed(0)}% من كل عملية بيع</p>
-        </div>
+        </Card>
       </div>
 
-      <div className="rounded-2xl border border-harbor/10 bg-white shadow-sm p-6">
+      <Card className="p-6">
         <h2 className="font-bold text-harbor mb-4">سجل الدفعات</h2>
-        {summary.history.length === 0 ? (
-          <p className="text-rope text-sm">لا توجد دفعات بعد.</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-right">
-              <thead className="border-b border-harbor/10 text-rope">
-                <tr>
-                  <th className="px-4 py-3 font-bold">الفترة</th>
-                  <th className="px-4 py-3 font-bold">عدد الطلبات</th>
-                  <th className="px-4 py-3 font-bold">إجمالي المبيعات</th>
-                  <th className="px-4 py-3 font-bold">العمولة</th>
-                  <th className="px-4 py-3 font-bold">المستحق</th>
-                  <th className="px-4 py-3 font-bold">الحالة</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-harbor/5">
-                {summary.history.map((p) => (
-                  <tr key={p.id}>
-                    <td className="px-4 py-3 text-rope">
-                      {new Date(p.periodStart).toLocaleDateString("ar-LY")} – {new Date(p.periodEnd).toLocaleDateString("ar-LY")}
-                    </td>
-                    <td className="px-4 py-3">{p.orderCount}</td>
-                    <td className="px-4 py-3">{formatLYD(p.totalSalesCents)}</td>
-                    <td className="px-4 py-3">{formatLYD(p.commissionCents)}</td>
-                    <td className="px-4 py-3 font-bold text-harbor">{formatLYD(p.amountCents)}</td>
-                    <td className="px-4 py-3">
-                      <span className={`rounded-full px-3 py-1 text-xs font-bold ${STATUS_CLASSES[p.status]}`}>
-                        {STATUS_LABELS[p.status]}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+        <DataTable
+          columns={columns}
+          rows={summary.history}
+          rowKey={(p) => p.id}
+          pageSize={10}
+          emptyState={<EmptyState title="لا توجد دفعات بعد" />}
+        />
+      </Card>
     </div>
   );
 }

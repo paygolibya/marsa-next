@@ -6,11 +6,12 @@ import { useCurrentStore } from "@/lib/use-current-store";
 import { api, ApiError, formatLYD, type Product, type ProductVariant, type ProductVariantOption } from "@/lib/api";
 import ProductGalleryUpload from "@/components/products/ProductGalleryUpload";
 import ProductVariantsManager from "@/components/products/ProductVariantsManager";
+import { Button, Card, EmptyState, SkeletonCard } from "@/components/ui";
 
 export default function DashboardProductsPage() {
   const { token } = useAuth();
   const { store } = useCurrentStore();
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<Product[] | null>(null);
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
   const [images, setImages] = useState<string[]>([]);
@@ -110,13 +111,9 @@ export default function DashboardProductsPage() {
 
           {error && <p className="text-signal text-sm">{error}</p>}
 
-          <button
-            type="submit"
-            disabled={saving}
-            className="rounded-full bg-signal px-6 py-2.5 font-bold text-canvas hover:bg-signal-dark transition-colors disabled:opacity-60"
-          >
-            {saving ? "جارٍ الإضافة..." : "إضافة المنتج"}
-          </button>
+          <Button type="submit" loading={saving} loadingText="جارٍ الإضافة...">
+            إضافة المنتج
+          </Button>
         </form>
 
         <CsvImport token={token} storeId={store.id} onImported={refresh} />
@@ -124,8 +121,14 @@ export default function DashboardProductsPage() {
 
       <div>
         <h2 className="font-display text-2xl font-extrabold text-harbor mb-6">منتجاتك</h2>
-        {products.length === 0 ? (
-          <p className="text-rope">لا توجد منتجات بعد.</p>
+        {products === null ? (
+          <div className="space-y-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <SkeletonCard key={i} />
+            ))}
+          </div>
+        ) : products.length === 0 ? (
+          <EmptyState title="لا توجد منتجات بعد" description="أضف أول منتج من النموذج على اليمين." />
         ) : (
           <ul className="space-y-3">
             {products.map((p) =>
@@ -141,10 +144,7 @@ export default function DashboardProductsPage() {
                   onCancel={() => setEditingId(null)}
                 />
               ) : (
-                <li
-                  key={p.id}
-                  className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-harbor/10 bg-white shadow-sm px-4 sm:px-5 py-3"
-                >
+                <Card key={p.id} className="flex flex-wrap items-center justify-between gap-3 px-4 sm:px-5 py-3">
                   <div className="flex items-center gap-3 min-w-0">
                     {p.imageUrl && (
                       // eslint-disable-next-line @next/next/no-img-element
@@ -176,7 +176,7 @@ export default function DashboardProductsPage() {
                       حذف
                     </button>
                   </div>
-                </li>
+                </Card>
               )
             )}
           </ul>
@@ -227,7 +227,7 @@ function ProductEditRow({
   }
 
   return (
-    <li className="rounded-xl border border-brass/40 bg-white p-4 space-y-3">
+    <Card className="border-brass/40 p-4 space-y-3">
       <input value={name} onChange={(e) => setName(e.target.value)} className="input" placeholder="اسم المنتج" />
       <input
         type="number"
@@ -284,18 +284,14 @@ function ProductEditRow({
       )}
 
       <div className="flex gap-2">
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="rounded-full bg-signal px-4 py-1.5 text-sm font-bold text-canvas hover:bg-signal-dark disabled:opacity-60"
-        >
-          {saving ? "جارٍ الحفظ..." : "حفظ"}
-        </button>
-        <button onClick={onCancel} className="rounded-full border border-harbor/20 px-4 py-1.5 text-sm font-bold text-harbor">
+        <Button size="sm" onClick={handleSave} loading={saving} loadingText="جارٍ الحفظ...">
+          حفظ
+        </Button>
+        <Button size="sm" variant="secondary" onClick={onCancel}>
           إلغاء
-        </button>
+        </Button>
       </div>
-    </li>
+    </Card>
   );
 }
 
@@ -319,7 +315,7 @@ function CsvImport({ token, storeId, onImported }: { token: string | null; store
   }
 
   return (
-    <div className="mt-8 rounded-xl border border-harbor/10 bg-white shadow-sm p-4">
+    <Card className="mt-8 p-4">
       <h3 className="font-bold text-harbor mb-2">استيراد من CSV</h3>
       <p className="text-xs text-rope mb-3" dir="ltr">
         columns: name, price, imageUrl, stock
@@ -348,6 +344,6 @@ function CsvImport({ token, storeId, onImported }: { token: string | null; store
           )}
         </div>
       )}
-    </div>
+    </Card>
   );
 }
