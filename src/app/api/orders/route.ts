@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createShipment } from "@/lib/integrations/couriers";
-import { openDpaySession, DpayApiError } from "@/lib/payment/dpay-client";
+import { buildLightboxConfig, getLightboxScriptUrl, isMoamalatConfigured, makeOrderReference } from "@/lib/payment/moamalat-client";
 import { createOrderSchema } from "@/lib/validation";
 import { getSubscriptionState, getCheckoutPaymentMethods } from "@/lib/checkout-features";
 import { resolveCouponDiscount } from "@/lib/coupons";
@@ -30,15 +30,14 @@ export async function POST(req: Request) {
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "بيانات غير صالحة" }, { status: 400 });
     }
-    const { storeSlug, items, buyer, paymentMethod, dpayPayMethod, dpayCustomerMobile, dpayBirthYear, dpayCardNumber, couponCode } =
-      parsed.data;
+    const { storeSlug, items, buyer, paymentMethod, couponCode } = parsed.data;
 
     const store = await prisma.store.findUnique({ where: { slug: storeSlug }, include: { merchant: true } });
     if (!store) return NextResponse.json({ error: "Store not found" }, { status: 404 });
 
     if (paymentMethod === "wallet") {
-      const dpayAvailable = getCheckoutPaymentMethods(getSubscriptionState(store.merchant)).dpay;
-      if (!store.walletProvider || !dpayAvailable) {
+      const walletAvailable = getCheckoutPaymentMethods(getSubscriptionState(store.merchant)).dpay;
+      if (!store.walletProvider || !walletAvailable || !isMoamalatConfigured()) {
         return NextResponse.json({ error: "This store has no wallet payment option enabled" }, { status: 400 });
       }
     }
@@ -204,62 +203,27 @@ export async function POST(req: Request) {
     const totalCents = order.totalCents;
     const discountCents = order.discountCents;
 
-    // Wallet orders open a DPay payment session instead of settling
-    // synchronously — most gateways need the buyer to enter an OTP DPay
-    // texts them directly (we never see it ourselves until the buyer
-    // types it back to us), and Moamalat redirects to a hosted page
-    // entirely. Only DPay's webhook (or, for a faster UI, the OTP-verify
-    // call — see finalizeWalletOrder) ever flips paymentStatus to
-    // paid/failed; nothing here assumes success.
+    // Wallet orders return a signed LightBox config instead of settling
+    // synchronously — the buyer's browser embeds Moamalat's own widget
+    // directly (no server-side "open a session" call the way DPay had
+    // one). Only /api/moamalat/webhook (or, for a faster UI,
+    // /api/payments/moamalat/complete relaying the widget's own
+    // completeCallback — see finalizeWalletOrder) ever flips
+    // paymentStatus to paid/failed; nothing here assumes success.
     if (paymentMethod === "wallet") {
-      let session;
-      try {
-        session = await openDpaySession({
-          payMethod: dpayPayMethod!,
+      const lightbox = buildLightboxConfig(totalCents, makeOrderReference(order.id));
+      return NextResponse.json(
+        {
+          orderId: order.id,
           totalCents,
-          data: { order_id: order.id },
-          customerMobile: dpayCustomerMobile,
-          birthYear: dpayBirthYear,
-          cardNumber: dpayCardNumber,
-        });
-      } catch (err) {
-        const message = err instanceof DpayApiError ? err.message : "تعذّر بدء الدفع الإلكتروني";
-        console.error(`DPay session open failed for order ${order.id}:`, err);
-        return NextResponse.json({ error: message, orderId: order.id }, { status: 502 });
-      }
-
-      await prisma.order.update({
-        where: { id: order.id },
-        data: {
-          dpaySessionId: String(session.sessionId),
-          dpayPayMethod,
-          dpayFeeCents: session.feeCents,
-          paymentStatus: session.status === "paid" ? "paid" : "pending",
+          shippingCents,
+          discountCents,
+          paymentStatus: "pending",
+          moamalat: lightbox,
+          moamalatScriptUrl: getLightboxScriptUrl(),
         },
-      });
-
-      if (session.status !== "paid") {
-        // Real session, awaiting OTP entry or the Moamalat redirect —
-        // nothing to ship yet. See /api/dpay/verify-otp and /api/dpay/webhook.
-        return NextResponse.json(
-          {
-            orderId: order.id,
-            totalCents,
-            shippingCents,
-            discountCents,
-            paymentStatus: "pending",
-            dpay: {
-              sessionId: session.sessionId,
-              payMethod: dpayPayMethod,
-              requiresOtp: dpayPayMethod !== "moamalat",
-              paymentLink: session.paymentLink,
-            },
-          },
-          { status: 201 }
-        );
-      }
-      // Mock mode (no DPAY_API_TOKEN) resolves "paid" immediately — fall
-      // through to the shared shipment/notify block below, same as COD.
+        { status: 201 }
+      );
     }
 
     // Hand off to the courier regardless of payment method — COD orders still
@@ -289,6 +253,8 @@ export async function POST(req: Request) {
     });
     await sendNewOrderSms(store.merchant.phone, order.id, order.buyerName);
 
+    // Only "cod" ever reaches here now — "wallet" always returned earlier
+    // above with the LightBox config instead.
     return NextResponse.json(
       {
         orderId: order.id,
@@ -297,7 +263,7 @@ export async function POST(req: Request) {
         discountCents,
         trackingId: shipment.trackingId,
         courier: store.courier,
-        paymentStatus: paymentMethod === "wallet" ? "paid" : "pending",
+        paymentStatus: "pending",
       },
       { status: 201 }
     );

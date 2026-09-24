@@ -28,11 +28,11 @@ export function normalizeSubscriptionTier(tier?: string | null): SubscriptionTie
 // The merchant.* boolean feature flags (dpayEnabled, apiAccessEnabled, ...)
 // have real (non-null) defaults in the DB, so they never fall back to
 // this on their own — this must be applied explicitly whenever a
-// merchant's subscription activates (registration, DPay payment,
+// merchant's subscription activates (registration, Moamalat payment,
 // admin approval) or the flags just stay at their defaults forever.
 // Every tier now maps to the same full feature set — kept as a function
 // of `tier` (rather than a bare constant) only so every existing call
-// site (register, dpay-subscription, admin approve/accept) keeps
+// site (register, moamalat/subscription-init, admin approve/accept) keeps
 // working unchanged.
 export function getPlanFeatureFlags(_tier?: string | null) {
   return {
@@ -126,7 +126,7 @@ export function normalizeSubscriptionPeriod(period?: string | null): Subscriptio
 // since there's only one plan now. Shared by the homepage pricing
 // section and /subscription so the two never drift apart.
 export const PLATFORM_FEATURES: string[] = [
-  "طرق دفع جاهزة: DPay (معاملات، ساحارة باي، سداد، إدفعلي) + الدفع عند الاستلام",
+  "طرق دفع جاهزة: Moamalat + الدفع عند الاستلام",
   "شحن جاهز عبر فانكس: إنشاء شحنة تلقائي وتتبع لحظي",
   "رسائل SMS وبريد إلكتروني جاهزة: تحقق وإشعارات وتأكيدات",
   "منتجات وطلبات ومبيعات غير محدودة",

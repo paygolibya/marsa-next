@@ -1,6 +1,5 @@
 import { z } from "zod";
 import { normalizeLibyanPhone } from "@/lib/integrations/sms";
-import { DPAY_PAY_METHODS } from "@/lib/payment/dpay-client";
 
 export const registerSchema = z.object({
   name: z.string().min(1, "الاسم مطلوب"),
@@ -92,18 +91,7 @@ export const createOrderSchema = z
       vanexAreaId: z.string().min(1).optional(),
     }),
     paymentMethod: z.enum(["cod", "wallet"]),
-    // Required (per the refine below) only when paymentMethod is "wallet" —
-    // which DPay gateway the buyer picked, plus whichever of its required
-    // fields apply (see DPAY_REQUIRED_FIELDS in dpay-client.ts).
-    dpayPayMethod: z.enum(DPAY_PAY_METHODS).optional(),
-    dpayCustomerMobile: z.string().optional(),
-    dpayBirthYear: z.string().optional(),
-    dpayCardNumber: z.string().optional(),
     couponCode: z.string().optional(),
-  })
-  .refine((v) => v.paymentMethod !== "wallet" || !!v.dpayPayMethod, {
-    message: "اختر طريقة الدفع الإلكتروني",
-    path: ["dpayPayMethod"],
   });
 
 export const createCouponSchema = z.object({
@@ -141,14 +129,6 @@ export const setCustomDomainSchema = z.object({
     .regex(/^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/i, "نطاق غير صالح")
     .transform((v) => v.toLowerCase())
     .nullable(),
-});
-
-export const dpaySubscriptionCheckoutSchema = z.object({
-  period: z.enum(["1m", "3m", "12m"]),
-  dpayPayMethod: z.enum(DPAY_PAY_METHODS),
-  dpayCustomerMobile: z.string().optional(),
-  dpayBirthYear: z.string().optional(),
-  dpayCardNumber: z.string().optional(),
 });
 
 export const transferPayoutSchema = z.object({

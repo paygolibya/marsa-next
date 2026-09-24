@@ -3,7 +3,7 @@
 // calls to a Next.js API.
 
 import type { Payout, PlatformStats, MerchantPayoutSummary, CronLog } from "@/types/payment";
-import type { DpayPayMethod } from "@/lib/payment/dpay-client";
+import type { LightboxConfig } from "@/lib/payment/moamalat-client";
 
 export class ApiError extends Error {
   status: number;
@@ -323,10 +323,6 @@ export const api = {
     items: { productId: string; quantity: number; variantId?: string }[];
     buyer: { name: string; phone: string; email?: string; city: string; address: string; vanexAreaId?: string };
     paymentMethod: "cod" | "wallet";
-    dpayPayMethod?: DpayPayMethod;
-    dpayCustomerMobile?: string;
-    dpayBirthYear?: string;
-    dpayCardNumber?: string;
     couponCode?: string;
   }) =>
     request<{
@@ -337,36 +333,21 @@ export const api = {
       trackingId?: string;
       courier?: string;
       paymentStatus: string;
-      dpay?: { sessionId: number; payMethod: DpayPayMethod; requiresOtp: boolean; paymentLink?: string };
+      moamalat?: LightboxConfig;
+      moamalatScriptUrl?: string;
     }>("/api/orders", { method: "POST", body: JSON.stringify(body) }),
 
-  dpayVerifyOtp: (orderId: string, otp: string) =>
-    request<{ status: string; trackingId?: string; courier?: string; error?: string }>("/api/dpay/verify-otp", {
-      method: "POST",
-      body: JSON.stringify({ orderId, otp }),
-    }),
+  moamalatComplete: (fields: Record<string, string>) =>
+    request<{ status: string; kind?: "order" | "subscription"; trackingId?: string; courier?: string; error?: string }>(
+      "/api/payments/moamalat/complete",
+      { method: "POST", body: JSON.stringify(fields) }
+    ),
 
-  subscriptionDpayCheckout: (
-    token: string,
-    body: {
-      period: "1m" | "3m" | "12m";
-      dpayPayMethod: DpayPayMethod;
-      dpayCustomerMobile?: string;
-      dpayBirthYear?: string;
-      dpayCardNumber?: string;
-    }
-  ) =>
-    request<{
-      paymentId: string;
-      status: string;
-      dpay?: { sessionId: number; payMethod: DpayPayMethod; requiresOtp: boolean; paymentLink?: string };
-    }>("/api/payments/dpay-checkout", { method: "POST", headers: authHeaders(token), body: JSON.stringify(body) }),
-
-  subscriptionDpayVerifyOtp: (token: string, paymentId: string, otp: string) =>
-    request<{ status: string; error?: string }>("/api/payments/dpay-verify-otp", {
+  subscriptionMoamalatInit: (token: string, period: "1m" | "3m" | "12m") =>
+    request<{ paymentId: string; lightbox: LightboxConfig; moamalatScriptUrl: string }>("/api/payments/moamalat/subscription-init", {
       method: "POST",
       headers: authHeaders(token),
-      body: JSON.stringify({ paymentId, otp }),
+      body: JSON.stringify({ period }),
     }),
 
   ordersByStore: (token: string, storeId: string) =>

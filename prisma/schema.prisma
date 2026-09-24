@@ -125,10 +125,17 @@ model Merchant {
   directWireEnabled      Boolean   @default(true) @map("direct_wire_enabled")
   receiptUploadEnabled   Boolean   @default(true) @map("receipt_upload_enabled")
   codEnabled             Boolean   @default(true) @map("cod_enabled")
+  // Name kept from the DPay era for column-rename safety on a live DB —
+  // this now gates wallet payment (Moamalat) generally, not DPay
+  // specifically. See getCheckoutPaymentMethods().dpay.
   dpayEnabled            Boolean   @default(false) @map("dpay_enabled")
   allowMultiplePaymentMethods Boolean @default(false) @map("allow_multiple_payment_methods")
   apiAccessEnabled       Boolean   @default(false) @map("api_access_enabled")
   selectedPaymentMethod  String?   @map("selected_payment_method")
+  // Legacy: DPay's per-merchant bearer token. Moamalat uses app-wide env
+  // credentials instead (MOAMALAT_MERCHANT_ID/TERMINAL_ID/SECRET_KEY), so
+  // this column is frozen historical data — never read or written by new
+  // code.
   dpayApiToken           String?   @map("dpay_api_token")
 
   phoneVerified          Boolean   @default(false) @map("phone_verified")
@@ -156,18 +163,23 @@ model Payment {
   amount            Int // whole LYD, NOT cents — existing convention on this model, kept as-is rather than migrated
   currency          String    @default("LYD")
   status            String    @default("pending") // 'pending' | 'approved' | 'rejected'
-  method            String    @default("bank_transfer") @map("method") // 'bank_transfer' | 'dpay'
+  method            String    @default("bank_transfer") @map("method") // 'bank_transfer' | 'dpay' (legacy) | 'moamalat'
   receiptFile       String?   @map("receipt_file")
   receiptUploadedAt DateTime? @map("receipt_uploaded_at")
   approvedAt        DateTime? @map("approved_at")
-  approvedBy        String?   @map("approved_by") // admin merchantId for a manual approval; null for an automatic DPay one
+  approvedBy        String?   @map("approved_by") // admin merchantId for a manual approval; null for an automatic gateway confirmation
   rejectionReason   String?   @map("rejection_reason")
 
-  // Set when method is "dpay" — same DPay session tracking as Order,
-  // see src/lib/payment/dpay-subscription.ts.
+  // Legacy DPay session tracking — frozen historical data, see the
+  // matching comment on Order above.
   dpaySessionId String? @unique @map("dpay_session_id")
   dpayPayMethod String? @map("dpay_pay_method")
   dpayFeeCents  Int?    @map("dpay_fee_cents")
+
+  // Direct Moamalat LightBox tracking — see moamalat-subscription.ts.
+  // MerchantReference sent to Moamalat is always this Payment's own id.
+  moamalatSystemReference  String? @map("moamalat_system_reference")
+  moamalatNetworkReference String? @map("moamalat_network_reference")
 
   createdAt         DateTime  @default(now()) @map("created_at")
   updatedAt         DateTime  @updatedAt @map("updated_at")
@@ -301,14 +313,25 @@ model Order {
   courierNote       String?  @map("courier_note") // failure/return reason from the courier
   createdAt         DateTime @default(now()) @map("created_at")
 
-  // DPay wallet payment tracking — set when a wallet order opens a DPay
-  // session (src/lib/payment/dpay-client.ts). paymentStatus flips from
-  // pending to paid/failed only via src/lib/payment/dpay-order.ts, called
-  // from either the OTP-verify route or the DPay webhook (whichever
-  // confirms first) — never written directly anywhere else.
+  // Legacy DPay wallet payment tracking — DPay (the aggregator) was
+  // removed in favor of a direct Moamalat integration; these three
+  // columns are frozen historical data for orders paid before that
+  // switch, never written to by new code. See moamalatSystemReference
+  // etc. below for the current integration.
   dpaySessionId String? @unique @map("dpay_session_id")
   dpayPayMethod String? @map("dpay_pay_method") // edfali | sadad | masrefypay | yousrpay | saharapay | mobicash | moamalat
   dpayFeeCents  Int?    @map("dpay_fee_cents") // DPay's own fee, separate from Rifqa's commission
+
+  // Direct Moamalat LightBox payment tracking — set once Moamalat's
+  // completeCallback or server notification confirms the transaction
+  // (src/lib/payment/moamalat-client.ts). paymentStatus flips from
+  // pending to paid/failed only via src/lib/payment/moamalat-order.ts,
+  // called from either the client-relayed complete callback or Moamalat's
+  // own server notification (whichever confirms first) — never written
+  // directly anywhere else. MerchantReference sent to Moamalat is always
+  // this Order's own id, so no separate correlation column is needed.
+  moamalatSystemReference  String? @map("moamalat_system_reference")
+  moamalatNetworkReference String? @map("moamalat_network_reference")
 
   // Automatic payout tracking — set the moment the real-time trigger (or
   // its daily-cron backstop) calculates this order's commission. Denormalized

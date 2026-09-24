@@ -1,5 +1,15 @@
 # DPay wallet payments
 
+> **Superseded.** DPay was removed from the codebase on 2026-09-24. Its
+> Moamalat pass-through worked on DPay's own side (real session, real
+> `payment_link`) but Moamalat's own hosted LightBox page couldn't find the
+> resulting order ("Order Not Found") — an issue on DPay/Moamalat's backend,
+> not something fixable from here. Wallet payment is now a **direct**
+> integration against Moamalat's own LightBox API instead — see
+> `docs/moamalat.md`. This document is kept as historical record of how
+> DPay worked and what was verified; none of the code paths described below
+> still exist.
+
 Real integration with [DPay](https://dpay.ly) (`https://dpay.ly/api`), the
 aggregator Rifqa routes every "wallet" checkout through. One session-based
 flow covers 7 gateways — the buyer picks one at checkout, not us:

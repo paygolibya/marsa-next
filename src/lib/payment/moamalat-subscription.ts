@@ -13,14 +13,14 @@ function addMonths(date: Date, months: number): Date {
 }
 
 /**
- * The single place a DPay-paid subscription Payment's status is ever
+ * The single place a Moamalat-paid subscription Payment's status is ever
  * written, and the single place it actually activates the merchant's
- * subscription — same shape as finalizeWalletOrder (dpay-order.ts), and
- * for the same reason: called from two independent triggers that can
- * race each other (the merchant completing OTP verification, and DPay's
- * webhook), guarded by the same atomic `status: "pending"` updateMany so
- * whichever confirms first wins and the other is a safe no-op, not a
- * double-activation.
+ * subscription — same shape as finalizeWalletOrder (moamalat-order.ts),
+ * and for the same reason: called from two independent triggers that can
+ * race each other (the client-relayed complete callback, and Moamalat's
+ * server notification), guarded by the same atomic `status: "pending"`
+ * updateMany so whichever confirms first wins and the other is a safe
+ * no-op, not a double-activation.
  *
  * Mirrors exactly what an admin's manual approval already does
  * (/api/admin/payments/[id]/approve) — this is the same activation,
@@ -28,11 +28,11 @@ function addMonths(date: Date, months: number): Date {
  */
 export async function finalizeSubscriptionPayment(paymentId: string, outcome: "paid" | "failed"): Promise<FinalizeSubscriptionPaymentResult> {
   const guarded = await prisma.payment.updateMany({
-    where: { id: paymentId, method: "dpay", status: "pending" },
+    where: { id: paymentId, method: "moamalat", status: "pending" },
     data: {
       status: outcome === "paid" ? "approved" : "rejected",
       approvedAt: outcome === "paid" ? new Date() : null,
-      rejectionReason: outcome === "paid" ? null : "فشلت عملية الدفع عبر DPay",
+      rejectionReason: outcome === "paid" ? null : "فشلت عملية الدفع عبر Moamalat",
     },
   });
   if (guarded.count === 0) return { updated: false };

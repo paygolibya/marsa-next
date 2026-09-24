@@ -4,7 +4,7 @@ import { sendOrderConfirmationEmail } from "@/lib/integrations/email";
 import { sendNewOrderSms } from "@/lib/integrations/sms";
 
 export type FinalizeWalletOrderResult = {
-  updated: boolean; // false = already finalized by a concurrent call (webhook + OTP-verify racing, or a duplicate webhook delivery) — a safe no-op, not an error
+  updated: boolean; // false = already finalized by a concurrent call (the notification + client-relayed complete callback racing, or a duplicate notification delivery) — a safe no-op, not an error
   trackingId?: string;
   courier?: string;
 };
@@ -12,11 +12,15 @@ export type FinalizeWalletOrderResult = {
 /**
  * The single place a wallet order's paymentStatus is ever written after
  * creation, and the single place its shipment gets created. Called from
- * two independent triggers that can race each other — the customer
- * completing OTP verification (src/app/api/dpay/verify-otp/route.ts) and
- * DPay's own webhook (src/app/api/dpay/webhook/route.ts) — whichever
- * confirms first wins; the other becomes a no-op via the atomic
- * `paymentStatus: "pending"` guard below, not a duplicate shipment.
+ * two independent triggers that can race each other — the buyer's browser
+ * relaying Moamalat's completeCallback (src/app/api/payments/moamalat/complete/route.ts)
+ * and Moamalat's own server-to-server notification
+ * (src/app/api/moamalat/webhook/route.ts) — whichever confirms first wins;
+ * the other becomes a no-op via the atomic `paymentStatus: "pending"`
+ * guard below, not a duplicate shipment.
+ *
+ * Unchanged from the DPay era (this function never referenced DPay
+ * directly — it only ever cared that paymentMethod is "wallet").
  */
 export async function finalizeWalletOrder(orderId: string, outcome: "paid" | "failed"): Promise<FinalizeWalletOrderResult> {
   const guarded = await prisma.order.updateMany({
