@@ -162,6 +162,19 @@ export type ProductReview = {
   reviewText: string | null;
   createdAt: string;
 };
+export type SupportMessage = { role: "user" | "assistant"; content: string };
+export type BugReport = {
+  id: string;
+  merchantId: string;
+  storeId: string | null;
+  conversationId: string | null;
+  summary: string;
+  details: string;
+  status: "open" | "investigating" | "fixed" | "wont_fix";
+  createdAt: string;
+  merchant?: { name: string; phone: string };
+  conversation?: { messages: SupportMessage[] } | null;
+};
 
 export const api = {
   register: (body: { name: string; phone: string; password: string }) =>
@@ -453,6 +466,28 @@ export const api = {
 
   merchantPayouts: (token: string) =>
     request<MerchantPayoutSummary>("/api/merchant/payouts", { headers: authHeaders(token) }),
+
+  supportChat: (token: string, body: { conversationId?: string | null; message: string }) =>
+    request<{ conversationId: string; reply: string }>("/api/support/chat", {
+      method: "POST",
+      headers: authHeaders(token),
+      body: JSON.stringify(body),
+    }),
+
+  supportLatestConversation: (token: string) =>
+    request<{ conversationId: string | null; messages: SupportMessage[] }>("/api/support/conversations/latest", {
+      headers: authHeaders(token),
+    }),
+
+  adminBugReports: (token: string) =>
+    request<{ reports: BugReport[] }>("/api/admin/bug-reports", { headers: authHeaders(token) }),
+
+  adminUpdateBugReportStatus: (token: string, id: string, status: BugReport["status"]) =>
+    request<{ report: BugReport }>(`/api/admin/bug-reports/${id}`, {
+      method: "PATCH",
+      headers: authHeaders(token),
+      body: JSON.stringify({ status }),
+    }),
 };
 
 export function formatLYD(cents: number): string {

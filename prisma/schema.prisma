@@ -149,8 +149,65 @@ model Merchant {
   payments Payment[]
   payouts Payout[]
   commissions Commission[]
+  supportConversations SupportConversation[]
+  bugReports BugReport[]
 
   @@map("merchants")
+}
+
+// AI merchant-support chat (Claude, tool-use grounded in this merchant's
+// own real data — see src/lib/support/). One conversation persists across
+// page reloads; a merchant can escalate a real platform bug mid-conversation
+// (see BugReport) rather than the agent guessing or making something up.
+model SupportConversation {
+  id         String   @id @default(cuid())
+  merchantId String   @map("merchant_id")
+  storeId    String?  @map("store_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  merchant   Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  messages   SupportMessage[]
+  bugReports BugReport[]
+
+  @@index([merchantId])
+  @@map("support_conversations")
+}
+
+model SupportMessage {
+  id             String   @id @default(cuid())
+  conversationId String   @map("conversation_id")
+  role           String   // "user" | "assistant"
+  content        String   @db.Text
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  conversation SupportConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@map("support_messages")
+}
+
+// A real platform issue the support agent couldn't resolve by answering —
+// escalated for a human developer to investigate (see src/app/admin/escalations).
+// Deliberately NOT auto-fixed: no agent in this app ever pushes a code
+// change to production unattended.
+model BugReport {
+  id             String   @id @default(cuid())
+  merchantId     String   @map("merchant_id")
+  storeId        String?  @map("store_id")
+  conversationId String?  @map("conversation_id")
+  summary        String
+  details        String   @db.Text
+  status         String   @default("open") // open | investigating | fixed | wont_fix
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  merchant     Merchant             @relation(fields: [merchantId], references: [id])
+  conversation SupportConversation? @relation(fields: [conversationId], references: [id])
+
+  @@index([merchantId])
+  @@index([status])
+  @@map("bug_reports")
 }
 
 model Payment {

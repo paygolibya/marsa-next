@@ -80,3 +80,18 @@ export async function sendOrderStatusEmail(order: EmailOrder, newStatus: string)
   const lines = [`مرحبًا ${order.buyerName}،`, message, `رقم الطلب: ${order.id}`];
   await sendEmail(order.buyerEmail, "تحديث على طلبك", lines.join("\n"));
 }
+
+// A merchant-support conversation escalated a real platform issue (see
+// src/lib/support/tools.ts's escalate_to_developer) — notifies the
+// platform owner, same best-effort/never-throws convention as every other
+// email here. No-op (besides the mock log) when ADMIN_NOTIFICATION_EMAIL
+// isn't set, same as buyerEmail being absent elsewhere in this file.
+export async function sendBugReportEmail(report: { id: string; merchantName: string; summary: string; details: string }): Promise<void> {
+  const to = process.env.ADMIN_NOTIFICATION_EMAIL;
+  if (!to) {
+    console.log(`[email mock] bug report ${report.id} not sent — ADMIN_NOTIFICATION_EMAIL not set`);
+    return;
+  }
+  const lines = [`تاجر: ${report.merchantName}`, `الملخص: ${report.summary}`, "", report.details, "", "عرض في لوحة الإدارة: /admin/escalations"];
+  await sendEmail(to, `🚨 مشكلة مُصعّدة: ${report.summary}`, lines.join("\n"));
+}

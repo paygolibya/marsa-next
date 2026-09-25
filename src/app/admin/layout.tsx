@@ -9,6 +9,7 @@ import ThemeToggle from "@/components/layout/ThemeToggle";
 
 const navItems = [
   { href: "/admin", label: "لوحة التحكم", icon: "📊" },
+  { href: "/admin/escalations", label: "المشاكل المُصعّدة", icon: "🚨" },
   { href: "/admin/payments", label: "الدفعات", icon: "💰" },
   { href: "/admin/payouts", label: "مستحقات التجار", icon: "🏦" },
   { href: "/admin/cron-logs", label: "سجل المهام التلقائية", icon: "🕒" },

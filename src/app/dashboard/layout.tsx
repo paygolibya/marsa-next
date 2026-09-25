@@ -9,6 +9,7 @@ import { isAdminMerchant } from "@/lib/is-admin";
 import { useCurrentStore } from "@/lib/use-current-store";
 import ThemeToggle from "@/components/layout/ThemeToggle";
 import { ToastProvider } from "@/components/ui";
+import { SupportChatWidget } from "@/components/support/SupportChatWidget";
 
 const navItems = [
   { href: "/dashboard", label: "نظرة عامة", icon: "📊" },
@@ -246,6 +247,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           ) : null}
         </main>
       </div>
+      <SupportChatWidget />
     </ToastProvider>
   );
 }
