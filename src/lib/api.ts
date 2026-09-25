@@ -4,6 +4,7 @@
 
 import type { Payout, PlatformStats, MerchantPayoutSummary, CronLog } from "@/types/payment";
 import type { LightboxConfig } from "@/lib/payment/moamalat-client";
+import type { SectionData } from "@/components/storefront/sections/types";
 
 export class ApiError extends Error {
   status: number;
@@ -76,6 +77,7 @@ export type Store = {
   createdAt: string;
   customization?: StoreCustomization | null;
   dpayAvailable?: boolean;
+  sections?: SectionData[];
   aboutText: string | null;
   returnPolicy: string | null;
   shippingPolicy: string | null;

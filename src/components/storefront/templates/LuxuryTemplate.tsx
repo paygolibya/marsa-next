@@ -1,8 +1,14 @@
 import Image from "next/image";
-import Link from "next/link";
-import type { ReactNode } from "react";
-import { formatLYD } from "@/lib/api";
-import { normalizeSectionOrder, type SectionKey, type StorefrontTemplateProps } from "./types";
+import { StatsSection, ProductsSection, TestimonialsSection, NewsletterSection } from "@/components/storefront/sections";
+import type { SectionRenderProps, SectionType } from "@/components/storefront/sections/types";
+import type { StorefrontTemplateProps } from "./types";
+
+const SECTION_COMPONENTS: Record<SectionType, (props: SectionRenderProps) => React.ReactNode> = {
+  stats: StatsSection,
+  products: ProductsSection,
+  testimonials: TestimonialsSection,
+  newsletter: NewsletterSection,
+};
 
 /**
  * "الفاخر" (Luxury) — the one template that inverts the usual primary/
@@ -13,7 +19,6 @@ import { normalizeSectionOrder, type SectionKey, type StorefrontTemplateProps } 
  * refined 2-column grid instead of 3, thin gold-on-dark borders.
  */
 export default function LuxuryTemplate({
-  slug,
   store,
   filtered,
   query,
@@ -27,171 +32,48 @@ export default function LuxuryTemplate({
   setNewsletterEmail,
   newsletterState,
   onNewsletterSubmit,
+  sections,
 }: StorefrontTemplateProps) {
   const dark = store.customization?.primaryColor || "#1f2937";
   const gold = store.customization?.accentColor || store.customization?.secondaryColor || "#f59e0b";
-  const order = normalizeSectionOrder(store.customization?.sectionOrder);
+  // Luxury inverts the usual roles — "primary" here is the dark canvas
+  // (background), not a button/header color, and "accent" (gold) does the
+  // highlighting work primary normally does elsewhere. Each section's
+  // variant="luxury" branch already knows this and reads colors.primary/
+  // accent accordingly.
+  const colors = { primary: dark, secondary: dark, accent: gold };
 
-  const statsSection =
-    store.customization?.showSocialProof !== false && stats && (stats.deliveredOrderCount > 0 || stats.reviewCount > 0) ? (
-      <div className="flex flex-wrap justify-center gap-8 text-center">
-        {stats.deliveredOrderCount > 0 && (
-          <div>
-            <p className="font-display text-xl font-extrabold" style={{ color: gold }}>
-              +{stats.deliveredOrderCount}
-            </p>
-            <p className="text-xs text-white/50 tracking-wide">طلب تم تسليمه</p>
-          </div>
-        )}
-        {stats.averageRating != null && stats.reviewCount > 0 && (
-          <div>
-            <p className="font-display text-xl font-extrabold" style={{ color: gold }}>
-              ★ {stats.averageRating.toFixed(1)}
-            </p>
-            <p className="text-xs text-white/50 tracking-wide">{stats.reviewCount} تقييم</p>
-          </div>
-        )}
-      </div>
-    ) : null;
-
-  const productsSection = (
-    <div>
-      <div className="flex justify-center mb-12">
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="ابحث عن منتج..."
-          className="w-full max-w-sm rounded-none border-0 border-b bg-transparent px-2 py-2 text-center text-white placeholder:text-white/40 focus:outline-none"
-          style={{ borderColor: `${gold}50` }}
-        />
-      </div>
-
-      {filtered.length === 0 ? (
-        <p className="text-white/50 text-center py-16">لا توجد منتجات مطابقة حاليًا.</p>
-      ) : (
-        <div className="grid sm:grid-cols-2 gap-10">
-          {filtered.map((product) => (
-            <div key={product.id} className="flex flex-col">
-              <Link
-                href={`/store/${slug}/product/${product.id}`}
-                className="aspect-[4/3] flex items-center justify-center text-white/40 text-sm border"
-                style={{ borderColor: `${gold}30` }}
-              >
-                {product.imageUrl ? (
-                  <Image src={product.imageUrl} alt={product.name} width={900} height={675} unoptimized className="h-full w-full object-cover" />
-                ) : (
-                  "لا توجد صورة"
-                )}
-              </Link>
-              <div className="pt-4 text-center">
-                <Link href={`/store/${slug}/product/${product.id}`} className="font-display text-lg font-bold hover:underline">
-                  {product.name}
-                </Link>
-                <p className="mt-1 font-bold tracking-wide" style={{ color: gold }}>
-                  {formatLYD(product.priceCents)}
-                </p>
-                {product.variantOptions?.length ? (
-                  <Link
-                    href={`/store/${slug}/product/${product.id}`}
-                    className="mt-3 inline-block rounded-full border px-6 py-2 text-xs font-bold tracking-widest hover:bg-white/5 transition-colors"
-                    style={{ borderColor: gold, color: gold }}
-                  >
-                    اختر الخيارات
-                  </Link>
-                ) : (
-                  <button
-                    onClick={() => onAddToCart(product)}
-                    className="mt-3 rounded-full border px-6 py-2 text-xs font-bold tracking-widest hover:bg-white/5 transition-colors"
-                    style={{ borderColor: gold, color: gold }}
-                  >
-                    أضف إلى السلة
-                  </button>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-
-  const testimonialsSection =
-    store.customization?.showTestimonials && testimonials.length > 0 ? (
-      <div className="text-center">
-        <h2 className="font-display text-xl font-extrabold mb-10 tracking-wide" style={{ color: gold }}>
-          آراء عملائنا
-        </h2>
-        <div className="grid sm:grid-cols-3 gap-8">
-          {testimonials.map((t, i) => (
-            <div key={i}>
-              <p className="mb-3" style={{ color: gold }}>
-                {"★".repeat(t.rating)}
-                {"☆".repeat(5 - t.rating)}
-              </p>
-              {t.reviewText && <p className="text-sm text-white/70 mb-3">&quot;{t.reviewText}&quot;</p>}
-              <p className="text-xs text-white/40 tracking-wide">
-                {t.buyerName} — {t.productName}
-              </p>
-            </div>
-          ))}
-        </div>
-      </div>
-    ) : null;
-
-  const newsletterSection = store.customization?.showNewsletter ? (
-    <div className="text-center max-w-md mx-auto">
-      <h3 className="font-display font-bold mb-2 tracking-wide" style={{ color: gold }}>
-        انضم إلى قائمتنا الخاصة
-      </h3>
-      <p className="text-sm text-white/60 mb-5">عروض حصرية من {store.name}</p>
-      {newsletterState === "done" ? (
-        <p className="text-sm font-bold" style={{ color: gold }}>
-          ✓ تم الاشتراك بنجاح
-        </p>
-      ) : (
-        <form onSubmit={onNewsletterSubmit} className="flex gap-2">
-          <input
-            type="email"
-            required
-            dir="ltr"
-            value={newsletterEmail}
-            onChange={(e) => setNewsletterEmail(e.target.value)}
-            placeholder="بريدك الإلكتروني"
-            className="flex-1 rounded-none border-0 border-b bg-transparent px-2 py-2 text-white placeholder:text-white/40 focus:outline-none"
-            style={{ borderColor: `${gold}50` }}
-          />
-          <button
-            type="submit"
-            disabled={newsletterState === "loading"}
-            className="rounded-full border px-6 py-2 text-xs font-bold tracking-widest disabled:opacity-50 hover:bg-white/5 transition-colors"
-            style={{ borderColor: gold, color: gold }}
-          >
-            {newsletterState === "loading" ? "..." : "اشترك"}
-          </button>
-        </form>
-      )}
-      {newsletterState === "error" && <p className="text-xs mt-2 text-white/50">تعذّر الاشتراك، حاول مجددًا</p>}
-    </div>
-  ) : null;
-
-  const sections: Record<SectionKey, ReactNode> = {
-    stats: statsSection,
-    products: productsSection,
-    testimonials: testimonialsSection,
-    newsletter: newsletterSection,
+  const sectionProps: Omit<SectionRenderProps, "settings"> = {
+    variant: "luxury",
+    colors,
+    store,
+    filtered,
+    query,
+    setQuery,
+    stats,
+    testimonials,
+    onAddToCart,
+    newsletterEmail,
+    setNewsletterEmail,
+    newsletterState,
+    onNewsletterSubmit,
   };
+
   let renderedFirst = false;
-  const orderedSections = order.map((key) => {
-    const node = sections[key];
-    if (!node) return null;
-    const spacing = renderedFirst ? "mt-24" : "";
-    renderedFirst = true;
-    return (
-      <div key={key} className={spacing}>
-        {node}
-      </div>
-    );
-  });
+  const orderedSections = sections
+    .filter((s) => s.enabled)
+    .map((s) => {
+      const Component = SECTION_COMPONENTS[s.type];
+      const node = Component({ ...sectionProps, settings: s.settings });
+      if (!node) return null;
+      const spacing = renderedFirst ? "mt-24" : "";
+      renderedFirst = true;
+      return (
+        <div key={s.id ?? s.type} className={spacing}>
+          {node}
+        </div>
+      );
+    });
 
   return (
     <div style={{ backgroundColor: dark }} className="min-h-screen text-white">

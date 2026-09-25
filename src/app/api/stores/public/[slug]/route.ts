@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSubscriptionState, getCheckoutPaymentMethods } from "@/lib/checkout-features";
+import { normalizeToSections } from "@/components/storefront/sections/normalize";
 
 // GET /api/stores/public/:slug — public: fetch a store by its public slug
 // (what the storefront page loads). No auth required.
@@ -10,9 +11,22 @@ export async function GET(_req: Request, { params }: { params: Promise<{ slug: s
     const { slug } = await params;
     const store = await prisma.store.findUnique({
       where: { slug },
-      include: { customization: { include: { template: true } }, merchant: true },
+      include: { customization: { include: { template: true } }, merchant: true, sections: true },
     });
     if (!store) return NextResponse.json({ error: "Store not found" }, { status: 404 });
+
+    // Real StoreSection rows if the backfill's run for this store, else
+    // synthesized from the legacy sectionOrder/show* fields — see
+    // normalizeToSections()'s own comment. Always a complete list, so
+    // templates and the editor never need to know a fallback path exists.
+    const sections = normalizeToSections(store.sections, {
+      sectionOrder: store.customization?.sectionOrder,
+      showSocialProof: store.customization?.showSocialProof ?? true,
+      showTestimonials: store.customization?.showTestimonials ?? false,
+      showNewsletter: store.customization?.showNewsletter ?? true,
+    });
+    const statsEnabled = sections.find((s) => s.type === "stats")?.enabled ?? true;
+    const testimonialsEnabled = sections.find((s) => s.type === "testimonials")?.enabled ?? false;
 
     const products = await prisma.product.findMany({
       where: { storeId: store.id, active: true },
@@ -31,7 +45,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ slug: s
     // has no DPay, Professional only if they picked it as their one
     // automated method, Advanced always. Only this one derived boolean is
     // exposed publicly, never the merchant's subscription details.
-    const { merchant, ...publicStore } = store;
+    const { merchant, sections: _rawSections, ...publicStore } = store;
     const dpayAvailable = getCheckoutPaymentMethods(getSubscriptionState(merchant)).dpay;
 
     // Real numbers behind the customizer's "عرض عدد العملاء والمبيعات"
@@ -42,7 +56,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ slug: s
     let stats: { deliveredOrderCount: number; averageRating: number | null; reviewCount: number } | null = null;
     let testimonials: { buyerName: string; rating: number; reviewText: string | null; productName: string }[] = [];
 
-    if (store.customization?.showSocialProof !== false) {
+    if (statsEnabled) {
       const [deliveredOrderCount, ratingAgg] = await Promise.all([
         prisma.order.count({ where: { storeId: store.id, status: "delivered" } }),
         prisma.productReview.aggregate({
@@ -58,7 +72,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ slug: s
       };
     }
 
-    if (store.customization?.showTestimonials) {
+    if (testimonialsEnabled) {
       const reviews = await prisma.productReview.findMany({
         where: { product: { storeId: store.id }, rating: { gte: 4 }, reviewText: { not: null } },
         orderBy: { createdAt: "desc" },
@@ -68,7 +82,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ slug: s
       testimonials = reviews.map((r) => ({ buyerName: r.buyerName, rating: r.rating, reviewText: r.reviewText, productName: r.product.name }));
     }
 
-    return NextResponse.json({ store: { ...publicStore, dpayAvailable }, products, stats, testimonials });
+    return NextResponse.json({ store: { ...publicStore, dpayAvailable, sections }, products, stats, testimonials });
   } catch (err) {
     console.error(err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

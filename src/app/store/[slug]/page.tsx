@@ -101,6 +101,7 @@ export default function StorefrontPage() {
         setNewsletterEmail={setNewsletterEmail}
         newsletterState={newsletterState}
         onNewsletterSubmit={handleNewsletterSubmit}
+        sections={store.sections ?? []}
       />
 
       <SiteFooter store={footerBranded ? { name: store.name, tagline: store.customization?.tagline } : undefined} />

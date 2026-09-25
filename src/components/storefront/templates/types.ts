@@ -1,4 +1,5 @@
 import type { Product, Store, StoreStats, StoreTestimonial } from "@/lib/api";
+import type { SectionData } from "@/components/storefront/sections/types";
 
 // Every template gets the exact same real data — only how it's laid out
 // differs. A template component owns its whole page (header through
@@ -22,6 +23,11 @@ export type StorefrontTemplateProps = {
   setNewsletterEmail: (v: string) => void;
   newsletterState: "idle" | "loading" | "done" | "error";
   onNewsletterSubmit: (e: React.FormEvent) => void;
+  // The store's real StoreSection rows (or the legacy-synthesized
+  // fallback — see normalizeToSections()), already resolved by the
+  // caller. Templates just render them in order; they no longer compute
+  // section order themselves from store.customization.
+  sections: SectionData[];
 };
 
 // The set of body sections a merchant can drag into any order from the

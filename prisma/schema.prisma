@@ -61,16 +61,16 @@ model TemplateCustomization {
   description      String?
   headerStyle      String  @default("standard") @map("header_style")
   footerStyle      String  @default("standard") @map("footer_style")
+  // Deprecated in favor of StoreSection.enabled (per-section, not one flag
+  // per section type here) — same fallback-source role as sectionOrder below.
   showNewsletter   Boolean @default(true) @map("show_newsletter")
   showReviews      Boolean @default(true) @map("show_reviews")
   showTestimonials Boolean @default(false) @map("show_testimonials")
   showSocialProof  Boolean @default(true) @map("show_social_proof")
-  // Drag-and-drop section order from the customizer, e.g.
-  // ["stats","products","testimonials","newsletter"]. Stored as the
-  // literal keys the storefront templates render — see
-  // src/components/storefront/templates/types.ts (SECTION_KEYS). Missing/
-  // unrecognized values are normalized back to the default order at render
-  // time, so older customizations with no sectionOrder saved yet still work.
+  // Deprecated in favor of StoreSection (see that model's comment) — kept,
+  // not dropped, as the fallback source when a store has no StoreSection
+  // rows yet (backfill not run / a store created in the gap). New code
+  // should read/write StoreSection, not these.
   sectionOrder     String[] @default(["stats", "products", "testimonials", "newsletter"]) @map("section_order")
 
   store    Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
@@ -220,8 +220,46 @@ model Store {
   orders         Order[]
   coupons        Coupon[]
   newsletterSubscribers NewsletterSubscriber[]
+  sections       StoreSection[]
 
   @@map("stores")
+}
+
+// Replaces TemplateCustomization's flat sectionOrder: String[] + the four
+// show* booleans with a real, individually-configurable content model — one
+// row per section instead of one shared array. `settings` is validated
+// per-`type` by the Zod schemas in
+// src/components/storefront/sections/schemas.ts (kept intentionally small:
+// these sections stay data-driven — real orders/reviews/products — not
+// merchant-authored CMS content; that's the seam future section types would
+// plug into, not something Phase 1 needs).
+//
+// Additive-only migration (prisma/migrations/*_add_store_sections) — safe
+// on live production data on its own. A one-time backfill script
+// (prisma/scripts/backfill-store-sections.ts) populates this table from
+// each store's existing sectionOrder/show* fields; until that's run for a
+// given store (or for a store created in the gap before it runs), storefront
+// rendering falls back to synthesizing sections in-memory from those legacy
+// fields — see normalizeSectionOrder() — so the rollout order isn't required
+// to be atomic. The legacy sectionOrder/show* columns are deliberately NOT
+// dropped here — a later migration removes them once this table's been the
+// live source for a while.
+model StoreSection {
+  id        String   @id @default(cuid())
+  storeId   String   @map("store_id")
+  type      String   // "stats" | "products" | "testimonials" | "newsletter" for now
+  position  Int
+  enabled   Boolean  @default(true)
+  settings  Json     @default("{}")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@unique([storeId, position])
+  @@index([storeId])
+  @@map("store_sections")
 }
 
 // Real capture behind the customizer's "عرض نموذج الاشتراك بالرسائل"

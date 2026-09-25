@@ -6,6 +6,7 @@ import Link from "next/link";
 import { templatesData } from "@/lib/templates-data";
 import { STOREFRONT_TEMPLATES } from "@/components/storefront/templates/registry";
 import type { Product, Store, StoreStats, StoreTestimonial } from "@/lib/api";
+import type { SectionData } from "@/components/storefront/sections/types";
 
 // Real sample data driving the ACTUAL template component — this used to
 // be a generic color-swatch/feature-list mockup with no relationship to
@@ -32,6 +33,16 @@ const MOCK_TESTIMONIALS: StoreTestimonial[] = [
 ];
 
 const MOCK_STATS: StoreStats = { deliveredOrderCount: 312, averageRating: 4.8, reviewCount: 96 };
+
+// Every section on, in the default order — same reasoning as the mock
+// products/testimonials above: a preview shouldn't hide behind a
+// default-off toggle.
+const MOCK_SECTIONS: SectionData[] = [
+  { type: "stats", position: 0, enabled: true, settings: {} },
+  { type: "products", position: 1, enabled: true, settings: {} },
+  { type: "testimonials", position: 2, enabled: true, settings: {} },
+  { type: "newsletter", position: 3, enabled: true, settings: {} },
+];
 
 export default function TemplatePreviewPage() {
   const { templateSlug } = useParams<{ templateSlug: string }>();
@@ -141,6 +152,7 @@ export default function TemplatePreviewPage() {
         setNewsletterEmail={setNewsletterEmail}
         newsletterState={newsletterState}
         onNewsletterSubmit={handleNewsletterSubmit}
+        sections={MOCK_SECTIONS}
       />
     </>
   );
