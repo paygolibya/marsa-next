@@ -14,6 +14,7 @@ const navItems = [
   { href: "/dashboard", label: "نظرة عامة", icon: "📊" },
   { href: "/dashboard/products", label: "المنتجات", icon: "📦" },
   { href: "/dashboard/orders", label: "الطلبات", icon: "🧾" },
+  { href: "/dashboard/design", label: "تصميم المتجر", icon: "🎨" },
   { href: "/dashboard/payouts", label: "المستحقات المالية", icon: "💰" },
   { href: "/dashboard/coupons", label: "كوبونات الخصم", icon: "🏷️" },
   { href: "/dashboard/analytics", label: "التحليلات", icon: "📈" },

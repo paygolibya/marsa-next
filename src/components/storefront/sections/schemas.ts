@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { SECTION_TYPES, type SectionType } from "./types";
 
 // Deliberately small: these 4 section types stay data-driven (real orders/
 // reviews/products), not merchant-authored CMS content, so their settings
@@ -42,4 +43,28 @@ export type NewsletterSettings = z.infer<typeof newsletterSettingsSchema>;
 export function safeParseSettings<T extends z.ZodTypeAny>(schema: T, settings: unknown): z.infer<T> {
   const result = schema.safeParse(settings ?? {});
   return result.success ? result.data : schema.parse({});
+}
+
+// Validates a client-sent sections[] payload before it's persisted — never
+// trust client JSON blindly (same principle this codebase already applies
+// to order prices/discounts). Unknown types are dropped rather than
+// rejecting the whole save; each entry's settings are parsed against its
+// own type's schema, filling in defaults for anything missing/invalid.
+// Position is always the array index, not client-supplied, so a save can
+// never produce gaps/duplicates/out-of-range positions.
+export function parseSectionsPayload(raw: unknown): { type: SectionType; enabled: boolean; settings: unknown }[] {
+  if (!Array.isArray(raw)) return [];
+  const result: { type: SectionType; enabled: boolean; settings: unknown }[] = [];
+  for (const entry of raw) {
+    if (typeof entry !== "object" || entry === null) continue;
+    const { type, enabled, settings } = entry as Record<string, unknown>;
+    if (typeof type !== "string" || !(SECTION_TYPES as readonly string[]).includes(type)) continue;
+    const sectionType = type as SectionType;
+    result.push({
+      type: sectionType,
+      enabled: enabled !== false,
+      settings: safeParseSettings(SECTION_SCHEMAS[sectionType], settings),
+    });
+  }
+  return result;
 }

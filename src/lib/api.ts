@@ -311,6 +311,22 @@ export const api = {
       body: JSON.stringify(body),
     }),
 
+  getStoreCustomization: (token: string, storeId: string) =>
+    request<{ customization: StoreCustomization; sections: SectionData[] }>(`/api/stores/${storeId}/customize`, {
+      headers: authHeaders(token),
+    }),
+
+  saveStoreCustomization: (
+    token: string,
+    storeId: string,
+    body: Partial<StoreCustomization> & { sections?: SectionData[] }
+  ) =>
+    request<{ success: boolean; customization: StoreCustomization; sections: SectionData[] | null }>(`/api/stores/${storeId}/customize`, {
+      method: "POST",
+      headers: authHeaders(token),
+      body: JSON.stringify(body),
+    }),
+
   getDomain: (token: string, storeId: string) =>
     request<{
       subdomain: string;
