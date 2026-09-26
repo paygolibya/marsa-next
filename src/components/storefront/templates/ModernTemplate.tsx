@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { StatsSection, ProductsSection, TestimonialsSection, NewsletterSection } from "@/components/storefront/sections";
 import type { SectionRenderProps, SectionType } from "@/components/storefront/sections/types";
-import type { StorefrontTemplateProps } from "./types";
+import { resolveLogoSizePx, type StorefrontTemplateProps } from "./types";
 
 const SECTION_COMPONENTS: Record<SectionType, (props: SectionRenderProps) => React.ReactNode> = {
   stats: StatsSection,
@@ -37,7 +37,10 @@ export default function ModernTemplate({
   const secondary = store.customization?.secondaryColor || "#f0f0f0";
   const accent = store.customization?.accentColor || primary;
   const headerCentered = store.customization?.headerStyle === "centered";
-  const colors = { primary, secondary, accent };
+  const showStoreName = store.customization?.showStoreName !== false;
+  const logoPx = resolveLogoSizePx(store.customization?.logoSize);
+  const textColor = store.customization?.textColor || undefined;
+  const colors = { primary, secondary, accent, text: textColor };
 
   const sectionProps: Omit<SectionRenderProps, "settings"> = {
     variant: "modern",
@@ -79,12 +82,22 @@ export default function ModernTemplate({
         <div className={`mx-auto max-w-6xl px-6 py-4 flex items-center gap-4 ${headerCentered ? "flex-col justify-center text-center" : "justify-between"}`}>
           <div className={`flex items-center gap-3 ${headerCentered ? "flex-col" : ""}`}>
             {store.customization?.logo && (
-              <Image src={store.customization.logo} alt={store.name} width={40} height={40} unoptimized className="h-10 w-10 rounded-full object-cover" />
+              <Image
+                src={store.customization.logo}
+                alt={store.name}
+                width={logoPx}
+                height={logoPx}
+                unoptimized
+                className="rounded-full object-cover"
+                style={{ width: logoPx, height: logoPx }}
+              />
             )}
-            <div>
-              <h1 className="font-display text-xl font-extrabold text-white">{store.name}</h1>
-              {store.customization?.tagline && <p className="text-sm text-white/80">{store.customization.tagline}</p>}
-            </div>
+            {(showStoreName || store.customization?.tagline) && (
+              <div>
+                {showStoreName && <h1 className="font-display text-xl font-extrabold text-white">{store.name}</h1>}
+                {store.customization?.tagline && <p className="text-sm text-white/80">{store.customization.tagline}</p>}
+              </div>
+            )}
           </div>
           <button onClick={onOpenCart} className="relative rounded-full bg-white/15 px-5 py-2 text-white font-bold text-sm hover:bg-white/25 transition-colors">
             سلة التسوق
@@ -97,8 +110,15 @@ export default function ModernTemplate({
         </div>
       </header>
 
+      {store.customization?.coverImage && (
+        <div className="w-full h-48 md:h-64 overflow-hidden">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={store.customization.coverImage} alt="" className="w-full h-full object-cover" />
+        </div>
+      )}
+
       <main className="mx-auto max-w-6xl px-6 py-10">
-        {store.customization?.description && <p className="text-harbor/80 mb-6 max-w-2xl">{store.customization.description}</p>}
+        {store.customization?.description && <p className="text-harbor/80 mb-6 max-w-2xl" style={{ color: colors.text }}>{store.customization.description}</p>}
         {orderedSections}
       </main>
     </div>

@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { StatsSection, ProductsSection, TestimonialsSection, NewsletterSection } from "@/components/storefront/sections";
 import type { SectionRenderProps, SectionType } from "@/components/storefront/sections/types";
-import type { StorefrontTemplateProps } from "./types";
+import { resolveLogoSizePx, type StorefrontTemplateProps } from "./types";
 
 const SECTION_COMPONENTS: Record<SectionType, (props: SectionRenderProps) => React.ReactNode> = {
   stats: StatsSection,
@@ -42,6 +42,8 @@ export default function LuxuryTemplate({
   // variant="luxury" branch already knows this and reads colors.primary/
   // accent accordingly.
   const colors = { primary: dark, secondary: dark, accent: gold };
+  const showStoreName = store.customization?.showStoreName !== false;
+  const logoPx = resolveLogoSizePx(store.customization?.logoSize);
 
   const sectionProps: Omit<SectionRenderProps, "settings"> = {
     variant: "luxury",
@@ -80,11 +82,21 @@ export default function LuxuryTemplate({
       <header className="border-b" style={{ borderColor: `${gold}30` }}>
         <div className="mx-auto max-w-5xl px-6 py-8 flex flex-col items-center text-center gap-3">
           {store.customization?.logo && (
-            <Image src={store.customization.logo} alt={store.name} width={56} height={56} unoptimized className="h-14 w-14 rounded-full object-cover" style={{ border: `1px solid ${gold}` }} />
+            <Image
+              src={store.customization.logo}
+              alt={store.name}
+              width={logoPx}
+              height={logoPx}
+              unoptimized
+              className="rounded-full object-cover"
+              style={{ width: logoPx, height: logoPx, border: `1px solid ${gold}` }}
+            />
           )}
-          <h1 className="font-display text-3xl font-extrabold tracking-wide" style={{ color: gold }}>
-            {store.name}
-          </h1>
+          {showStoreName && (
+            <h1 className="font-display text-3xl font-extrabold tracking-wide" style={{ color: gold }}>
+              {store.name}
+            </h1>
+          )}
           {store.customization?.tagline && <p className="text-white/60 text-sm tracking-wide">{store.customization.tagline}</p>}
           <button
             onClick={onOpenCart}
@@ -103,6 +115,13 @@ export default function LuxuryTemplate({
           </button>
         </div>
       </header>
+
+      {store.customization?.coverImage && (
+        <div className="w-full h-48 md:h-64 overflow-hidden">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={store.customization.coverImage} alt="" className="w-full h-full object-cover" />
+        </div>
+      )}
 
       <main className="mx-auto max-w-5xl px-6 py-16">
         {store.customization?.description && <p className="text-white/70 text-center max-w-xl mx-auto mb-10">{store.customization.description}</p>}

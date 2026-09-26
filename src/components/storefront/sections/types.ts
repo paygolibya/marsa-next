@@ -33,6 +33,9 @@ export type SectionColors = {
   primary: string;
   secondary: string;
   accent: string;
+  // Overrides the default heading/body text color when the merchant sets
+  // one — undefined means "use this variant's own default color/class".
+  text?: string;
 };
 
 // Real data every section might need — a section only reads what's

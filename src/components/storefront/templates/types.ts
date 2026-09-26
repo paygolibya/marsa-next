@@ -39,6 +39,14 @@ export const SECTION_KEYS = ["stats", "products", "testimonials", "newsletter"] 
 export type SectionKey = (typeof SECTION_KEYS)[number];
 export const DEFAULT_SECTION_ORDER: SectionKey[] = ["stats", "products", "testimonials", "newsletter"];
 
+// Shared across all 4 templates so a merchant's chosen logo size looks the
+// same regardless of which template they're on, rather than each template
+// keeping its own hardcoded logo width/height.
+export const LOGO_SIZE_PX: Record<string, number> = { sm: 32, md: 48, lg: 64 };
+export function resolveLogoSizePx(logoSize: string | undefined): number {
+  return LOGO_SIZE_PX[logoSize ?? "md"] ?? LOGO_SIZE_PX.md;
+}
+
 // A saved sectionOrder can predate this feature (undefined), or in theory
 // carry stale/unknown values if the known keys ever change later — this
 // always returns a complete, valid permutation of SECTION_KEYS so templates

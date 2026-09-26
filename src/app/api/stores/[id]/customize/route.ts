@@ -30,6 +30,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       description,
       headerStyle,
       footerStyle,
+      showStoreName,
+      logoSize,
+      textColor,
+      coverImage,
       showNewsletter,
       showReviews,
       showTestimonials,
@@ -41,6 +45,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     // complete/valid permutation of the known section keys. (Legacy path —
     // new code sends `sections` instead, see below.)
     const normalizedSectionOrder = sectionOrder !== undefined ? normalizeSectionOrder(sectionOrder) : undefined;
+    const validLogoSize = ["sm", "md", "lg"].includes(logoSize) ? logoSize : undefined;
 
     const customization = await prisma.templateCustomization.upsert({
       where: { storeId: id },
@@ -56,6 +61,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         description,
         headerStyle: headerStyle || "standard",
         footerStyle: footerStyle || "standard",
+        showStoreName: showStoreName !== false,
+        logoSize: validLogoSize ?? "md",
+        textColor,
+        coverImage,
         showNewsletter: showNewsletter !== false,
         showReviews: showReviews !== false,
         showTestimonials: showTestimonials === true,
@@ -72,6 +81,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         description,
         headerStyle: headerStyle || undefined,
         footerStyle: footerStyle || undefined,
+        showStoreName: showStoreName !== undefined ? showStoreName : undefined,
+        logoSize: validLogoSize,
+        textColor,
+        coverImage,
         showNewsletter: showNewsletter !== undefined ? showNewsletter : undefined,
         showReviews: showReviews !== undefined ? showReviews : undefined,
         showTestimonials: showTestimonials !== undefined ? showTestimonials : undefined,

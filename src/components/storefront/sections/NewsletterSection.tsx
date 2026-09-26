@@ -89,7 +89,7 @@ export function NewsletterSection({
   if (variant === "marketplace") {
     return (
       <div className="rounded-lg border border-harbor/10 bg-white p-6 text-center max-w-md mx-auto">
-        <h3 className="font-bold text-harbor mb-1 text-sm">{heading || "اشترك ليصلك كل جديد"}</h3>
+        <h3 className="font-bold text-harbor mb-1 text-sm" style={{ color: colors.text }}>{heading || "اشترك ليصلك كل جديد"}</h3>
         <p className="text-xs text-rope mb-3">{body}</p>
         {newsletterState === "done" ? (
           <p className="text-xs font-bold text-green-700">✓ تم الاشتراك بنجاح</p>
@@ -122,7 +122,7 @@ export function NewsletterSection({
   // modern
   return (
     <div className="rounded-2xl border border-dashed border-harbor/20 p-8 text-center max-w-lg mx-auto">
-      <h3 className="font-display font-bold text-harbor mb-2">{heading || "اشترك ليصلك كل جديد"}</h3>
+      <h3 className="font-display font-bold text-harbor mb-2" style={{ color: colors.text }}>{heading || "اشترك ليصلك كل جديد"}</h3>
       <p className="text-sm text-rope mb-4">{body}</p>
       {newsletterState === "done" ? (
         <p className="text-sm font-bold text-green-700">✓ تم الاشتراك بنجاح</p>

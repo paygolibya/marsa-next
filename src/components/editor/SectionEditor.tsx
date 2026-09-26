@@ -18,10 +18,14 @@ type DraftCustomization = {
   accentColor: string | null;
   logo: string | null;
   favicon: string | null;
+  coverImage: string | null;
   tagline: string;
   description: string;
   headerStyle: string;
   footerStyle: string;
+  showStoreName: boolean;
+  logoSize: string;
+  textColor: string | null;
 };
 
 const DEFAULT_DRAFT: DraftCustomization = {
@@ -30,11 +34,21 @@ const DEFAULT_DRAFT: DraftCustomization = {
   accentColor: "#B8752E",
   logo: null,
   favicon: null,
+  coverImage: null,
   tagline: "",
   description: "",
   headerStyle: "standard",
   footerStyle: "standard",
+  showStoreName: true,
+  logoSize: "md",
+  textColor: null,
 };
+
+const LOGO_SIZE_OPTIONS: { value: string; label: string }[] = [
+  { value: "sm", label: "صغير" },
+  { value: "md", label: "متوسط" },
+  { value: "lg", label: "كبير" },
+];
 
 // Generates a stable client-side id for a section that has none yet (just
 // added in this session, not saved) — dnd-kit's sortable context needs a
@@ -55,11 +69,12 @@ export function SectionEditor({ storeId, onSaved }: { storeId: string; onSaved?:
   const [draft, setDraft] = useState<DraftCustomization>(DEFAULT_DRAFT);
   const [sections, setSections] = useState<EditableSection[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [showColorPicker, setShowColorPicker] = useState<"primary" | "secondary" | "accent" | null>(null);
+  const [showColorPicker, setShowColorPicker] = useState<"primary" | "secondary" | "accent" | "text" | null>(null);
   const [paletteOpen, setPaletteOpen] = useState(false);
 
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingFavicon, setUploadingFavicon] = useState(false);
+  const [uploadingCover, setUploadingCover] = useState(false);
   const [saving, setSaving] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -92,10 +107,14 @@ export function SectionEditor({ storeId, onSaved }: { storeId: string; onSaved?:
           accentColor: customization.accentColor,
           logo: customization.logo,
           favicon: customization.favicon,
+          coverImage: customization.coverImage,
           tagline: customization.tagline ?? "",
           description: customization.description ?? "",
           headerStyle: customization.headerStyle,
           footerStyle: customization.footerStyle,
+          showStoreName: customization.showStoreName,
+          logoSize: customization.logoSize,
+          textColor: customization.textColor,
         });
         setSections(fetchedSections.map((s) => ({ id: s.id ?? makeLocalId(), type: s.type, enabled: s.enabled, settings: s.settings })));
         setProducts(publicData.products);
@@ -116,9 +135,9 @@ export function SectionEditor({ storeId, onSaved }: { storeId: string; onSaved?:
     setDraft((prev) => ({ ...prev, [key]: value }));
   }
 
-  async function handleImageUpload(kind: "logo" | "favicon", file: File) {
+  async function handleImageUpload(kind: "logo" | "favicon" | "coverImage", file: File) {
     if (!token) return;
-    const setUploading = kind === "logo" ? setUploadingLogo : setUploadingFavicon;
+    const setUploading = kind === "logo" ? setUploadingLogo : kind === "favicon" ? setUploadingFavicon : setUploadingCover;
     setUploading(true);
     setError(null);
     try {
@@ -171,10 +190,14 @@ export function SectionEditor({ storeId, onSaved }: { storeId: string; onSaved?:
         accentColor: draft.accentColor,
         logo: draft.logo,
         favicon: draft.favicon,
+        coverImage: draft.coverImage,
         tagline: draft.tagline,
         description: draft.description,
         headerStyle: draft.headerStyle,
         footerStyle: draft.footerStyle,
+        showStoreName: draft.showStoreName,
+        logoSize: draft.logoSize,
+        textColor: draft.textColor,
         sections: sections.map((s, position) => ({ type: s.type, position, enabled: s.enabled, settings: s.settings })),
       });
       show("تم حفظ التخصيصات", "success");
@@ -199,10 +222,14 @@ export function SectionEditor({ storeId, onSaved }: { storeId: string; onSaved?:
             accentColor: draft.accentColor,
             logo: draft.logo,
             favicon: draft.favicon,
+            coverImage: draft.coverImage,
             tagline: draft.tagline || null,
             description: draft.description || null,
             headerStyle: draft.headerStyle,
             footerStyle: draft.footerStyle,
+            showStoreName: draft.showStoreName,
+            logoSize: draft.logoSize,
+            textColor: draft.textColor,
           }
         : null,
     };
@@ -228,7 +255,27 @@ export function SectionEditor({ storeId, onSaved }: { storeId: string; onSaved?:
           <h2 className="font-display text-lg font-bold text-harbor mb-4">الألوان</h2>
           <ColorField label="اللون الأساسي — الرأس والأزرار" value={draft.primaryColor} onChange={(v) => setField("primaryColor", v)} field="primary" open={showColorPicker} setOpen={setShowColorPicker} />
           <ColorField label="اللون الثانوي — خلفية المتجر" value={draft.secondaryColor} onChange={(v) => setField("secondaryColor", v)} field="secondary" open={showColorPicker} setOpen={setShowColorPicker} />
-          <ColorField label="لون التمييز — التقييمات والشارات" value={draft.accentColor ?? "#000000"} onChange={(v) => setField("accentColor", v)} field="accent" open={showColorPicker} setOpen={setShowColorPicker} last />
+          <ColorField label="لون التمييز — التقييمات والشارات" value={draft.accentColor ?? "#000000"} onChange={(v) => setField("accentColor", v)} field="accent" open={showColorPicker} setOpen={setShowColorPicker} />
+
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block font-bold text-harbor text-sm">لون النصوص الرئيسية</label>
+              {draft.textColor && (
+                <button type="button" onClick={() => setField("textColor", null)} className="text-xs font-bold text-rope hover:text-harbor">
+                  استخدام الافتراضي
+                </button>
+              )}
+            </div>
+            <ColorField
+              label=""
+              value={draft.textColor ?? "#0E2A3F"}
+              onChange={(v) => setField("textColor", v)}
+              field="text"
+              open={showColorPicker}
+              setOpen={setShowColorPicker}
+              last
+            />
+          </div>
         </Card>
 
         <Card className="p-6">
@@ -281,6 +328,37 @@ export function SectionEditor({ storeId, onSaved }: { storeId: string; onSaved?:
               </label>
             </div>
           </div>
+
+          <div className="mt-6">
+            <div className="flex items-center justify-between mb-2">
+              <label className="block font-bold text-harbor text-sm">صورة الغلاف</label>
+              {draft.coverImage && (
+                <button type="button" onClick={() => setField("coverImage", null)} className="text-xs font-bold text-signal hover:underline">
+                  إزالة
+                </button>
+              )}
+            </div>
+            {draft.coverImage && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={draft.coverImage} alt="صورة الغلاف" className="w-full h-28 object-cover rounded-xl border border-harbor/10 mb-2" />
+            )}
+            <label className="block">
+              <span className="inline-block rounded-full border border-harbor/20 px-4 py-2 text-sm font-bold text-harbor hover:bg-harbor/5 cursor-pointer transition-colors">
+                {uploadingCover ? "جارٍ الرفع..." : draft.coverImage ? "تغيير صورة الغلاف" : "اختر صورة غلاف"}
+              </span>
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                className="hidden"
+                disabled={uploadingCover}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) void handleImageUpload("coverImage", file);
+                }}
+              />
+            </label>
+            <p className="text-xs text-rope mt-2">تظهر شريطًا كاملًا أسفل رأس المتجر مباشرة.</p>
+          </div>
         </Card>
 
         <Card className="p-6">
@@ -311,6 +389,20 @@ export function SectionEditor({ storeId, onSaved }: { storeId: string; onSaved?:
                 <option value="standard">قياسي</option>
                 <option value="branded">يعرض اسم متجرك وشعارك</option>
               </select>
+            </label>
+            <label className="block">
+              <span className="block text-sm font-bold text-harbor mb-1.5">حجم الشعار</span>
+              <select value={draft.logoSize} onChange={(e) => setField("logoSize", e.target.value)} className="input">
+                {LOGO_SIZE_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="flex items-center gap-3 rounded-xl border border-harbor/15 bg-canvas px-4 py-3">
+              <input type="checkbox" checked={draft.showStoreName} onChange={(e) => setField("showStoreName", e.target.checked)} className="h-5 w-5 accent-brass" />
+              <span className="font-bold text-harbor text-sm">إظهار اسم المتجر بجانب الشعار</span>
             </label>
           </div>
         </Card>
@@ -395,14 +487,14 @@ function ColorField({
   label: string;
   value: string;
   onChange: (v: string) => void;
-  field: "primary" | "secondary" | "accent";
-  open: "primary" | "secondary" | "accent" | null;
-  setOpen: (v: "primary" | "secondary" | "accent" | null) => void;
+  field: "primary" | "secondary" | "accent" | "text";
+  open: "primary" | "secondary" | "accent" | "text" | null;
+  setOpen: (v: "primary" | "secondary" | "accent" | "text" | null) => void;
   last?: boolean;
 }) {
   return (
     <div className={last ? "" : "mb-5"}>
-      <label className="block font-bold text-harbor mb-2 text-sm">{label}</label>
+      {label && <label className="block font-bold text-harbor mb-2 text-sm">{label}</label>}
       <div className="flex items-center gap-3">
         <button
           type="button"

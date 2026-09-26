@@ -9,7 +9,7 @@ export function TestimonialsSection({ variant, colors, settings: rawSettings, te
   if (variant === "bold") {
     return (
       <div>
-        <h2 className="font-display text-2xl font-extrabold text-harbor mb-8 text-center">{settings.title || "ماذا يقول عملاؤنا"}</h2>
+        <h2 className="font-display text-2xl font-extrabold text-harbor mb-8 text-center" style={{ color: colors.text }}>{settings.title || "ماذا يقول عملاؤنا"}</h2>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {items.map((t, i) => (
             <div key={i} className="rounded-2xl bg-white p-6 shadow-lg">
@@ -55,7 +55,7 @@ export function TestimonialsSection({ variant, colors, settings: rawSettings, te
   if (variant === "marketplace") {
     return (
       <div>
-        <h2 className="font-display text-lg font-extrabold text-harbor mb-4">{settings.title || "آراء المشترين"}</h2>
+        <h2 className="font-display text-lg font-extrabold text-harbor mb-4" style={{ color: colors.text }}>{settings.title || "آراء المشترين"}</h2>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {items.map((t, i) => (
             <div key={i} className="rounded-lg border border-harbor/10 bg-white p-3">
@@ -77,7 +77,7 @@ export function TestimonialsSection({ variant, colors, settings: rawSettings, te
   // modern
   return (
     <div>
-      <h2 className="font-display text-xl font-extrabold text-harbor mb-6">{settings.title || "آراء عملائنا"}</h2>
+      <h2 className="font-display text-xl font-extrabold text-harbor mb-6" style={{ color: colors.text }}>{settings.title || "آراء عملائنا"}</h2>
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {items.map((t, i) => (
           <div key={i} className="rounded-2xl border border-harbor/10 bg-white p-5">

@@ -24,7 +24,7 @@ export function ProductsSection({
     return (
       <div>
         <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
-          <h2 className="font-display text-2xl font-extrabold text-harbor">{settings.title || "تسوّق الآن"}</h2>
+          <h2 className="font-display text-2xl font-extrabold text-harbor" style={{ color: colors.text }}>{settings.title || "تسوّق الآن"}</h2>
           <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="ابحث عن منتج..." className="input max-w-xs" />
         </div>
         {filtered.length === 0 ? (
@@ -48,7 +48,7 @@ export function ProductsSection({
                   )}
                 </Link>
                 <div className="p-5 flex flex-col flex-1">
-                  <Link href={`/store/${slug}/product/${product.id}`} className="font-extrabold text-harbor text-lg hover:underline">
+                  <Link href={`/store/${slug}/product/${product.id}`} className="font-extrabold text-harbor text-lg hover:underline" style={{ color: colors.text }}>
                     {product.name}
                   </Link>
                   <p className="font-extrabold text-xl mt-2" style={{ color: colors.accent }}>
@@ -146,7 +146,7 @@ export function ProductsSection({
   if (variant === "marketplace") {
     return (
       <div>
-        {settings.title && <h2 className="font-display text-lg font-extrabold text-harbor mb-4">{settings.title}</h2>}
+        {settings.title && <h2 className="font-display text-lg font-extrabold text-harbor mb-4" style={{ color: colors.text }}>{settings.title}</h2>}
         {filtered.length === 0 ? (
           empty
         ) : (
@@ -166,7 +166,7 @@ export function ProductsSection({
                   )}
                 </Link>
                 <div className="p-2.5 flex flex-col flex-1">
-                  <Link href={`/store/${slug}/product/${product.id}`} className="text-sm font-bold text-harbor hover:underline line-clamp-2">
+                  <Link href={`/store/${slug}/product/${product.id}`} className="text-sm font-bold text-harbor hover:underline line-clamp-2" style={{ color: colors.text }}>
                     {product.name}
                   </Link>
                   <p className="font-extrabold text-sm mt-1" style={{ color: colors.primary }}>
@@ -201,7 +201,7 @@ export function ProductsSection({
   // modern
   return (
     <div>
-      {settings.title && <h2 className="font-display text-xl font-extrabold text-harbor mb-4">{settings.title}</h2>}
+      {settings.title && <h2 className="font-display text-xl font-extrabold text-harbor mb-4" style={{ color: colors.text }}>{settings.title}</h2>}
       <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="ابحث عن منتج..." className="input mb-8 max-w-sm" />
       {filtered.length === 0 ? (
         empty
@@ -217,7 +217,7 @@ export function ProductsSection({
                 )}
               </Link>
               <div className="p-4 flex flex-col flex-1">
-                <Link href={`/store/${slug}/product/${product.id}`} className="font-bold text-harbor hover:underline">
+                <Link href={`/store/${slug}/product/${product.id}`} className="font-bold text-harbor hover:underline" style={{ color: colors.text }}>
                   {product.name}
                 </Link>
                 <p className="font-bold mt-1" style={{ color: colors.primary }}>

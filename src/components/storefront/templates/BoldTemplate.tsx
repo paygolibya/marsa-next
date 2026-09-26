@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { StatsSection, ProductsSection, TestimonialsSection, NewsletterSection } from "@/components/storefront/sections";
 import type { SectionRenderProps, SectionType } from "@/components/storefront/sections/types";
-import type { StorefrontTemplateProps } from "./types";
+import { resolveLogoSizePx, type StorefrontTemplateProps } from "./types";
 
 const SECTION_COMPONENTS: Record<SectionType, (props: SectionRenderProps) => React.ReactNode> = {
   stats: StatsSection,
@@ -35,7 +35,10 @@ export default function BoldTemplate({
   const primary = store.customization?.primaryColor || "#ef4444";
   const secondary = store.customization?.secondaryColor || "#fef2f2";
   const accent = store.customization?.accentColor || primary;
-  const colors = { primary, secondary, accent };
+  const showStoreName = store.customization?.showStoreName !== false;
+  const logoPx = resolveLogoSizePx(store.customization?.logoSize);
+  const textColor = store.customization?.textColor || undefined;
+  const colors = { primary, secondary, accent, text: textColor };
 
   const sectionProps: Omit<SectionRenderProps, "settings"> = {
     variant: "bold",
@@ -76,9 +79,21 @@ export default function BoldTemplate({
         <div className="mx-auto max-w-6xl px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             {store.customization?.logo && (
-              <Image src={store.customization.logo} alt={store.name} width={32} height={32} unoptimized className="h-8 w-8 rounded-full object-cover" />
+              <Image
+                src={store.customization.logo}
+                alt={store.name}
+                width={logoPx}
+                height={logoPx}
+                unoptimized
+                className="rounded-full object-cover"
+                style={{ width: logoPx, height: logoPx }}
+              />
             )}
-            <span className="font-display font-extrabold text-harbor">{store.name}</span>
+            {showStoreName && (
+              <span className="font-display font-extrabold text-harbor" style={{ color: colors.text }}>
+                {store.name}
+              </span>
+            )}
           </div>
           <button
             onClick={onOpenCart}
@@ -94,6 +109,13 @@ export default function BoldTemplate({
           </button>
         </div>
       </div>
+
+      {store.customization?.coverImage && (
+        <div className="w-full h-48 md:h-64 overflow-hidden">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={store.customization.coverImage} alt="" className="w-full h-full object-cover" />
+        </div>
+      )}
 
       {/* Full-bleed hero */}
       <div style={{ backgroundColor: primary }} className="text-white text-center py-16 px-6">

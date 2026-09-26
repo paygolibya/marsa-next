@@ -61,6 +61,17 @@ model TemplateCustomization {
   description      String?
   headerStyle      String  @default("standard") @map("header_style")
   footerStyle      String  @default("standard") @map("footer_style")
+  // Header identity controls — whether the store name text renders next
+  // to/under the logo, and the logo's rendered size ("sm" | "md" | "lg").
+  showStoreName    Boolean @default(true) @map("show_store_name")
+  logoSize         String  @default("md") @map("logo_size")
+  // Overrides the storefront's default heading/body text color
+  // (Tailwind's harbor navy) when set — null means "use the template's
+  // own default", not black/unset.
+  textColor        String? @map("text_color")
+  // A full-width banner image shown between the header and the page
+  // content — every template lacked any hero-image capability before this.
+  coverImage       String? @map("cover_image")
   // Deprecated in favor of StoreSection.enabled (per-section, not one flag
   // per section type here) — same fallback-source role as sectionOrder below.
   showNewsletter   Boolean @default(true) @map("show_newsletter")
