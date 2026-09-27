@@ -55,10 +55,15 @@ export type StoreCustomization = {
   description: string | null;
   headerStyle: string;
   footerStyle: string;
+  showLogo: boolean;
   showStoreName: boolean;
   logoSize: string;
   textColor: string | null;
+  textSize: string;
   coverImage: string | null;
+  coverImageSize: string;
+  heroEnabled: boolean;
+  heroSize: string;
   showNewsletter: boolean;
   showReviews: boolean;
   showTestimonials: boolean;

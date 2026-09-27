@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { StatsSection, ProductsSection, TestimonialsSection, NewsletterSection } from "@/components/storefront/sections";
 import type { SectionRenderProps, SectionType } from "@/components/storefront/sections/types";
-import { resolveLogoSizePx, type StorefrontTemplateProps } from "./types";
+import { resolveCoverImageHeightClass, resolveLogoSizePx, type StorefrontTemplateProps } from "./types";
 
 const SECTION_COMPONENTS: Record<SectionType, (props: SectionRenderProps) => React.ReactNode> = {
   stats: StatsSection,
@@ -42,6 +42,7 @@ export default function LuxuryTemplate({
   // variant="luxury" branch already knows this and reads colors.primary/
   // accent accordingly.
   const colors = { primary: dark, secondary: dark, accent: gold };
+  const showLogo = store.customization?.showLogo !== false;
   const showStoreName = store.customization?.showStoreName !== false;
   const logoPx = resolveLogoSizePx(store.customization?.logoSize);
 
@@ -81,7 +82,7 @@ export default function LuxuryTemplate({
     <div style={{ backgroundColor: dark }} className="min-h-screen text-white">
       <header className="border-b" style={{ borderColor: `${gold}30` }}>
         <div className="mx-auto max-w-5xl px-6 py-8 flex flex-col items-center text-center gap-3">
-          {store.customization?.logo && (
+          {showLogo && store.customization?.logo && (
             <Image
               src={store.customization.logo}
               alt={store.name}
@@ -117,7 +118,7 @@ export default function LuxuryTemplate({
       </header>
 
       {store.customization?.coverImage && (
-        <div className="w-full h-48 md:h-64 overflow-hidden">
+        <div className={`w-full overflow-hidden ${resolveCoverImageHeightClass(store.customization?.coverImageSize)}`}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={store.customization.coverImage} alt="" className="w-full h-full object-cover" />
         </div>

@@ -346,7 +346,12 @@ export default function CheckoutPage() {
                       />
                       <span className="font-bold text-harbor text-sm">الدفع الإلكتروني</span>
                     </span>
-                    <Image src="/payment-logos/moamalat.png" alt="Moamalat" width={90} height={30} className="h-7 w-auto object-contain" />
+                    {/* width/height must match the real file's aspect ratio
+                        (2077x1126, ~1.84:1) — the old 90x30 (3:1) guess gave
+                        Next's Image component a wrong aspect-ratio hint that
+                        conflicted with w-auto, so browsers disagreed on how
+                        to size it (broken on desktop, glitching on mobile). */}
+                    <Image src="/payment-logos/moamalat.png" alt="Moamalat" width={177} height={96} className="h-7 w-auto object-contain" />
                   </label>
                 )}
               </div>

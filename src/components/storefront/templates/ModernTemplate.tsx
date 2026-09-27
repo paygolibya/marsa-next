@@ -1,7 +1,8 @@
 import Image from "next/image";
 import { StatsSection, ProductsSection, TestimonialsSection, NewsletterSection } from "@/components/storefront/sections";
 import type { SectionRenderProps, SectionType } from "@/components/storefront/sections/types";
-import { resolveLogoSizePx, type StorefrontTemplateProps } from "./types";
+import { StorefrontLogo } from "./StorefrontLogo";
+import { resolveCoverImageHeightClass, resolveLogoSizePx, resolveTextSizeClass, type StorefrontTemplateProps } from "./types";
 
 const SECTION_COMPONENTS: Record<SectionType, (props: SectionRenderProps) => React.ReactNode> = {
   stats: StatsSection,
@@ -37,9 +38,11 @@ export default function ModernTemplate({
   const secondary = store.customization?.secondaryColor || "#f0f0f0";
   const accent = store.customization?.accentColor || primary;
   const headerCentered = store.customization?.headerStyle === "centered";
+  const showLogo = store.customization?.showLogo !== false;
   const showStoreName = store.customization?.showStoreName !== false;
   const logoPx = resolveLogoSizePx(store.customization?.logoSize);
   const textColor = store.customization?.textColor || undefined;
+  const textSize = resolveTextSizeClass(store.customization?.textSize);
   const colors = { primary, secondary, accent, text: textColor };
 
   const sectionProps: Omit<SectionRenderProps, "settings"> = {
@@ -81,21 +84,20 @@ export default function ModernTemplate({
       <header className="sticky top-0 z-30 backdrop-blur" style={{ backgroundColor: primary }}>
         <div className={`mx-auto max-w-6xl px-6 py-4 flex items-center gap-4 ${headerCentered ? "flex-col justify-center text-center" : "justify-between"}`}>
           <div className={`flex items-center gap-3 ${headerCentered ? "flex-col" : ""}`}>
-            {store.customization?.logo && (
-              <Image
-                src={store.customization.logo}
-                alt={store.name}
-                width={logoPx}
-                height={logoPx}
-                unoptimized
-                className="rounded-full object-cover"
-                style={{ width: logoPx, height: logoPx }}
-              />
-            )}
+            {showLogo && store.customization?.logo && (headerCentered ? (
+              // The overflow-past-the-bar trick (StorefrontLogo) only
+              // works when the logo is a row sibling — in centered mode
+              // it's stacked in a flex-COLUMN, where height genuinely
+              // matters for layout, so a plain sized image is used here
+              // instead (a bigger logo grows the header in this mode).
+              <Image src={store.customization.logo} alt={store.name} width={logoPx} height={logoPx} unoptimized className="rounded-full object-cover" style={{ width: logoPx, height: logoPx }} />
+            ) : (
+              <StorefrontLogo src={store.customization.logo} alt={store.name} sizePx={logoPx} />
+            ))}
             {(showStoreName || store.customization?.tagline) && (
               <div>
-                {showStoreName && <h1 className="font-display text-xl font-extrabold text-white">{store.name}</h1>}
-                {store.customization?.tagline && <p className="text-sm text-white/80">{store.customization.tagline}</p>}
+                {showStoreName && <h1 className={`font-display font-extrabold text-white ${textSize.heading}`}>{store.name}</h1>}
+                {store.customization?.tagline && <p className={`text-white/80 ${textSize.body}`}>{store.customization.tagline}</p>}
               </div>
             )}
           </div>
@@ -111,14 +113,14 @@ export default function ModernTemplate({
       </header>
 
       {store.customization?.coverImage && (
-        <div className="w-full h-48 md:h-64 overflow-hidden">
+        <div className={`w-full overflow-hidden ${resolveCoverImageHeightClass(store.customization?.coverImageSize)}`}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={store.customization.coverImage} alt="" className="w-full h-full object-cover" />
         </div>
       )}
 
       <main className="mx-auto max-w-6xl px-6 py-10">
-        {store.customization?.description && <p className="text-harbor/80 mb-6 max-w-2xl" style={{ color: colors.text }}>{store.customization.description}</p>}
+        {store.customization?.description && <p className={`text-harbor/80 mb-6 max-w-2xl ${textSize.body}`} style={{ color: colors.text }}>{store.customization.description}</p>}
         {orderedSections}
       </main>
     </div>

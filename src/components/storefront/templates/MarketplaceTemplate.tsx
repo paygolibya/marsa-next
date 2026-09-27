@@ -1,7 +1,7 @@
-import Image from "next/image";
 import { ProductsSection, TestimonialsSection, NewsletterSection } from "@/components/storefront/sections";
 import type { SectionRenderProps, SectionType } from "@/components/storefront/sections/types";
-import { resolveLogoSizePx, type StorefrontTemplateProps } from "./types";
+import { StorefrontLogo } from "./StorefrontLogo";
+import { resolveCoverImageHeightClass, resolveLogoSizePx, resolveTextSizeClass, type StorefrontTemplateProps } from "./types";
 
 // "stats" has no entry here — Marketplace shows the social-proof line
 // inline in its compact sticky header (see below), not as a movable body
@@ -41,9 +41,11 @@ export default function MarketplaceTemplate({
   const primary = store.customization?.primaryColor || "#0066cc";
   const secondary = store.customization?.secondaryColor || "#f8fafc";
   const accent = store.customization?.accentColor || primary;
+  const showLogo = store.customization?.showLogo !== false;
   const showStoreName = store.customization?.showStoreName !== false;
   const logoPx = resolveLogoSizePx(store.customization?.logoSize);
   const textColor = store.customization?.textColor || undefined;
+  const textSize = resolveTextSizeClass(store.customization?.textSize);
   const colors = { primary, secondary, accent, text: textColor };
   // Marketplace shows this inline in the header rather than as a body
   // section (see the SECTION_COMPONENTS comment above), but should still
@@ -88,19 +90,9 @@ export default function MarketplaceTemplate({
       <header className="sticky top-0 z-30 bg-white border-b border-harbor/10">
         <div className="mx-auto max-w-7xl px-4 py-3 flex items-center gap-4">
           <div className="flex items-center gap-2 shrink-0">
-            {store.customization?.logo && (
-              <Image
-                src={store.customization.logo}
-                alt={store.name}
-                width={logoPx}
-                height={logoPx}
-                unoptimized
-                className="rounded object-cover"
-                style={{ width: logoPx, height: logoPx }}
-              />
-            )}
+            {showLogo && store.customization?.logo && <StorefrontLogo src={store.customization.logo} alt={store.name} sizePx={logoPx} rounded="lg" />}
             {showStoreName && (
-              <span className="font-display font-extrabold text-harbor whitespace-nowrap" style={{ color: colors.text }}>
+              <span className={`font-display font-extrabold text-harbor whitespace-nowrap ${textSize.heading}`} style={{ color: colors.text }}>
                 {store.name}
               </span>
             )}
@@ -138,14 +130,14 @@ export default function MarketplaceTemplate({
       </header>
 
       {store.customization?.coverImage && (
-        <div className="w-full h-48 md:h-64 overflow-hidden">
+        <div className={`w-full overflow-hidden ${resolveCoverImageHeightClass(store.customization?.coverImageSize)}`}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={store.customization.coverImage} alt="" className="w-full h-full object-cover" />
         </div>
       )}
 
       <main className="mx-auto max-w-7xl px-4 py-8">
-        {store.customization?.tagline && <p className="text-harbor/70 text-sm mb-6">{store.customization.tagline}</p>}
+        {store.customization?.tagline && <p className={`text-harbor/70 mb-6 ${textSize.body}`}>{store.customization.tagline}</p>}
         {orderedSections}
       </main>
     </div>

@@ -107,7 +107,7 @@ export default function StorefrontPage() {
         sections={store.sections ?? []}
       />
 
-      <SiteFooter store={footerBranded ? { name: store.name, tagline: store.customization?.tagline } : undefined} />
+      <SiteFooter store={footerBranded ? { name: store.name, tagline: store.customization?.tagline, logo: store.customization?.logo } : undefined} />
 
       <CartDrawer
         open={cartOpen}

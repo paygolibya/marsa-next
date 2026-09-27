@@ -190,7 +190,13 @@ export default function ProductDetailPage() {
         <ReviewsSection productId={productId} reviews={reviews} onSubmitted={refreshReviews} />
       </main>
 
-      <SiteFooter />
+      <SiteFooter
+        store={
+          store.customization?.footerStyle === "branded"
+            ? { name: store.name, tagline: store.customization?.tagline, logo: store.customization?.logo }
+            : undefined
+        }
+      />
 
       <CartDrawer
         open={cartOpen}

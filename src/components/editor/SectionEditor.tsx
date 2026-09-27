@@ -19,13 +19,18 @@ type DraftCustomization = {
   logo: string | null;
   favicon: string | null;
   coverImage: string | null;
+  coverImageSize: string;
   tagline: string;
   description: string;
   headerStyle: string;
   footerStyle: string;
+  showLogo: boolean;
   showStoreName: boolean;
   logoSize: string;
   textColor: string | null;
+  textSize: string;
+  heroEnabled: boolean;
+  heroSize: string;
 };
 
 const DEFAULT_DRAFT: DraftCustomization = {
@@ -35,16 +40,28 @@ const DEFAULT_DRAFT: DraftCustomization = {
   logo: null,
   favicon: null,
   coverImage: null,
+  coverImageSize: "md",
   tagline: "",
   description: "",
   headerStyle: "standard",
   footerStyle: "standard",
+  showLogo: true,
   showStoreName: true,
   logoSize: "md",
   textColor: null,
+  textSize: "md",
+  heroEnabled: true,
+  heroSize: "md",
 };
 
 const LOGO_SIZE_OPTIONS: { value: string; label: string }[] = [
+  { value: "sm", label: "صغير" },
+  { value: "md", label: "متوسط" },
+  { value: "lg", label: "كبير" },
+  { value: "xl", label: "كبير جدًا" },
+];
+
+const SIZE_OPTIONS: { value: string; label: string }[] = [
   { value: "sm", label: "صغير" },
   { value: "md", label: "متوسط" },
   { value: "lg", label: "كبير" },
@@ -108,13 +125,18 @@ export function SectionEditor({ storeId, onSaved }: { storeId: string; onSaved?:
           logo: customization.logo,
           favicon: customization.favicon,
           coverImage: customization.coverImage,
+          coverImageSize: customization.coverImageSize,
           tagline: customization.tagline ?? "",
           description: customization.description ?? "",
           headerStyle: customization.headerStyle,
           footerStyle: customization.footerStyle,
+          showLogo: customization.showLogo,
           showStoreName: customization.showStoreName,
           logoSize: customization.logoSize,
           textColor: customization.textColor,
+          textSize: customization.textSize,
+          heroEnabled: customization.heroEnabled,
+          heroSize: customization.heroSize,
         });
         setSections(fetchedSections.map((s) => ({ id: s.id ?? makeLocalId(), type: s.type, enabled: s.enabled, settings: s.settings })));
         setProducts(publicData.products);
@@ -191,13 +213,18 @@ export function SectionEditor({ storeId, onSaved }: { storeId: string; onSaved?:
         logo: draft.logo,
         favicon: draft.favicon,
         coverImage: draft.coverImage,
+        coverImageSize: draft.coverImageSize,
         tagline: draft.tagline,
         description: draft.description,
         headerStyle: draft.headerStyle,
         footerStyle: draft.footerStyle,
+        showLogo: draft.showLogo,
         showStoreName: draft.showStoreName,
         logoSize: draft.logoSize,
         textColor: draft.textColor,
+        textSize: draft.textSize,
+        heroEnabled: draft.heroEnabled,
+        heroSize: draft.heroSize,
         sections: sections.map((s, position) => ({ type: s.type, position, enabled: s.enabled, settings: s.settings })),
       });
       show("تم حفظ التخصيصات", "success");
@@ -223,13 +250,18 @@ export function SectionEditor({ storeId, onSaved }: { storeId: string; onSaved?:
             logo: draft.logo,
             favicon: draft.favicon,
             coverImage: draft.coverImage,
+            coverImageSize: draft.coverImageSize,
             tagline: draft.tagline || null,
             description: draft.description || null,
             headerStyle: draft.headerStyle,
             footerStyle: draft.footerStyle,
+            showLogo: draft.showLogo,
             showStoreName: draft.showStoreName,
             logoSize: draft.logoSize,
             textColor: draft.textColor,
+            textSize: draft.textSize,
+            heroEnabled: draft.heroEnabled,
+            heroSize: draft.heroSize,
           }
         : null,
     };
@@ -257,7 +289,7 @@ export function SectionEditor({ storeId, onSaved }: { storeId: string; onSaved?:
           <ColorField label="اللون الثانوي — خلفية المتجر" value={draft.secondaryColor} onChange={(v) => setField("secondaryColor", v)} field="secondary" open={showColorPicker} setOpen={setShowColorPicker} />
           <ColorField label="لون التمييز — التقييمات والشارات" value={draft.accentColor ?? "#000000"} onChange={(v) => setField("accentColor", v)} field="accent" open={showColorPicker} setOpen={setShowColorPicker} />
 
-          <div>
+          <div className="mb-5">
             <div className="flex items-center justify-between mb-2">
               <label className="block font-bold text-harbor text-sm">لون النصوص الرئيسية</label>
               {draft.textColor && (
@@ -276,6 +308,17 @@ export function SectionEditor({ storeId, onSaved }: { storeId: string; onSaved?:
               last
             />
           </div>
+
+          <label className="block">
+            <span className="block text-sm font-bold text-harbor mb-1.5">حجم الخط</span>
+            <select value={draft.textSize} onChange={(e) => setField("textSize", e.target.value)} className="input">
+              {SIZE_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </label>
         </Card>
 
         <Card className="p-6">
@@ -358,6 +401,18 @@ export function SectionEditor({ storeId, onSaved }: { storeId: string; onSaved?:
               />
             </label>
             <p className="text-xs text-rope mt-2">تظهر شريطًا كاملًا أسفل رأس المتجر مباشرة.</p>
+            {draft.coverImage && (
+              <label className="block mt-3">
+                <span className="block text-sm font-bold text-harbor mb-1.5">حجم صورة الغلاف</span>
+                <select value={draft.coverImageSize} onChange={(e) => setField("coverImageSize", e.target.value)} className="input">
+                  {SIZE_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
           </div>
         </Card>
 
@@ -404,7 +459,35 @@ export function SectionEditor({ storeId, onSaved }: { storeId: string; onSaved?:
               <input type="checkbox" checked={draft.showStoreName} onChange={(e) => setField("showStoreName", e.target.checked)} className="h-5 w-5 accent-brass" />
               <span className="font-bold text-harbor text-sm">إظهار اسم المتجر بجانب الشعار</span>
             </label>
+            <label className="flex items-center gap-3 rounded-xl border border-harbor/15 bg-canvas px-4 py-3">
+              <input type="checkbox" checked={draft.showLogo} onChange={(e) => setField("showLogo", e.target.checked)} className="h-5 w-5 accent-brass" />
+              <span className="font-bold text-harbor text-sm">إظهار الشعار</span>
+            </label>
           </div>
+
+          {draftStore?.customization?.template?.slug === "bold" && (
+            <div className="grid sm:grid-cols-2 gap-4 mt-4 pt-4 border-t border-harbor/10">
+              <label className="flex items-center gap-3 rounded-xl border border-harbor/15 bg-canvas px-4 py-3">
+                <input type="checkbox" checked={draft.heroEnabled} onChange={(e) => setField("heroEnabled", e.target.checked)} className="h-5 w-5 accent-brass" />
+                <span className="font-bold text-harbor text-sm">إظهار الشريط الملوّن (Hero)</span>
+              </label>
+              <label className="block">
+                <span className="block text-sm font-bold text-harbor mb-1.5">حجم الشريط الملوّن</span>
+                <select
+                  value={draft.heroSize}
+                  onChange={(e) => setField("heroSize", e.target.value)}
+                  disabled={!draft.heroEnabled}
+                  className="input disabled:opacity-50"
+                >
+                  {SIZE_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+          )}
         </Card>
 
         <Card className="p-6">

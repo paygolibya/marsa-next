@@ -41,10 +41,44 @@ export const DEFAULT_SECTION_ORDER: SectionKey[] = ["stats", "products", "testim
 
 // Shared across all 4 templates so a merchant's chosen logo size looks the
 // same regardless of which template they're on, rather than each template
-// keeping its own hardcoded logo width/height.
-export const LOGO_SIZE_PX: Record<string, number> = { sm: 32, md: 48, lg: 64 };
+// keeping its own hardcoded logo width/height. "xl" deliberately exceeds
+// any header bar's own height — see <StorefrontLogo>, which renders it
+// absolutely positioned so a big logo overflows the bar instead of
+// stretching it.
+export const LOGO_SIZE_PX: Record<string, number> = { sm: 32, md: 48, lg: 64, xl: 96 };
 export function resolveLogoSizePx(logoSize: string | undefined): number {
   return LOGO_SIZE_PX[logoSize ?? "md"] ?? LOGO_SIZE_PX.md;
+}
+
+// Shared 3-tier "sm/md/lg" scale reused by text size, cover-image height,
+// and hero padding — one place to keep the actual pixel/class values so
+// they can't drift apart between templates.
+export const TEXT_SIZE_CLASS: Record<string, { heading: string; body: string }> = {
+  sm: { heading: "text-lg", body: "text-xs" },
+  md: { heading: "text-xl", body: "text-sm" },
+  lg: { heading: "text-2xl", body: "text-base" },
+};
+export function resolveTextSizeClass(textSize: string | undefined) {
+  return TEXT_SIZE_CLASS[textSize ?? "md"] ?? TEXT_SIZE_CLASS.md;
+}
+
+export const COVER_IMAGE_HEIGHT_CLASS: Record<string, string> = {
+  sm: "h-28 md:h-36",
+  md: "h-48 md:h-64",
+  lg: "h-64 md:h-96",
+};
+export function resolveCoverImageHeightClass(coverImageSize: string | undefined): string {
+  return COVER_IMAGE_HEIGHT_CLASS[coverImageSize ?? "md"] ?? COVER_IMAGE_HEIGHT_CLASS.md;
+}
+
+// BoldTemplate's hero block vertical padding.
+export const HERO_PADDING_CLASS: Record<string, string> = {
+  sm: "py-8",
+  md: "py-16",
+  lg: "py-24",
+};
+export function resolveHeroPaddingClass(heroSize: string | undefined): string {
+  return HERO_PADDING_CLASS[heroSize ?? "md"] ?? HERO_PADDING_CLASS.md;
 }
 
 // A saved sectionOrder can predate this feature (undefined), or in theory

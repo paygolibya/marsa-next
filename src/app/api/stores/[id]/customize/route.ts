@@ -30,10 +30,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       description,
       headerStyle,
       footerStyle,
+      showLogo,
       showStoreName,
       logoSize,
       textColor,
+      textSize,
       coverImage,
+      coverImageSize,
+      heroEnabled,
+      heroSize,
       showNewsletter,
       showReviews,
       showTestimonials,
@@ -45,7 +50,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     // complete/valid permutation of the known section keys. (Legacy path —
     // new code sends `sections` instead, see below.)
     const normalizedSectionOrder = sectionOrder !== undefined ? normalizeSectionOrder(sectionOrder) : undefined;
-    const validLogoSize = ["sm", "md", "lg"].includes(logoSize) ? logoSize : undefined;
+    const validLogoSize = ["sm", "md", "lg", "xl"].includes(logoSize) ? logoSize : undefined;
+    const validTextSize = ["sm", "md", "lg"].includes(textSize) ? textSize : undefined;
+    const validCoverImageSize = ["sm", "md", "lg"].includes(coverImageSize) ? coverImageSize : undefined;
+    const validHeroSize = ["sm", "md", "lg"].includes(heroSize) ? heroSize : undefined;
 
     const customization = await prisma.templateCustomization.upsert({
       where: { storeId: id },
@@ -61,10 +69,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         description,
         headerStyle: headerStyle || "standard",
         footerStyle: footerStyle || "standard",
+        showLogo: showLogo !== false,
         showStoreName: showStoreName !== false,
         logoSize: validLogoSize ?? "md",
         textColor,
+        textSize: validTextSize ?? "md",
         coverImage,
+        coverImageSize: validCoverImageSize ?? "md",
+        heroEnabled: heroEnabled !== false,
+        heroSize: validHeroSize ?? "md",
         showNewsletter: showNewsletter !== false,
         showReviews: showReviews !== false,
         showTestimonials: showTestimonials === true,
@@ -81,10 +94,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         description,
         headerStyle: headerStyle || undefined,
         footerStyle: footerStyle || undefined,
+        showLogo: showLogo !== undefined ? showLogo : undefined,
         showStoreName: showStoreName !== undefined ? showStoreName : undefined,
         logoSize: validLogoSize,
         textColor,
+        textSize: validTextSize,
         coverImage,
+        coverImageSize: validCoverImageSize,
+        heroEnabled: heroEnabled !== undefined ? heroEnabled : undefined,
+        heroSize: validHeroSize,
         showNewsletter: showNewsletter !== undefined ? showNewsletter : undefined,
         showReviews: showReviews !== undefined ? showReviews : undefined,
         showTestimonials: showTestimonials !== undefined ? showTestimonials : undefined,

@@ -14,14 +14,21 @@ export function SiteFooter({
   store,
   transparent = false,
 }: {
-  store?: { name: string; tagline?: string | null };
+  store?: { name: string; tagline?: string | null; logo?: string | null };
   transparent?: boolean;
 } = {}) {
   return (
     <footer className={`border-t ${transparent ? "border-white/15 text-canvas/80" : "border-harbor/10 bg-harbor text-canvas/70"}`}>
       <div className="mx-auto max-w-6xl px-6 py-10">
         {store && (
-          <div className="mb-6 pb-6 border-b border-canvas/10 text-center">
+          <div className="mb-6 pb-6 border-b border-canvas/10 text-center flex flex-col items-center gap-2">
+            {store.logo && (
+              // "branded" footerStyle promises the merchant's own logo, not
+              // just their name — this <img> never existed before, so that
+              // half of "يعرض اسم متجرك وشعارك" was silently never true.
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={store.logo} alt={store.name} className="h-10 w-10 rounded-full object-cover" />
+            )}
             <p className="font-display text-lg font-extrabold text-canvas">{store.name}</p>
             {store.tagline && <p className="text-sm mt-1">{store.tagline}</p>}
           </div>

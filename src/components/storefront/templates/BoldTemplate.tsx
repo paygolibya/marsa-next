@@ -1,7 +1,13 @@
-import Image from "next/image";
 import { StatsSection, ProductsSection, TestimonialsSection, NewsletterSection } from "@/components/storefront/sections";
 import type { SectionRenderProps, SectionType } from "@/components/storefront/sections/types";
-import { resolveLogoSizePx, type StorefrontTemplateProps } from "./types";
+import { StorefrontLogo } from "./StorefrontLogo";
+import {
+  resolveCoverImageHeightClass,
+  resolveHeroPaddingClass,
+  resolveLogoSizePx,
+  resolveTextSizeClass,
+  type StorefrontTemplateProps,
+} from "./types";
 
 const SECTION_COMPONENTS: Record<SectionType, (props: SectionRenderProps) => React.ReactNode> = {
   stats: StatsSection,
@@ -35,9 +41,12 @@ export default function BoldTemplate({
   const primary = store.customization?.primaryColor || "#ef4444";
   const secondary = store.customization?.secondaryColor || "#fef2f2";
   const accent = store.customization?.accentColor || primary;
+  const showLogo = store.customization?.showLogo !== false;
   const showStoreName = store.customization?.showStoreName !== false;
   const logoPx = resolveLogoSizePx(store.customization?.logoSize);
   const textColor = store.customization?.textColor || undefined;
+  const textSize = resolveTextSizeClass(store.customization?.textSize);
+  const heroEnabled = store.customization?.heroEnabled !== false;
   const colors = { primary, secondary, accent, text: textColor };
 
   const sectionProps: Omit<SectionRenderProps, "settings"> = {
@@ -78,19 +87,9 @@ export default function BoldTemplate({
       <div className="sticky top-0 z-30 bg-white/90 backdrop-blur border-b border-harbor/5">
         <div className="mx-auto max-w-6xl px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            {store.customization?.logo && (
-              <Image
-                src={store.customization.logo}
-                alt={store.name}
-                width={logoPx}
-                height={logoPx}
-                unoptimized
-                className="rounded-full object-cover"
-                style={{ width: logoPx, height: logoPx }}
-              />
-            )}
+            {showLogo && store.customization?.logo && <StorefrontLogo src={store.customization.logo} alt={store.name} sizePx={logoPx} />}
             {showStoreName && (
-              <span className="font-display font-extrabold text-harbor" style={{ color: colors.text }}>
+              <span className={`font-display font-extrabold text-harbor ${textSize.heading}`} style={{ color: colors.text }}>
                 {store.name}
               </span>
             )}
@@ -111,18 +110,21 @@ export default function BoldTemplate({
       </div>
 
       {store.customization?.coverImage && (
-        <div className="w-full h-48 md:h-64 overflow-hidden">
+        <div className={`w-full overflow-hidden ${resolveCoverImageHeightClass(store.customization?.coverImageSize)}`}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={store.customization.coverImage} alt="" className="w-full h-full object-cover" />
         </div>
       )}
 
-      {/* Full-bleed hero */}
-      <div style={{ backgroundColor: primary }} className="text-white text-center py-16 px-6">
-        <h1 className="font-display text-4xl md:text-6xl font-extrabold mb-3 leading-tight">{store.name}</h1>
-        {store.customization?.tagline && <p className="text-lg md:text-xl opacity-90 max-w-xl mx-auto">{store.customization.tagline}</p>}
-        {store.customization?.description && <p className="mt-4 opacity-80 max-w-2xl mx-auto">{store.customization.description}</p>}
-      </div>
+      {/* Full-bleed hero — the only template with this concept, so its
+          own on/off + size controls (unlike the shared header/cover ones). */}
+      {heroEnabled && (
+        <div style={{ backgroundColor: primary }} className={`text-white text-center px-6 ${resolveHeroPaddingClass(store.customization?.heroSize)}`}>
+          <h1 className="font-display text-4xl md:text-6xl font-extrabold mb-3 leading-tight">{store.name}</h1>
+          {store.customization?.tagline && <p className="text-lg md:text-xl opacity-90 max-w-xl mx-auto">{store.customization.tagline}</p>}
+          {store.customization?.description && <p className="mt-4 opacity-80 max-w-2xl mx-auto">{store.customization.description}</p>}
+        </div>
+      )}
 
       <main className="mx-auto max-w-6xl px-6 py-12">{orderedSections}</main>
     </div>
