@@ -83,7 +83,13 @@ export default function ModernTemplate({
   return (
     <div style={{ backgroundColor: secondary }} className="min-h-screen">
       <header className="sticky top-0 z-30 backdrop-blur" style={{ backgroundColor: primary }}>
-        <div className={`relative mx-auto max-w-6xl px-6 py-4 flex items-center gap-4 ${headerCentered ? "flex-col justify-center text-center" : ""}`}>
+        {/* min-h-14 keeps the bar tall enough for the absolutely-positioned
+            cart button below — without it, when the logo uses the
+            zero-height overflow trick and the name is hidden, the row's
+            flow content collapses to ~0 and the button (no longer a flex
+            sibling, since its position is now independent of the logo)
+            overflows past the bar's own edges instead of sitting inside it. */}
+        <div className={`relative min-h-14 mx-auto max-w-6xl px-6 py-4 flex items-center gap-4 ${headerCentered ? "flex-col justify-center text-center" : ""}`}>
           <div className={`flex items-center gap-3 ${headerCentered ? "flex-col" : ""}`}>
             {showLogo && store.customization?.logo && (headerCentered ? (
               // The overflow-past-the-bar trick (StorefrontLogo) only

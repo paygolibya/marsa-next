@@ -88,7 +88,13 @@ export default function BoldTemplate({
     <div style={{ backgroundColor: secondary }} className="min-h-screen">
       {/* Slim utility bar — logo + cart only, the hero below carries the weight */}
       <div className="sticky top-0 z-30 bg-white/90 backdrop-blur border-b border-harbor/5">
-        <div className={`relative mx-auto max-w-6xl px-6 py-3 flex items-center gap-4 ${headerCentered ? "flex-col justify-center text-center" : ""}`}>
+        {/* min-h-14 keeps the bar tall enough for the absolutely-positioned
+            cart button below — without it, when the logo uses the
+            zero-height overflow trick and the name is hidden, the row's
+            flow content collapses to ~0 and the button (no longer a flex
+            sibling, since its position is now independent of the logo)
+            overflows past the bar's own edges instead of sitting inside it. */}
+        <div className={`relative min-h-14 mx-auto max-w-6xl px-6 py-3 flex items-center gap-4 ${headerCentered ? "flex-col justify-center text-center" : ""}`}>
           <div className={`flex items-center gap-2 ${headerCentered ? "flex-col" : ""}`}>
             {showLogo && store.customization?.logo && (headerCentered ? (
               // Same constraint as ModernTemplate's centered mode — the
