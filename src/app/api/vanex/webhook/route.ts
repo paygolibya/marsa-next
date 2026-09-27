@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { sendOrderStatusEmail } from "@/lib/integrations/email";
 import { sendShipmentStatusSms } from "@/lib/integrations/sms";
 import { calculateCommissionForOrder } from "@/lib/payment/payout-processor";
+import { isValidVanexWebhookKey, resolveVanexCourierStatus } from "@/lib/integrations/vanex-webhook";
 
 // POST /api/vanex/webhook — Vanex pushes shipment status changes here.
 // Auth is a shared secret header, not a merchant/admin token, since Vanex
@@ -14,7 +15,7 @@ import { calculateCommissionForOrder } from "@/lib/payment/payout-processor";
 // response, which would silently drop any work still in flight.
 export async function POST(req: Request) {
   const webhookKey = req.headers.get("x-webhook-key");
-  if (!webhookKey || webhookKey !== process.env.VANEX_WEBHOOK_SECRET) {
+  if (!isValidVanexWebhookKey(webhookKey, process.env.VANEX_WEBHOOK_SECRET)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -38,13 +39,7 @@ export async function POST(req: Request) {
 
   const statusAt = time_stamp ? new Date(time_stamp) : new Date();
 
-  const statusByType: Record<string, string> = {
-    package_accepted: "accepted",
-    package_delivered: "delivered",
-    package_failed_delivery: "failed_delivery",
-    packages_returned: "returned",
-  };
-  const courierStatus = statusByType[type];
+  const courierStatus = resolveVanexCourierStatus(type);
   if (!courierStatus) {
     console.warn(`Vanex webhook: unknown type "${type}"`);
     return NextResponse.json({ success: true });

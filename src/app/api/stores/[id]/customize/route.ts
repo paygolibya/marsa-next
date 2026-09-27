@@ -4,6 +4,7 @@ import { getAuthMerchantId } from "@/lib/auth";
 import { normalizeSectionOrder } from "@/components/storefront/templates/types";
 import { parseSectionsPayload } from "@/components/storefront/sections/schemas";
 import { normalizeToSections } from "@/components/storefront/sections/normalize";
+import { validateCustomizationEnums } from "./validate";
 
 // POST /api/stores/:id/customize — needs auth + ownership. Previously had
 // NO auth check at all (anyone who guessed/knew a store id could overwrite
@@ -51,11 +52,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     // complete/valid permutation of the known section keys. (Legacy path —
     // new code sends `sections` instead, see below.)
     const normalizedSectionOrder = sectionOrder !== undefined ? normalizeSectionOrder(sectionOrder) : undefined;
-    const validLogoSize = ["sm", "md", "lg", "xl"].includes(logoSize) ? logoSize : undefined;
-    const validTextSize = ["sm", "md", "lg"].includes(textSize) ? textSize : undefined;
-    const validCoverImageSize = ["sm", "md", "lg"].includes(coverImageSize) ? coverImageSize : undefined;
-    const validHeroSize = ["sm", "md", "lg"].includes(heroSize) ? heroSize : undefined;
-    const validCartPosition = ["left", "right"].includes(cartPosition) ? cartPosition : undefined;
+    const { validLogoSize, validTextSize, validCoverImageSize, validHeroSize, validCartPosition } = validateCustomizationEnums({
+      logoSize,
+      textSize,
+      coverImageSize,
+      heroSize,
+      cartPosition,
+    });
 
     const customization = await prisma.templateCustomization.upsert({
       where: { storeId: id },
