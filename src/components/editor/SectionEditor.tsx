@@ -431,13 +431,15 @@ export function SectionEditor({ storeId, onSaved }: { storeId: string; onSaved?:
         <Card className="p-6">
           <h2 className="font-display text-lg font-bold text-harbor mb-4">تخطيط المتجر</h2>
           <div className="grid sm:grid-cols-2 gap-4">
-            <label className="block">
-              <span className="block text-sm font-bold text-harbor mb-1.5">نمط الرأس</span>
-              <select value={draft.headerStyle} onChange={(e) => setField("headerStyle", e.target.value)} className="input">
-                <option value="standard">قياسي — الشعار على اليمين</option>
-                <option value="centered">متمركز — الشعار في المنتصف</option>
-              </select>
-            </label>
+            {(draftStore?.customization?.template?.slug === "modern" || draftStore?.customization?.template?.slug === "bold") && (
+              <label className="block">
+                <span className="block text-sm font-bold text-harbor mb-1.5">نمط الرأس</span>
+                <select value={draft.headerStyle} onChange={(e) => setField("headerStyle", e.target.value)} className="input">
+                  <option value="standard">قياسي — الشعار على اليمين</option>
+                  <option value="centered">متمركز — الشعار في المنتصف</option>
+                </select>
+              </label>
+            )}
             <label className="block">
               <span className="block text-sm font-bold text-harbor mb-1.5">نمط التذييل</span>
               <select value={draft.footerStyle} onChange={(e) => setField("footerStyle", e.target.value)} className="input">

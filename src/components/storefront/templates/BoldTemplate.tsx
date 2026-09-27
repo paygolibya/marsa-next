@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { StatsSection, ProductsSection, TestimonialsSection, NewsletterSection } from "@/components/storefront/sections";
 import type { SectionRenderProps, SectionType } from "@/components/storefront/sections/types";
 import { StorefrontLogo } from "./StorefrontLogo";
@@ -41,6 +42,7 @@ export default function BoldTemplate({
   const primary = store.customization?.primaryColor || "#ef4444";
   const secondary = store.customization?.secondaryColor || "#fef2f2";
   const accent = store.customization?.accentColor || primary;
+  const headerCentered = store.customization?.headerStyle === "centered";
   const showLogo = store.customization?.showLogo !== false;
   const showStoreName = store.customization?.showStoreName !== false;
   const logoPx = resolveLogoSizePx(store.customization?.logoSize);
@@ -85,9 +87,17 @@ export default function BoldTemplate({
     <div style={{ backgroundColor: secondary }} className="min-h-screen">
       {/* Slim utility bar — logo + cart only, the hero below carries the weight */}
       <div className="sticky top-0 z-30 bg-white/90 backdrop-blur border-b border-harbor/5">
-        <div className="mx-auto max-w-6xl px-6 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            {showLogo && store.customization?.logo && <StorefrontLogo src={store.customization.logo} alt={store.name} sizePx={logoPx} />}
+        <div className={`mx-auto max-w-6xl px-6 py-3 flex items-center gap-4 ${headerCentered ? "flex-col justify-center text-center" : "justify-between"}`}>
+          <div className={`flex items-center gap-2 ${headerCentered ? "flex-col" : ""}`}>
+            {showLogo && store.customization?.logo && (headerCentered ? (
+              // Same constraint as ModernTemplate's centered mode — the
+              // overflow-past-the-bar trick only works as a flex-row
+              // sibling, so centered (flex-column) mode falls back to a
+              // plain sized image instead.
+              <Image src={store.customization.logo} alt={store.name} width={logoPx} height={logoPx} unoptimized className="rounded-full object-cover" style={{ width: logoPx, height: logoPx }} />
+            ) : (
+              <StorefrontLogo src={store.customization.logo} alt={store.name} sizePx={logoPx} />
+            ))}
             {showStoreName && (
               <span className={`font-display font-extrabold text-harbor ${textSize.heading}`} style={{ color: colors.text }}>
                 {store.name}
