@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Almarai } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
 import { ThemeProvider, THEME_INIT_SCRIPT } from "@/lib/theme-context";
@@ -41,6 +42,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <AuthProvider>{children}</AuthProvider>
           <ChatWidget />
         </ThemeProvider>
+        <Analytics />
       </body>
     </html>
   );
