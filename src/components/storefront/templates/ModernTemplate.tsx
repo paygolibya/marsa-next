@@ -38,6 +38,7 @@ export default function ModernTemplate({
   const secondary = store.customization?.secondaryColor || "#f0f0f0";
   const accent = store.customization?.accentColor || primary;
   const headerCentered = store.customization?.headerStyle === "centered";
+  const cartOnRight = store.customization?.cartPosition === "right";
   const showLogo = store.customization?.showLogo !== false;
   const showStoreName = store.customization?.showStoreName !== false;
   const logoPx = resolveLogoSizePx(store.customization?.logoSize);
@@ -82,7 +83,7 @@ export default function ModernTemplate({
   return (
     <div style={{ backgroundColor: secondary }} className="min-h-screen">
       <header className="sticky top-0 z-30 backdrop-blur" style={{ backgroundColor: primary }}>
-        <div className={`mx-auto max-w-6xl px-6 py-4 flex items-center gap-4 ${headerCentered ? "flex-col justify-center text-center" : "justify-between"}`}>
+        <div className={`relative mx-auto max-w-6xl px-6 py-4 flex items-center gap-4 ${headerCentered ? "flex-col justify-center text-center" : ""}`}>
           <div className={`flex items-center gap-3 ${headerCentered ? "flex-col" : ""}`}>
             {showLogo && store.customization?.logo && (headerCentered ? (
               // The overflow-past-the-bar trick (StorefrontLogo) only
@@ -101,7 +102,12 @@ export default function ModernTemplate({
               </div>
             )}
           </div>
-          <button onClick={onOpenCart} className="relative rounded-full bg-white/15 px-5 py-2 text-white font-bold text-sm hover:bg-white/25 transition-colors">
+          {/* Positioned independently of the logo/name group above — cart
+              placement is its own merchant choice, not tied to headerStyle. */}
+          <button
+            onClick={onOpenCart}
+            className={`absolute top-1/2 -translate-y-1/2 ${cartOnRight ? "right-6" : "left-6"} rounded-full bg-white/15 px-5 py-2 text-white font-bold text-sm hover:bg-white/25 transition-colors`}
+          >
             سلة التسوق
             {cartTotalItems > 0 && (
               <span className="absolute -top-2 -left-2 h-5 w-5 rounded-full bg-signal text-[11px] flex items-center justify-center text-white">

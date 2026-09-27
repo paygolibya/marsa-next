@@ -64,6 +64,7 @@ export type StoreCustomization = {
   coverImageSize: string;
   heroEnabled: boolean;
   heroSize: string;
+  cartPosition: string;
   showNewsletter: boolean;
   showReviews: boolean;
   showTestimonials: boolean;

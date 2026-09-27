@@ -39,6 +39,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       coverImageSize,
       heroEnabled,
       heroSize,
+      cartPosition,
       showNewsletter,
       showReviews,
       showTestimonials,
@@ -54,6 +55,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const validTextSize = ["sm", "md", "lg"].includes(textSize) ? textSize : undefined;
     const validCoverImageSize = ["sm", "md", "lg"].includes(coverImageSize) ? coverImageSize : undefined;
     const validHeroSize = ["sm", "md", "lg"].includes(heroSize) ? heroSize : undefined;
+    const validCartPosition = ["left", "right"].includes(cartPosition) ? cartPosition : undefined;
 
     const customization = await prisma.templateCustomization.upsert({
       where: { storeId: id },
@@ -78,6 +80,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         coverImageSize: validCoverImageSize ?? "md",
         heroEnabled: heroEnabled !== false,
         heroSize: validHeroSize ?? "md",
+        cartPosition: validCartPosition ?? "left",
         showNewsletter: showNewsletter !== false,
         showReviews: showReviews !== false,
         showTestimonials: showTestimonials === true,
@@ -103,6 +106,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         coverImageSize: validCoverImageSize,
         heroEnabled: heroEnabled !== undefined ? heroEnabled : undefined,
         heroSize: validHeroSize,
+        cartPosition: validCartPosition,
         showNewsletter: showNewsletter !== undefined ? showNewsletter : undefined,
         showReviews: showReviews !== undefined ? showReviews : undefined,
         showTestimonials: showTestimonials !== undefined ? showTestimonials : undefined,

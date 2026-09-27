@@ -49,6 +49,7 @@ export default function BoldTemplate({
   const textColor = store.customization?.textColor || undefined;
   const textSize = resolveTextSizeClass(store.customization?.textSize);
   const heroEnabled = store.customization?.heroEnabled !== false;
+  const cartOnRight = store.customization?.cartPosition === "right";
   const colors = { primary, secondary, accent, text: textColor };
 
   const sectionProps: Omit<SectionRenderProps, "settings"> = {
@@ -87,7 +88,7 @@ export default function BoldTemplate({
     <div style={{ backgroundColor: secondary }} className="min-h-screen">
       {/* Slim utility bar — logo + cart only, the hero below carries the weight */}
       <div className="sticky top-0 z-30 bg-white/90 backdrop-blur border-b border-harbor/5">
-        <div className={`mx-auto max-w-6xl px-6 py-3 flex items-center gap-4 ${headerCentered ? "flex-col justify-center text-center" : "justify-between"}`}>
+        <div className={`relative mx-auto max-w-6xl px-6 py-3 flex items-center gap-4 ${headerCentered ? "flex-col justify-center text-center" : ""}`}>
           <div className={`flex items-center gap-2 ${headerCentered ? "flex-col" : ""}`}>
             {showLogo && store.customization?.logo && (headerCentered ? (
               // Same constraint as ModernTemplate's centered mode — the
@@ -104,10 +105,12 @@ export default function BoldTemplate({
               </span>
             )}
           </div>
+          {/* Positioned independently of the logo/name group above — cart
+              placement is its own merchant choice, not tied to headerStyle. */}
           <button
             onClick={onOpenCart}
             style={{ backgroundColor: primary }}
-            className="relative rounded-xl px-5 py-2 text-white font-extrabold text-sm shadow-lg hover:opacity-90 transition-opacity"
+            className={`absolute top-1/2 -translate-y-1/2 ${cartOnRight ? "right-6" : "left-6"} rounded-xl px-5 py-2 text-white font-extrabold text-sm shadow-lg hover:opacity-90 transition-opacity`}
           >
             🛒 السلة
             {cartTotalItems > 0 && (

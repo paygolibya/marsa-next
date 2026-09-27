@@ -84,6 +84,11 @@ model TemplateCustomization {
   // vertical padding.
   heroEnabled      Boolean @default(true) @map("hero_enabled")
   heroSize         String  @default("md") @map("hero_size")
+  // Which side of the header the cart button sits on — independent of
+  // headerStyle/logo placement (Modern/Bold only; see cartPosition usage
+  // in those templates). "left" matches the original pre-existing layout,
+  // so this default changes nothing for stores created before this field.
+  cartPosition     String  @default("left") @map("cart_position")
   // Deprecated in favor of StoreSection.enabled (per-section, not one flag
   // per section type here) — same fallback-source role as sectionOrder below.
   showNewsletter   Boolean @default(true) @map("show_newsletter")

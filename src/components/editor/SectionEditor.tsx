@@ -31,6 +31,7 @@ type DraftCustomization = {
   textSize: string;
   heroEnabled: boolean;
   heroSize: string;
+  cartPosition: string;
 };
 
 const DEFAULT_DRAFT: DraftCustomization = {
@@ -52,6 +53,7 @@ const DEFAULT_DRAFT: DraftCustomization = {
   textSize: "md",
   heroEnabled: true,
   heroSize: "md",
+  cartPosition: "left",
 };
 
 const LOGO_SIZE_OPTIONS: { value: string; label: string }[] = [
@@ -137,6 +139,7 @@ export function SectionEditor({ storeId, onSaved }: { storeId: string; onSaved?:
           textSize: customization.textSize,
           heroEnabled: customization.heroEnabled,
           heroSize: customization.heroSize,
+          cartPosition: customization.cartPosition,
         });
         setSections(fetchedSections.map((s) => ({ id: s.id ?? makeLocalId(), type: s.type, enabled: s.enabled, settings: s.settings })));
         setProducts(publicData.products);
@@ -225,6 +228,7 @@ export function SectionEditor({ storeId, onSaved }: { storeId: string; onSaved?:
         textSize: draft.textSize,
         heroEnabled: draft.heroEnabled,
         heroSize: draft.heroSize,
+        cartPosition: draft.cartPosition,
         sections: sections.map((s, position) => ({ type: s.type, position, enabled: s.enabled, settings: s.settings })),
       });
       show("تم حفظ التخصيصات", "success");
@@ -262,6 +266,7 @@ export function SectionEditor({ storeId, onSaved }: { storeId: string; onSaved?:
             textSize: draft.textSize,
             heroEnabled: draft.heroEnabled,
             heroSize: draft.heroSize,
+            cartPosition: draft.cartPosition,
           }
         : null,
     };
@@ -465,6 +470,15 @@ export function SectionEditor({ storeId, onSaved }: { storeId: string; onSaved?:
               <input type="checkbox" checked={draft.showLogo} onChange={(e) => setField("showLogo", e.target.checked)} className="h-5 w-5 accent-brass" />
               <span className="font-bold text-harbor text-sm">إظهار الشعار</span>
             </label>
+            {(draftStore?.customization?.template?.slug === "modern" || draftStore?.customization?.template?.slug === "bold") && (
+              <label className="block">
+                <span className="block text-sm font-bold text-harbor mb-1.5">موضع زر السلة</span>
+                <select value={draft.cartPosition} onChange={(e) => setField("cartPosition", e.target.value)} className="input">
+                  <option value="left">اليسار</option>
+                  <option value="right">اليمين</option>
+                </select>
+              </label>
+            )}
           </div>
 
           {draftStore?.customization?.template?.slug === "bold" && (

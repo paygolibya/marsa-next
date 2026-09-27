@@ -110,6 +110,7 @@ export default function TemplatePreviewPage() {
         textSize: "md",
         heroEnabled: true,
         heroSize: "md",
+        cartPosition: "left",
         showNewsletter: true,
         showReviews: true,
         showTestimonials: true,
