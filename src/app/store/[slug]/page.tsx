@@ -38,23 +38,6 @@ export default function StorefrontPage() {
       .catch(() => setNotFound(true));
   }, [slug]);
 
-  // A store's own favicon (if uploaded). Previously mutated the existing
-  // <link rel="icon">'s href in place — most browsers only read a
-  // favicon's href at initial parse time and ignore a later JS mutation
-  // to the SAME element, so the change never actually showed in the tab.
-  // Removing Next's own default icon link(s) (from the app/icon.png file
-  // convention) and inserting a brand-new element is the reliable
-  // cross-browser way to swap it at runtime.
-  useEffect(() => {
-    const favicon = store?.customization?.favicon;
-    if (!favicon) return;
-    document.querySelectorAll<HTMLLinkElement>("link[rel~='icon']").forEach((el) => el.remove());
-    const link = document.createElement("link");
-    link.rel = "icon";
-    link.href = favicon;
-    document.head.appendChild(link);
-  }, [store?.customization?.favicon]);
-
   async function handleNewsletterSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!newsletterEmail.trim()) return;
