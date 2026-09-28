@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { getAuthMerchantId } from "@/lib/auth";
 import { normalizeSectionOrder } from "@/components/storefront/templates/types";
 import { parseSectionsPayload } from "@/components/storefront/sections/schemas";
@@ -156,6 +157,7 @@ export async function handleCustomizePost(db: CustomizeDb, req: Request, storeId
     return NextResponse.json({ success: true, customization, sections: savedSections });
   } catch (error) {
     console.error("Error updating customization:", error);
+    Sentry.captureException(error);
     return NextResponse.json({ error: "Failed to update customization" }, { status: 500 });
   }
 }
@@ -182,6 +184,7 @@ export async function handleCustomizeGet(db: CustomizeDb, req: Request, storeId:
     return NextResponse.json({ customization, sections });
   } catch (error) {
     console.error("Error fetching customization:", error);
+    Sentry.captureException(error);
     return NextResponse.json({ error: "Failed to fetch customization" }, { status: 500 });
   }
 }

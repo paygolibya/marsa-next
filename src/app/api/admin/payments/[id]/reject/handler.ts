@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { getAuthMerchantId, isAdminMerchantId } from "@/lib/auth";
 
 export type RejectPaymentDb = {
@@ -18,6 +19,7 @@ export async function handleRejectPayment(db: RejectPaymentDb, req: Request, pay
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Rejection error:", error);
+    Sentry.captureException(error);
     return NextResponse.json({ error: "Failed to reject payment" }, { status: 500 });
   }
 }

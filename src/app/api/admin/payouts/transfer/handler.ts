@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { getAuthMerchantId, isAdminMerchantId } from "@/lib/auth";
 import { transferPayoutSchema } from "@/lib/validation";
 
@@ -74,6 +75,7 @@ export async function handleTransferPayout(db: TransferPayoutDb, req: Request): 
     return NextResponse.json(updatedPayout);
   } catch (err) {
     console.error(err);
+    Sentry.captureException(err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

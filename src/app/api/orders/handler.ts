@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { buildLightboxConfig, getLightboxScriptUrl, isMoamalatConfigured, makeOrderReference } from "@/lib/payment/moamalat-client";
 import { createOrderSchema } from "@/lib/validation";
 import { getSubscriptionState, getCheckoutPaymentMethods } from "@/lib/checkout-features";
@@ -273,6 +274,7 @@ export async function handleCreateOrder(deps: OrdersDeps, req: Request): Promise
     );
   } catch (err) {
     console.error(err);
+    Sentry.captureException(err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

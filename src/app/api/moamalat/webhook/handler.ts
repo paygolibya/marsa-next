@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { verifyMoamalatResponseHash } from "@/lib/payment/moamalat-client";
 
 // See docs.moamalat.net/notification.html for the field list — the hash
@@ -75,6 +76,7 @@ export async function handleMoamalatWebhook(deps: MoamalatWebhookDeps, req: Requ
     }
   } catch (error) {
     console.error(`Moamalat webhook: failed to process MerchantReference ${MerchantReference}:`, error);
+    Sentry.captureException(error);
     return NextResponse.json({ Message: "Internal error", Success: false }, { status: 500 });
   }
 

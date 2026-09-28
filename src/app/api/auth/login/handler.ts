@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { signMerchantToken, toMerchantDTO } from "@/lib/auth";
 import { loginSchema } from "@/lib/validation";
 import { getClientIp } from "@/lib/request-ip";
@@ -83,6 +84,7 @@ export async function handleLogin(deps: LoginDeps, req: Request): Promise<Respon
     });
   } catch (err) {
     console.error(err);
+    Sentry.captureException(err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

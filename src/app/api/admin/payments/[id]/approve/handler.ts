@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { getAuthMerchantId, isAdminMerchantId } from "@/lib/auth";
 import { getPlanFeatureFlags } from "@/lib/checkout-features";
 import { addMonths } from "@/lib/subscription/period";
@@ -49,6 +50,7 @@ export async function handleApprovePayment(db: ApprovePaymentDb, req: Request, p
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Approval error:", error);
+    Sentry.captureException(error);
     return NextResponse.json({ error: "Failed to approve payment" }, { status: 500 });
   }
 }

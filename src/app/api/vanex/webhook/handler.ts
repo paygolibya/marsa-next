@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { isValidVanexWebhookKey, resolveVanexCourierStatus } from "@/lib/integrations/vanex-webhook";
 
 type OrderLike = {
@@ -90,11 +91,13 @@ export async function handleVanexWebhook(deps: VanexWebhookDeps, req: Request): 
             await deps.calculateCommissionForOrder(order.id);
           } catch (error) {
             console.error(`Vanex webhook: commission calculation failed for order ${order.id}:`, error);
+            Sentry.captureException(error);
           }
         }
       }
     } catch (error) {
       console.error(`Vanex webhook: failed to process package ${pkg.code}:`, error);
+      Sentry.captureException(error);
     }
   }
 
