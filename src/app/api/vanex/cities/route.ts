@@ -1,12 +1,8 @@
-import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { handleVanexCities } from "./handler";
 
-// GET /api/vanex/cities — public: zones + areas with shipping prices, for
-// the checkout page's city/area picker on vanex-courier stores.
+// GET /api/vanex/cities — see handler.ts for the actual logic (injectable
+// there so it can be integration-tested with fakes; handler.test.ts).
 export async function GET() {
-  const cities = await prisma.vanexCity.findMany({
-    orderBy: { name: "asc" },
-    include: { areas: { orderBy: { name: "asc" } } },
-  });
-  return NextResponse.json({ cities });
+  return handleVanexCities(prisma);
 }
