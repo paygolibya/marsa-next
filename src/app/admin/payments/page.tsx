@@ -84,11 +84,11 @@ export default function PaymentsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
+    <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
       <div className="mx-auto max-w-6xl">
-        <h1 className="mb-8 text-4xl font-bold">إدارة الدفع</h1>
+        <h1 className="mb-6 text-2xl font-bold sm:mb-8 sm:text-4xl">إدارة الدفع</h1>
 
-        <div className="mb-6 flex gap-4">
+        <div className="mb-6 flex gap-2 overflow-x-auto pb-1 sm:gap-4 sm:overflow-visible">
           {[
             { key: "pending", label: "قيد الانتظار" },
             { key: "approved", label: "موافق عليه" },
@@ -97,7 +97,7 @@ export default function PaymentsPage() {
             <button
               key={status.key}
               onClick={() => setFilter(status.key)}
-              className={`rounded-lg px-6 py-2 font-bold transition ${filter === status.key ? "bg-signal text-white" : "border border-harbor/10 bg-white text-harbor hover:border-signal"}`}
+              className={`shrink-0 rounded-lg px-4 py-2 text-sm font-bold transition sm:px-6 sm:text-base ${filter === status.key ? "bg-signal text-white" : "border border-harbor/10 bg-white text-harbor hover:border-signal"}`}
             >
               {status.label}
             </button>
@@ -111,24 +111,24 @@ export default function PaymentsPage() {
         ) : (
           <div className="space-y-4">
             {payments.map((payment) => (
-              <div key={payment.id} className="rounded-lg border border-harbor/10 bg-white p-6">
-                <div className="mb-4 grid grid-cols-4 gap-4">
-                  <div>
+              <div key={payment.id} className="rounded-lg border border-harbor/10 bg-white p-4 sm:p-6">
+                <div className="mb-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
+                  <div className="min-w-0">
                     <p className="text-sm text-rope">التاجر</p>
-                    <p className="font-bold">{payment.merchant.name}</p>
-                    <p className="text-sm text-rope">{payment.merchant.phone}</p>
+                    <p className="truncate font-bold">{payment.merchant.name}</p>
+                    <p className="truncate text-sm text-rope" dir="ltr">{payment.merchant.phone}</p>
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-sm text-rope">الخطة</p>
-                    <p className="font-bold">{payment.tier}</p>
+                    <p className="truncate font-bold">{payment.tier}</p>
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-sm text-rope">المبلغ</p>
-                    <p className="font-bold text-signal">{payment.amount} د.ل</p>
+                    <p className="truncate font-bold text-signal">{payment.amount} د.ل</p>
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-sm text-rope">التاريخ</p>
-                    <p className="font-bold">{payment.receiptUploadedAt ? new Date(payment.receiptUploadedAt).toLocaleDateString("ar-LY") : "—"}</p>
+                    <p className="truncate font-bold">{payment.receiptUploadedAt ? new Date(payment.receiptUploadedAt).toLocaleDateString("ar-LY") : "—"}</p>
                   </div>
                 </div>
 
@@ -142,10 +142,10 @@ export default function PaymentsPage() {
 
                 {payment.status === "pending" && (
                   <div className="flex gap-3">
-                    <button onClick={() => approvePayment(payment.id)} className="flex-1 rounded-lg bg-green-600 py-2 font-bold text-white transition hover:bg-green-700">
+                    <button onClick={() => approvePayment(payment.id)} className="flex-1 rounded-lg bg-green-600 py-2.5 font-bold text-white transition hover:bg-green-700 active:bg-green-800">
                       ✓ موافقة
                     </button>
-                    <button onClick={() => rejectPayment(payment.id)} className="flex-1 rounded-lg bg-red-600 py-2 font-bold text-white transition hover:bg-red-700">
+                    <button onClick={() => rejectPayment(payment.id)} className="flex-1 rounded-lg bg-red-600 py-2.5 font-bold text-white transition hover:bg-red-700 active:bg-red-800">
                       ✗ رفض
                     </button>
                   </div>
