@@ -18,25 +18,36 @@ export default function OrdersPage() {
   const { token } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   useEffect(() => {
     void fetchOrders();
   }, [token]);
 
-  async function fetchOrders() {
+  async function fetchOrders(cursor?: string) {
     try {
-      const response = await fetch("/api/admin/orders", {
+      const url = cursor ? `/api/admin/orders?cursor=${encodeURIComponent(cursor)}` : "/api/admin/orders";
+      const response = await fetch(url, {
         headers: token ? { Authorization: `Bearer ${token}` } : undefined,
       });
       if (response.ok) {
         const data = await response.json();
-        setOrders(data.orders || []);
+        setOrders((prev) => (cursor ? [...prev, ...(data.orders || [])] : data.orders || []));
+        setNextCursor(data.nextCursor ?? null);
       }
     } catch (error) {
       console.error("Error fetching orders:", error);
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
+  }
+
+  function handleLoadMore() {
+    if (!nextCursor || loadingMore) return;
+    setLoadingMore(true);
+    void fetchOrders(nextCursor);
   }
 
   return (
@@ -75,6 +86,15 @@ export default function OrdersPage() {
               </div>
             </div>
           ))}
+          {nextCursor && (
+            <button
+              onClick={handleLoadMore}
+              disabled={loadingMore}
+              className="w-full rounded-full border border-harbor/20 py-2.5 font-bold text-harbor hover:bg-harbor/5 transition-colors disabled:opacity-50"
+            >
+              {loadingMore ? "جارٍ التحميل..." : "تحميل المزيد"}
+            </button>
+          )}
         </div>
       )}
     </div>

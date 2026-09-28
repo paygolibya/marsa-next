@@ -8,16 +8,23 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
   try {
-    // Capped as a scale safety net (see admin/orders for the same pattern)
-    // — at today's real merchant count this changes nothing; a real
-    // paginated/searchable admin merchant list is a separate UI feature.
+    // Real cursor pagination (see admin/orders for the same pattern) — a
+    // flat cap silently hides every merchant past it with no way to reach
+    // them; this returns nextCursor so the admin page can page through the
+    // full list via "load more".
+    const url = new URL(req.url);
+    const cursor = url.searchParams.get("cursor");
+    const PAGE_SIZE = 100;
+
     const merchants = await prisma.merchant.findMany({
       include: { stores: true },
       orderBy: { createdAt: "desc" },
-      take: 1000,
+      take: PAGE_SIZE,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     });
+    const nextCursor = merchants.length === PAGE_SIZE ? merchants[merchants.length - 1].id : null;
 
-    return NextResponse.json({ merchants });
+    return NextResponse.json({ merchants, nextCursor });
   } catch (error) {
     console.error("Error fetching merchants:", error);
     return NextResponse.json({ error: "Failed to fetch merchants" }, { status: 500 });

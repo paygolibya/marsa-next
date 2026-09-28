@@ -46,6 +46,8 @@ export default function MerchantsPage() {
   const [selectedMerchant, setSelectedMerchant] = useState<Merchant | null>(null);
   const [showDetails, setShowDetails] = useState(false);
   const [acceptingMerchant, setAcceptingMerchant] = useState<Merchant | null>(null);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   useEffect(() => {
     // Wait for the auth context to actually finish reading the token from
@@ -58,15 +60,17 @@ export default function MerchantsPage() {
     void fetchMerchants();
   }, [ready, token]);
 
-  async function fetchMerchants() {
+  async function fetchMerchants(cursor?: string) {
     setFetchError(null);
     try {
-      const response = await fetch("/api/admin/merchants", {
+      const url = cursor ? `/api/admin/merchants?cursor=${encodeURIComponent(cursor)}` : "/api/admin/merchants";
+      const response = await fetch(url, {
         headers: token ? { Authorization: `Bearer ${token}` } : undefined,
       });
       if (response.ok) {
         const data = await response.json();
-        setMerchants(data.merchants || []);
+        setMerchants((prev) => (cursor ? [...prev, ...(data.merchants || [])] : data.merchants || []));
+        setNextCursor(data.nextCursor ?? null);
       } else {
         const data = await response.json().catch(() => null);
         setFetchError(
@@ -80,7 +84,14 @@ export default function MerchantsPage() {
       setFetchError("تعذّر الاتصال بالخادم، تحقق من الإنترنت وحاول مجددًا.");
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
+  }
+
+  function handleLoadMore() {
+    if (!nextCursor || loadingMore) return;
+    setLoadingMore(true);
+    void fetchMerchants(nextCursor);
   }
 
   async function acceptMerchant(merchantId: string, tier: string) {
@@ -355,6 +366,17 @@ export default function MerchantsPage() {
               ))}
             </tbody>
           </table>
+          {nextCursor && (
+            <div className="p-4 border-t border-gray-200">
+              <button
+                onClick={handleLoadMore}
+                disabled={loadingMore}
+                className="w-full rounded-lg border border-gray-300 py-2 font-bold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              >
+                {loadingMore ? "جارٍ التحميل..." : "تحميل المزيد"}
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
