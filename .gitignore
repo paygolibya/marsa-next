@@ -2,3 +2,6 @@ node_modules/
 .next/
 .env
 *.log
+# scripts/load-test.mjs's scratch embedded-postgres data dir — deletes
+# itself on a normal run, this is only a safety net if one gets interrupted.
+.load-test-pg-data/

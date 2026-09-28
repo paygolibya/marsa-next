@@ -3,49 +3,49 @@
 // database — the dashboard's revenue-over-time chart and "top products"
 // list are exactly the kind of thing an off-by-one in the day range or a
 // wrong sort direction would silently misreport to a merchant.
-
-export type AnalyticsOrder = {
-  createdAt: Date;
-  totalCents: number;
-  items: { productId: string; productName: string; unitPriceCents: number; quantity: number }[];
-};
+//
+// The route used to fetch every order (with every item) in the window and
+// aggregate in JS — this was fine at the volumes this codebase actually
+// had, but a real load test (scripts/load-test.mjs, seeded to 30k orders
+// on one store) measured this at 2+ seconds. The route now aggregates in
+// Postgres (GROUP BY, one raw query each — see route.ts) and only the
+// final, already-small step (merge a day-scaffold, sort+cap top products)
+// happens here in JS. These two functions are what stayed pure/testable;
+// the SQL itself isn't something a unit test can usefully cover, but it's
+// exercised for real by scripts/load-test.mjs.
 
 export type DailyBucket = { date: string; orders: number; revenueCents: number };
 export type TopProduct = { name: string; quantity: number; revenueCents: number };
+export type DbDailyRow = { date: string; orders: number; revenueCents: number };
+export type DbProductRow = { productId: string; name: string; quantity: number; revenueCents: number };
 
-export function buildAnalyticsSummary(
-  orders: AnalyticsOrder[],
-  days: number,
-  now: Date = new Date()
-): { byDay: DailyBucket[]; topProducts: TopProduct[] } {
-  const byDayMap = new Map<string, { orders: number; revenueCents: number }>();
+// Fills in every day in the window (even ones with zero orders) and
+// overlays whatever Postgres actually returned — dbRows only ever contains
+// days that had at least one order.
+export function mergeDailyBuckets(dbRows: DbDailyRow[], days: number, now: Date = new Date()): DailyBucket[] {
+  const byDayMap = new Map<string, DailyBucket>();
   for (let i = 0; i < days; i++) {
     const d = new Date(now.getTime() - (days - 1 - i) * 24 * 60 * 60 * 1000);
-    byDayMap.set(d.toISOString().slice(0, 10), { orders: 0, revenueCents: 0 });
+    const date = d.toISOString().slice(0, 10);
+    byDayMap.set(date, { date, orders: 0, revenueCents: 0 });
   }
-  for (const order of orders) {
-    const key = order.createdAt.toISOString().slice(0, 10);
-    const bucket = byDayMap.get(key);
+  for (const row of dbRows) {
+    const bucket = byDayMap.get(row.date);
     if (bucket) {
-      bucket.orders += 1;
-      bucket.revenueCents += order.totalCents;
+      bucket.orders = row.orders;
+      bucket.revenueCents = row.revenueCents;
     }
   }
+  return Array.from(byDayMap.values());
+}
 
-  const productTotals = new Map<string, TopProduct>();
-  for (const order of orders) {
-    for (const item of order.items) {
-      const entry = productTotals.get(item.productId) ?? { name: item.productName, quantity: 0, revenueCents: 0 };
-      entry.quantity += item.quantity;
-      entry.revenueCents += item.unitPriceCents * item.quantity;
-      productTotals.set(item.productId, entry);
-    }
-  }
-  const topProducts = Array.from(productTotals.values())
+// Postgres returns every distinct product sold in the window (bounded by
+// catalog size, not order count) — this picks the top 5 by revenue.
+export function pickTopProducts(dbRows: DbProductRow[], limit = 5): TopProduct[] {
+  return [...dbRows]
     .sort((a, b) => b.revenueCents - a.revenueCents)
-    .slice(0, 5);
-
-  return { byDay: Array.from(byDayMap.entries()).map(([date, v]) => ({ date, ...v })), topProducts };
+    .slice(0, limit)
+    .map(({ name, quantity, revenueCents }) => ({ name, quantity, revenueCents }));
 }
 
 // The same days-param clamp the route applies before calling the above —
