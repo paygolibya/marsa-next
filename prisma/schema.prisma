@@ -183,6 +183,22 @@ model Merchant {
   @@map("merchants")
 }
 
+// Failed login attempts only, by IP — the DB-backed rate-limit counter for
+// POST /api/auth/login, same "must survive across invocations" reasoning
+// as Merchant.registrationIp's counter for registration (this runs on
+// serverless, so an in-memory counter resets on every cold start). Only
+// failures are logged (a successful login isn't a brute-force signal), so
+// the count naturally ages out of the lockout window without needing an
+// explicit reset on success.
+model LoginAttempt {
+  id        String   @id @default(cuid())
+  ip        String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([ip, createdAt])
+  @@map("login_attempts")
+}
+
 // AI merchant-support chat (Claude, tool-use grounded in this merchant's
 // own real data — see src/lib/support/). One conversation persists across
 // page reloads; a merchant can escalate a real platform bug mid-conversation

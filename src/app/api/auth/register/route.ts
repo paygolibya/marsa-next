@@ -5,6 +5,7 @@ import { signMerchantToken, toMerchantDTO } from "@/lib/auth";
 import { registerSchema } from "@/lib/validation";
 import { requestOtpPin } from "@/lib/integrations/sms";
 import { getPlanFeatureFlags } from "@/lib/checkout-features";
+import { getClientIp } from "@/lib/request-ip";
 
 const OTP_EXPIRY_MS = 10 * 60 * 1000;
 const MAX_REGISTRATIONS_PER_IP_PER_HOUR = 3;
@@ -13,11 +14,6 @@ const TRIAL_DAYS = 90;
 // DPay/API access/etc — not the earlier behavior of sitting in "pending"
 // with no tier at all until an admin manually reviewed a payment receipt.
 const TRIAL_TIER = "advanced";
-
-function getClientIp(req: Request): string | null {
-  const forwardedFor = req.headers.get("x-forwarded-for");
-  return forwardedFor ? forwardedFor.split(",")[0].trim() : null;
-}
 
 // POST /api/auth/register — create a merchant account and send an OTP to
 // verify the phone number. Rate-limited per IP (DB-backed, not in-memory —
