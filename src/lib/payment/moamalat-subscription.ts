@@ -1,16 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { getPlanFeatureFlags } from "@/lib/checkout-features";
+import { addMonths } from "@/lib/subscription/period";
 
 export type FinalizeSubscriptionPaymentResult = { updated: boolean };
-
-// Real calendar-month arithmetic (not periodMonths * 30 days) so a
-// 12-month period lands on the same date next year rather than drifting
-// ~5 days short from treating every month as exactly 30 days.
-function addMonths(date: Date, months: number): Date {
-  const result = new Date(date);
-  result.setMonth(result.getMonth() + months);
-  return result;
-}
 
 /**
  * The single place a Moamalat-paid subscription Payment's status is ever

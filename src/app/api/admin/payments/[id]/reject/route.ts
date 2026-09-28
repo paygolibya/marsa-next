@@ -1,27 +1,10 @@
-import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getAuthMerchantId, isAdminMerchantId } from "@/lib/auth";
+import { handleRejectPayment } from "./handler";
 
+// POST /api/admin/payments/:id/reject — see handler.ts for the actual
+// logic (injectable there so it can be integration-tested with fakes;
+// handler.test.ts).
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const merchantId = getAuthMerchantId(req);
-  if (!(await isAdminMerchantId(merchantId))) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
-  try {
-    const { id } = await params;
-    const { reason } = await req.json();
-
-    await prisma.payment.update({
-      where: { id },
-      data: {
-        status: "rejected",
-        rejectionReason: reason,
-      },
-    });
-
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error("Rejection error:", error);
-    return NextResponse.json({ error: "Failed to reject payment" }, { status: 500 });
-  }
+  const { id } = await params;
+  return handleRejectPayment(prisma, req, id);
 }
