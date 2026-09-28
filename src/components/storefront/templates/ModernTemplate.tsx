@@ -1,7 +1,6 @@
-import Image from "next/image";
 import { StatsSection, ProductsSection, TestimonialsSection, NewsletterSection } from "@/components/storefront/sections";
 import type { SectionRenderProps, SectionType } from "@/components/storefront/sections/types";
-import { StorefrontLogo } from "./StorefrontLogo";
+import { StorefrontHeaderRow } from "./StorefrontHeaderRow";
 import { resolveCoverImageHeightClass, resolveLogoSizePx, resolveTextSizeClass, type StorefrontTemplateProps } from "./types";
 
 const SECTION_COMPONENTS: Record<SectionType, (props: SectionRenderProps) => React.ReactNode> = {
@@ -83,45 +82,37 @@ export default function ModernTemplate({
   return (
     <div style={{ backgroundColor: secondary }} className="min-h-screen">
       <header className="sticky top-0 z-30 backdrop-blur" style={{ backgroundColor: primary }}>
-        {/* min-h-14 keeps the bar tall enough for the absolutely-positioned
-            cart button below — without it, when the logo uses the
-            zero-height overflow trick and the name is hidden, the row's
-            flow content collapses to ~0 and the button (no longer a flex
-            sibling, since its position is now independent of the logo)
-            overflows past the bar's own edges instead of sitting inside it. */}
-        <div className={`relative min-h-14 mx-auto max-w-6xl px-6 py-4 flex items-center gap-4 ${headerCentered ? "flex-col justify-center text-center" : ""}`}>
-          <div className={`flex items-center gap-3 ${headerCentered ? "flex-col" : ""}`}>
-            {showLogo && store.customization?.logo && (headerCentered ? (
-              // The overflow-past-the-bar trick (StorefrontLogo) only
-              // works when the logo is a row sibling — in centered mode
-              // it's stacked in a flex-COLUMN, where height genuinely
-              // matters for layout, so a plain sized image is used here
-              // instead (a bigger logo grows the header in this mode).
-              <Image src={store.customization.logo} alt={store.name} width={logoPx} height={logoPx} unoptimized className="rounded-full object-cover" style={{ width: logoPx, height: logoPx }} />
-            ) : (
-              <StorefrontLogo src={store.customization.logo} alt={store.name} sizePx={logoPx} />
-            ))}
-            {(showStoreName || store.customization?.tagline) && (
+        <StorefrontHeaderRow
+          headerCentered={headerCentered}
+          showLogo={showLogo}
+          logo={store.customization?.logo}
+          storeName={store.name}
+          logoPx={logoPx}
+          logoGapClassName="gap-3"
+          paddingClassName="py-4"
+          cartOnRight={cartOnRight}
+          identityExtra={
+            (showStoreName || store.customization?.tagline) && (
               <div>
                 {showStoreName && <h1 className={`font-display font-extrabold text-white ${textSize.heading}`}>{store.name}</h1>}
                 {store.customization?.tagline && <p className={`text-white/80 ${textSize.body}`}>{store.customization.tagline}</p>}
               </div>
-            )}
-          </div>
-          {/* Positioned independently of the logo/name group above — cart
-              placement is its own merchant choice, not tied to headerStyle. */}
-          <button
-            onClick={onOpenCart}
-            className={`absolute top-1/2 -translate-y-1/2 ${cartOnRight ? "right-6" : "left-6"} rounded-full bg-white/15 px-5 py-2 text-white font-bold text-sm hover:bg-white/25 transition-colors`}
-          >
-            سلة التسوق
-            {cartTotalItems > 0 && (
-              <span className="absolute -top-2 -left-2 h-5 w-5 rounded-full bg-signal text-[11px] flex items-center justify-center text-white">
-                {cartTotalItems}
-              </span>
-            )}
-          </button>
-        </div>
+            )
+          }
+          cartButton={
+            <button
+              onClick={onOpenCart}
+              className="rounded-full bg-white/15 px-5 py-2 text-white font-bold text-sm hover:bg-white/25 transition-colors relative"
+            >
+              سلة التسوق
+              {cartTotalItems > 0 && (
+                <span className="absolute -top-2 -left-2 h-5 w-5 rounded-full bg-signal text-[11px] flex items-center justify-center text-white">
+                  {cartTotalItems}
+                </span>
+              )}
+            </button>
+          }
+        />
       </header>
 
       {store.customization?.coverImage && (
