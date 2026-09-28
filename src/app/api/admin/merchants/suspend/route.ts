@@ -1,28 +1,9 @@
-import { NextResponse } from "next/server";
-import * as Sentry from "@sentry/nextjs";
 import { prisma } from "@/lib/prisma";
-import { getAuthMerchantId, isAdminMerchantId } from "@/lib/auth";
+import { handleSuspendMerchant } from "./handler";
 
+// POST /api/admin/merchants/suspend — see handler.ts for the actual logic
+// (injectable there so it can be integration-tested with fakes;
+// handler.test.ts).
 export async function POST(req: Request) {
-  const merchantId = getAuthMerchantId(req);
-  if (!(await isAdminMerchantId(merchantId))) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
-
-  try {
-    const { merchantId: targetMerchantId } = await req.json();
-
-    await prisma.merchant.update({
-      where: { id: targetMerchantId },
-      data: {
-        subscriptionStatus: "suspended",
-      },
-    });
-
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error("Error suspending merchant:", error);
-    Sentry.captureException(error);
-    return NextResponse.json({ error: "Failed to suspend merchant" }, { status: 500 });
-  }
+  return handleSuspendMerchant(prisma, req);
 }

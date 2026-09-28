@@ -1,0 +1,140 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import jwt from "jsonwebtoken";
+import { handleDeleteMerchant, type DeleteMerchantDb } from "./handler";
+
+process.env.JWT_SECRET ||= "test-secret";
+process.env.ADMIN_MERCHANT_IDS = "admin-1";
+
+function adminReq(body: unknown) {
+  return new Request("http://localhost/api/admin/merchants/delete", {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${jwt.sign({ merchantId: "admin-1" }, process.env.JWT_SECRET!)}` },
+    body: JSON.stringify(body),
+  });
+}
+
+function noTokenReq(body: unknown) {
+  return new Request("http://localhost/api/admin/merchants/delete", { method: "DELETE", body: JSON.stringify(body) });
+}
+
+function makeFakeDb(storeIds: string[]) {
+  const callOrder: string[] = [];
+  const calls: Record<string, unknown> = {};
+  const db: DeleteMerchantDb = {
+    store: {
+      findMany: async (args) => {
+        callOrder.push("store.findMany");
+        calls.storeFindManyWhere = args.where;
+        return storeIds.map((id) => ({ id }));
+      },
+      deleteMany: async (args) => {
+        callOrder.push("store.deleteMany");
+        calls.storeDeleteManyWhere = args.where;
+        return {};
+      },
+    },
+    productReview: {
+      deleteMany: async (args) => {
+        callOrder.push("productReview.deleteMany");
+        calls.productReviewWhere = args.where;
+        return {};
+      },
+    },
+    orderItem: {
+      deleteMany: async (args) => {
+        callOrder.push("orderItem.deleteMany");
+        calls.orderItemWhere = args.where;
+        return {};
+      },
+    },
+    order: {
+      deleteMany: async (args) => {
+        callOrder.push("order.deleteMany");
+        calls.orderWhere = args.where;
+        return {};
+      },
+    },
+    product: {
+      deleteMany: async (args) => {
+        callOrder.push("product.deleteMany");
+        calls.productWhere = args.where;
+        return {};
+      },
+    },
+    coupon: {
+      deleteMany: async (args) => {
+        callOrder.push("coupon.deleteMany");
+        calls.couponWhere = args.where;
+        return {};
+      },
+    },
+    payment: {
+      deleteMany: async (args) => {
+        callOrder.push("payment.deleteMany");
+        calls.paymentWhere = args.where;
+        return {};
+      },
+    },
+    merchant: {
+      delete: async (args) => {
+        callOrder.push("merchant.delete");
+        calls.merchantDeleteWhere = args.where;
+        return {};
+      },
+    },
+  };
+  return { db, calls, callOrder };
+}
+
+test("rejects a non-admin/unauthenticated request with 403, before touching the database", async () => {
+  const { db, callOrder } = makeFakeDb(["store-1"]);
+  const res = await handleDeleteMerchant(db, noTokenReq({ merchantId: "m1" }));
+  assert.equal(res.status, 403);
+  assert.equal(callOrder.length, 0);
+});
+
+test("deletes in the exact order dependencies require: reviews and order items before orders/products, everything before the merchant row itself", async () => {
+  const { db, callOrder } = makeFakeDb(["store-1", "store-2"]);
+  const res = await handleDeleteMerchant(db, adminReq({ merchantId: "m1" }));
+  assert.equal(res.status, 200);
+  assert.deepEqual(callOrder, [
+    "store.findMany",
+    "productReview.deleteMany",
+    "orderItem.deleteMany",
+    "order.deleteMany",
+    "product.deleteMany",
+    "coupon.deleteMany",
+    "store.deleteMany",
+    "payment.deleteMany",
+    "merchant.delete",
+  ]);
+});
+
+test("scopes every deletion to the target merchant's own stores/id, never a different merchant's data", async () => {
+  const { db, calls } = makeFakeDb(["store-a", "store-b"]);
+  await handleDeleteMerchant(db, adminReq({ merchantId: "target-merchant" }));
+  assert.deepEqual(calls.storeFindManyWhere, { merchantId: "target-merchant" });
+  assert.deepEqual(calls.orderWhere, { storeId: { in: ["store-a", "store-b"] } });
+  assert.deepEqual(calls.productWhere, { storeId: { in: ["store-a", "store-b"] } });
+  assert.deepEqual(calls.couponWhere, { storeId: { in: ["store-a", "store-b"] } });
+  assert.deepEqual(calls.storeDeleteManyWhere, { merchantId: "target-merchant" });
+  assert.deepEqual(calls.paymentWhere, { merchantId: "target-merchant" });
+  assert.deepEqual((calls.merchantDeleteWhere as any).id, "target-merchant");
+});
+
+test("a merchant with no stores still deletes cleanly (empty storeIds, not an error)", async () => {
+  const { db, callOrder } = makeFakeDb([]);
+  const res = await handleDeleteMerchant(db, adminReq({ merchantId: "m1" }));
+  assert.equal(res.status, 200);
+  assert.ok(callOrder.includes("merchant.delete"));
+});
+
+test("if a step throws partway through, returns 500 rather than reporting success on a half-deleted merchant", async () => {
+  const { db } = makeFakeDb(["store-1"]);
+  db.order.deleteMany = async () => {
+    throw new Error("db down");
+  };
+  const res = await handleDeleteMerchant(db, adminReq({ merchantId: "m1" }));
+  assert.equal(res.status, 500);
+});
