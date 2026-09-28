@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { prisma } from "@/lib/prisma";
 import { getSubscriptionState, getCheckoutPaymentMethods } from "@/lib/checkout-features";
 import { normalizeToSections } from "@/components/storefront/sections/normalize";
@@ -85,6 +86,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ slug: s
     return NextResponse.json({ store: { ...publicStore, dpayAvailable, sections }, products, stats, testimonials });
   } catch (err) {
     console.error(err);
+    Sentry.captureException(err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

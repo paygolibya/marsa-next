@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { getAuthMerchantId, isAdminMerchantId } from "@/lib/auth";
 import { processRecentDeliveries, withRetry, logCronRun } from "@/lib/payment/payout-processor";
 
@@ -34,6 +35,7 @@ export async function GET(req: Request) {
     const errorMessage = err instanceof Error ? err.message : String(err);
     await logCronRun({ jobName: "process-deliveries", status: "failed", errorMessage, durationMs: Date.now() - startedAt });
     console.error("process-deliveries cron failed:", err);
+    Sentry.captureException(err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

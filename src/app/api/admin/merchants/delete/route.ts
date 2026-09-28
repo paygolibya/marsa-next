@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { prisma } from "@/lib/prisma";
 import { getAuthMerchantId, isAdminMerchantId } from "@/lib/auth";
 
@@ -62,6 +63,7 @@ export async function DELETE(req: Request) {
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error deleting merchant:", error);
+    Sentry.captureException(error);
     return NextResponse.json({ error: "Failed to delete merchant" }, { status: 500 });
   }
 }

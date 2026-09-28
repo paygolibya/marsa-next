@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { prisma } from "@/lib/prisma";
 import { resolveCouponDiscount } from "@/lib/coupons";
 
@@ -26,6 +27,7 @@ export async function POST(req: Request) {
     return NextResponse.json(result);
   } catch (err) {
     console.error(err);
+    Sentry.captureException(err);
     return NextResponse.json({ valid: false, discountCents: 0, message: "حدث خطأ" }, { status: 500 });
   }
 }

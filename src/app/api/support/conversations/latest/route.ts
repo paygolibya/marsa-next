@@ -1,23 +1,9 @@
-import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getAuthMerchantId } from "@/lib/auth";
+import { handleLatestConversation } from "./handler";
 
-// GET /api/support/conversations/latest — restores chat history on reload
-// instead of the widget starting blank every time.
+// GET /api/support/conversations/latest — see handler.ts for the actual
+// logic (injectable there so it can be integration-tested with fakes;
+// handler.test.ts).
 export async function GET(req: Request) {
-  const merchantId = getAuthMerchantId(req);
-  if (!merchantId) return NextResponse.json({ error: "Missing or invalid token" }, { status: 401 });
-
-  const conversation = await prisma.supportConversation.findFirst({
-    where: { merchantId },
-    orderBy: { updatedAt: "desc" },
-    include: { messages: { orderBy: { createdAt: "asc" } } },
-  });
-
-  if (!conversation) return NextResponse.json({ conversationId: null, messages: [] });
-
-  return NextResponse.json({
-    conversationId: conversation.id,
-    messages: conversation.messages.map((m) => ({ role: m.role, content: m.content })),
-  });
+  return handleLatestConversation(prisma, req);
 }

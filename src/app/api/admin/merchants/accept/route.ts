@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { prisma } from "@/lib/prisma";
 import { getAuthMerchantId, isAdminMerchantId } from "@/lib/auth";
 import { normalizeSubscriptionTier, getPlanFeatureFlags } from "@/lib/checkout-features";
@@ -40,6 +41,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error accepting merchant:", error);
+    Sentry.captureException(error);
     return NextResponse.json({ error: "Failed to accept merchant" }, { status: 500 });
   }
 }

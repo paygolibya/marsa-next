@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { getAuthMerchantId, isAdminMerchantId } from "@/lib/auth";
 import { expireAllLapsed } from "@/lib/subscription/expire";
 import { withRetry, logCronRun } from "@/lib/payment/payout-processor";
@@ -33,6 +34,7 @@ export async function GET(req: Request) {
     const errorMessage = err instanceof Error ? err.message : String(err);
     await logCronRun({ jobName: "expire-subscriptions", status: "failed", errorMessage, durationMs: Date.now() - startedAt });
     console.error("expire-subscriptions cron failed:", err);
+    Sentry.captureException(err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

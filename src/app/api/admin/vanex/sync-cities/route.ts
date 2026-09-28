@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { getAuthMerchantId, isAdminMerchantId } from "@/lib/auth";
 import { syncVanexCities } from "@/lib/integrations/vanex";
 
@@ -16,6 +17,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: true, ...result });
   } catch (error) {
     console.error("Vanex city sync failed:", error);
+    Sentry.captureException(error);
     return NextResponse.json({ error: "فشل مزامنة المدن مع Vanex" }, { status: 500 });
   }
 }

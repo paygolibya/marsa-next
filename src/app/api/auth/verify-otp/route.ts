@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { getAuthMerchantId, toMerchantDTO } from "@/lib/auth";
@@ -52,6 +53,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ merchant: toMerchantDTO(updated) });
   } catch (err) {
     console.error(err);
+    Sentry.captureException(err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

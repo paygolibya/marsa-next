@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
 import { getAuthMerchantId } from "@/lib/auth";
 
@@ -39,6 +40,7 @@ export async function POST(req: Request) {
     return NextResponse.json(jsonResponse);
   } catch (error) {
     console.error("Image upload token error:", error);
+    Sentry.captureException(error);
     return NextResponse.json({ error: "فشل رفع الصورة" }, { status: 400 });
   }
 }

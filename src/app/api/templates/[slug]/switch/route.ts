@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { prisma } from "@/lib/prisma";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
@@ -37,6 +38,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
     return NextResponse.json({ success: true, store: updatedStore });
   } catch (error) {
     console.error("Error switching template:", error);
+    Sentry.captureException(error);
     return NextResponse.json({ error: "Failed to switch template" }, { status: 500 });
   }
 }

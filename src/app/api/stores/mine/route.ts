@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { prisma } from "@/lib/prisma";
 import { getAuthMerchantId } from "@/lib/auth";
 
@@ -16,6 +17,7 @@ export async function GET(req: Request) {
     return NextResponse.json(stores);
   } catch (err) {
     console.error(err);
+    Sentry.captureException(err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

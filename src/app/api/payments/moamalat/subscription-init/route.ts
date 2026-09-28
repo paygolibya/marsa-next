@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { prisma } from "@/lib/prisma";
 import { getAuthMerchantId } from "@/lib/auth";
 import { subscriptionPeriods, type SubscriptionPeriod } from "@/lib/checkout-features";
@@ -39,6 +40,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ paymentId: payment.id, lightbox, moamalatScriptUrl: getLightboxScriptUrl() });
   } catch (err) {
     console.error(err);
+    Sentry.captureException(err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

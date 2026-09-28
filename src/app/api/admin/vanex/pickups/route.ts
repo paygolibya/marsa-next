@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { getAuthMerchantId, isAdminMerchantId } from "@/lib/auth";
 import { listVanexPickups, requestVanexPickup } from "@/lib/integrations/vanex";
 
@@ -18,6 +19,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ pickups });
   } catch (error) {
     console.error("Failed to list Vanex pickups:", error);
+    Sentry.captureException(error);
     return NextResponse.json({ error: "فشل جلب طلبات الاستلام" }, { status: 500 });
   }
 }
@@ -40,6 +42,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: true, result });
   } catch (error) {
     console.error("Failed to request Vanex pickup:", error);
+    Sentry.captureException(error);
     return NextResponse.json({ error: "فشل طلب الاستلام" }, { status: 500 });
   }
 }

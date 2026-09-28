@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(_req: Request, { params }: { params: Promise<{ slug: string }> }) {
@@ -27,6 +28,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ slug: s
     return NextResponse.json({ template });
   } catch (error) {
     console.error("Error fetching template:", error);
+    Sentry.captureException(error);
     return NextResponse.json({ error: "Failed to fetch template" }, { status: 500 });
   }
 }

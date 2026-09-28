@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { prisma } from "@/lib/prisma";
 import { getAuthMerchantId, isAdminMerchantId } from "@/lib/auth";
 
@@ -28,6 +29,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ orders, nextCursor });
   } catch (error) {
     console.error("Error fetching orders:", error);
+    Sentry.captureException(error);
     return NextResponse.json({ error: "Failed to fetch orders" }, { status: 500 });
   }
 }

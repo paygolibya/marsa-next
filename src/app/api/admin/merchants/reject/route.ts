@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { prisma } from "@/lib/prisma";
 import { getAuthMerchantId, isAdminMerchantId } from "@/lib/auth";
 
@@ -21,6 +22,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: true, reason });
   } catch (error) {
     console.error("Error rejecting merchant:", error);
+    Sentry.captureException(error);
     return NextResponse.json({ error: "Failed to reject merchant" }, { status: 500 });
   }
 }
