@@ -1,0 +1,43 @@
+name: E2E
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    # Skips gracefully (not fails) until a repo secret named
+    # STAGING_DATABASE_URL is added — these are real browser tests that
+    # place real orders, so they run against the staging database only,
+    # never a CI placeholder. See scripts/e2e-server.mjs for the same
+    # guard enforced again at runtime.
+    if: ${{ secrets.STAGING_DATABASE_URL != '' }}
+    env:
+      STAGING_DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+      JWT_SECRET: "ci-test-secret"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Install Playwright's Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run E2E tests
+        run: npx playwright test
+
+      - name: Upload trace on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces
+          path: test-results/
+          retention-days: 7

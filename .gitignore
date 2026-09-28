@@ -5,3 +5,6 @@ node_modules/
 # scripts/load-test.mjs's scratch embedded-postgres data dir — deletes
 # itself on a normal run, this is only a safety net if one gets interrupted.
 .load-test-pg-data/
+# Playwright's own local run output (traces, screenshots on failure).
+test-results/
+playwright-report/
