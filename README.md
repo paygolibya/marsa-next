@@ -37,6 +37,12 @@ real courier integration now, see `src/lib/integrations/couriers.ts`.)
    products. Login: phone `0910000000`, password `password123`.
 6. `npm run dev` — server runs at http://localhost:3000
 
+## Staging
+
+A real staging environment already exists — it's just easy to skip if you push straight to `main`. Vercel's GitHub integration deploys every branch/PR as its own **Preview** deployment, and this project's `DATABASE_URL` is scoped so Preview deployments connect to a separate Railway Postgres instance (the same one `STAGING_DATABASE_URL` points at for CI/E2E), never the production database. Production deployments (a push to `main`) use the production `DATABASE_URL`.
+
+That means opening a PR instead of pushing directly to `main` gets you a real, deployed, working copy of the app — not just a local dev server — running against disposable data, before anything touches production. For any change riskier than a one-liner (schema migrations, payment/payout logic, anything touching real money), open a PR and check the Preview deployment's URL (posted as a comment on the PR by the Vercel bot) before merging.
+
 ## Core endpoints (same shapes as the original)
 
 | Method | Path | Purpose |
