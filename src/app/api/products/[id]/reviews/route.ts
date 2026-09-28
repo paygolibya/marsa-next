@@ -1,57 +1,16 @@
-import { NextResponse } from "next/server";
-import * as Sentry from "@sentry/nextjs";
 import { prisma } from "@/lib/prisma";
-import { createReviewSchema } from "@/lib/validation";
 import { verifyBuyerOrder } from "@/lib/verify-buyer";
+import { handleListReviews, handleCreateReview } from "./handler";
 
-// GET /api/products/:id/reviews — public list. Never returns buyerPhone.
+// GET/POST /api/products/:id/reviews — see handler.ts for the actual logic
+// (injectable there so it can be integration-tested with fakes;
+// handler.test.ts).
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const reviews = await prisma.productReview.findMany({
-    where: { productId: id },
-    orderBy: { createdAt: "desc" },
-    select: { id: true, productId: true, buyerName: true, rating: true, reviewText: true, createdAt: true },
-  });
-  const average = reviews.length ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length : 0;
-  return NextResponse.json({ reviews, average, count: reviews.length });
+  return handleListReviews(prisma, id);
 }
 
-// POST /api/products/:id/reviews — public, gated by order-id + phone match
-// (verify-buyer) plus proof the order actually contained this product.
-// The @@unique([orderId, productId]) constraint caps it at one review per
-// purchase.
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  try {
-    const { id: productId } = await params;
-    const body = await req.json();
-    const parsed = createReviewSchema.safeParse(body);
-    if (!parsed.success) {
-      return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "بيانات غير صالحة" }, { status: 400 });
-    }
-    const { orderId, phone, buyerName, rating, reviewText } = parsed.data;
-
-    const order = await verifyBuyerOrder(orderId, phone);
-    if (!order) {
-      return NextResponse.json({ error: "لم يتم العثور على طلب مطابق" }, { status: 404 });
-    }
-    if (!order.items.some((i) => i.productId === productId)) {
-      return NextResponse.json({ error: "هذا الطلب لا يحتوي على هذا المنتج" }, { status: 400 });
-    }
-
-    const review = await prisma.productReview.create({
-      data: { productId, orderId, buyerName, buyerPhone: phone, rating, reviewText: reviewText || null },
-    });
-
-    return NextResponse.json(
-      { id: review.id, productId: review.productId, buyerName: review.buyerName, rating: review.rating, reviewText: review.reviewText, createdAt: review.createdAt },
-      { status: 201 }
-    );
-  } catch (err: unknown) {
-    if (err && typeof err === "object" && "code" in err && err.code === "P2002") {
-      return NextResponse.json({ error: "لقد قمت بتقييم هذا المنتج مسبقًا" }, { status: 409 });
-    }
-    console.error(err);
-    Sentry.captureException(err);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
-  }
+  const { id } = await params;
+  return handleCreateReview({ db: prisma, verifyBuyerOrder }, req, id);
 }
