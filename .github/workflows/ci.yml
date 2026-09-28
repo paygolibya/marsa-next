@@ -27,6 +27,17 @@ jobs:
 
       - run: npm ci
 
+      # Gated on "critical" only, not the default (which would also flag
+      # moderate/high) — there's a real, known high-severity issue today
+      # (postcss, transitively via next) whose fix needs a major Next.js
+      # version bump, not something to force as a side effect of adding
+      # scanning. Dependabot (.github/dependabot.yml) surfaces that one
+      # as a reviewable PR instead. This step exists to catch a NEW
+      # critical vulnerability the moment a dependency change introduces
+      # one — it passes clean today (0 critical) and stays a real gate.
+      - name: Dependency audit (critical only)
+        run: npm audit --audit-level=critical
+
       - name: Typecheck
         run: npx tsc --noEmit
 
