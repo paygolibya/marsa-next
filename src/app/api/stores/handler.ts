@@ -1,0 +1,101 @@
+import { NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
+import { nanoid } from "nanoid";
+import { getAuthMerchantId } from "@/lib/auth";
+import { slugify } from "@/lib/slug";
+import { createStoreSchema } from "@/lib/validation";
+
+type StoreRow = { id: string; slug: string };
+
+export type CreateStoreDb = {
+  store: {
+    findUnique: (args: { where: { slug: string } }) => Promise<{ id: string } | null>;
+    create: (args: {
+      data: {
+        merchantId: string;
+        name: string;
+        slug: string;
+        theme: string;
+        courier: string;
+        codEnabled: boolean;
+        walletProvider: string | null;
+        templateId: string | null;
+      };
+    }) => Promise<StoreRow>;
+  };
+  template: {
+    findUnique: (args: {
+      where: { id: string };
+      select: { defaultColors: true };
+    }) => Promise<{ defaultColors: unknown } | null>;
+  };
+  templateCustomization: {
+    upsert: (args: {
+      where: { storeId: string };
+      create: { storeId: string; templateId: string; primaryColor?: string; secondaryColor?: string };
+      update: { templateId: string };
+    }) => Promise<unknown>;
+  };
+};
+
+// POST /api/stores — create a store (needs auth). Mirrors the 4-step
+// wizard: name, theme, courier, payment.
+export async function handleCreateStore(db: CreateStoreDb, req: Request): Promise<Response> {
+  const merchantId = getAuthMerchantId(req);
+  if (!merchantId) return NextResponse.json({ error: "Missing or invalid token" }, { status: 401 });
+
+  try {
+    const body = await req.json();
+    const parsed = createStoreSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "بيانات غير صالحة" }, { status: 400 });
+    }
+    const { name, theme, courier, codEnabled, walletProvider, templateId } = parsed.data;
+
+    let slug = slugify(name) || nanoid(8);
+    const clash = await db.store.findUnique({ where: { slug } });
+    if (clash) slug = `${slug}-${nanoid(4)}`;
+
+    const store = await db.store.create({
+      data: {
+        merchantId,
+        name,
+        slug,
+        theme: theme || "souk",
+        courier: courier || "vanex",
+        codEnabled: codEnabled ?? true,
+        walletProvider: walletProvider || null,
+        templateId: templateId || null,
+      },
+    });
+
+    if (templateId) {
+      // Previously always started a new store at the schema's hardcoded
+      // blue default regardless of which template was picked — a
+      // merchant choosing a dark/gold template got the exact same blue
+      // starting colors as everyone else. Templates carry their own
+      // defaultColors for exactly this; use them when present.
+      const template = await db.template.findUnique({ where: { id: templateId }, select: { defaultColors: true } });
+      const defaults = (template?.defaultColors ?? {}) as { primaryColor?: string; secondaryColor?: string };
+
+      await db.templateCustomization.upsert({
+        where: { storeId: store.id },
+        create: {
+          storeId: store.id,
+          templateId,
+          primaryColor: defaults.primaryColor,
+          secondaryColor: defaults.secondaryColor,
+        },
+        update: {
+          templateId,
+        },
+      });
+    }
+
+    return NextResponse.json(store, { status: 201 });
+  } catch (err) {
+    console.error(err);
+    Sentry.captureException(err);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}

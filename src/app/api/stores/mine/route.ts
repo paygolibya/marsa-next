@@ -1,23 +1,8 @@
-import { NextResponse } from "next/server";
-import * as Sentry from "@sentry/nextjs";
 import { prisma } from "@/lib/prisma";
-import { getAuthMerchantId } from "@/lib/auth";
+import { handleStoresMine } from "./handler";
 
-// GET /api/stores/mine — a merchant's own stores (needs auth).
-// Ported from marsa-backend/src/routes/stores.js (GET /mine).
+// GET /api/stores/mine — see handler.ts for the actual logic (injectable
+// there so it can be integration-tested with fakes; handler.test.ts).
 export async function GET(req: Request) {
-  const merchantId = getAuthMerchantId(req);
-  if (!merchantId) return NextResponse.json({ error: "Missing or invalid token" }, { status: 401 });
-
-  try {
-    const stores = await prisma.store.findMany({
-      where: { merchantId },
-      include: { customization: { include: { template: true } } },
-    });
-    return NextResponse.json(stores);
-  } catch (err) {
-    console.error(err);
-    Sentry.captureException(err);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
-  }
+  return handleStoresMine(prisma, req);
 }
