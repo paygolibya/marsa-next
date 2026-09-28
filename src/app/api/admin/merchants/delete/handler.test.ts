@@ -76,6 +76,13 @@ function makeFakeDb(storeIds: string[]) {
         return {};
       },
     },
+    bugReport: {
+      deleteMany: async (args) => {
+        callOrder.push("bugReport.deleteMany");
+        calls.bugReportWhere = args.where;
+        return {};
+      },
+    },
     merchant: {
       delete: async (args) => {
         callOrder.push("merchant.delete");
@@ -107,8 +114,21 @@ test("deletes in the exact order dependencies require: reviews and order items b
     "coupon.deleteMany",
     "store.deleteMany",
     "payment.deleteMany",
+    "bugReport.deleteMany",
     "merchant.delete",
   ]);
+});
+
+// The actual bug found while auditing this route: bugReport.deleteMany
+// didn't exist at all, so deleting a merchant with any open bug report
+// hit an unhandled foreign-key violation on BugReport.merchantId (no
+// onDelete: Cascade in the schema) and 500'd, leaving a half-deleted
+// merchant. This is the regression test.
+test("deletes any bug reports scoped to the target merchant before deleting the merchant row", async () => {
+  const { db, calls } = makeFakeDb(["store-1"]);
+  const res = await handleDeleteMerchant(db, adminReq({ merchantId: "target-merchant" }));
+  assert.equal(res.status, 200);
+  assert.deepEqual(calls.bugReportWhere, { merchantId: "target-merchant" });
 });
 
 test("scopes every deletion to the target merchant's own stores/id, never a different merchant's data", async () => {
@@ -120,6 +140,7 @@ test("scopes every deletion to the target merchant's own stores/id, never a diff
   assert.deepEqual(calls.couponWhere, { storeId: { in: ["store-a", "store-b"] } });
   assert.deepEqual(calls.storeDeleteManyWhere, { merchantId: "target-merchant" });
   assert.deepEqual(calls.paymentWhere, { merchantId: "target-merchant" });
+  assert.deepEqual(calls.bugReportWhere, { merchantId: "target-merchant" });
   assert.deepEqual((calls.merchantDeleteWhere as any).id, "target-merchant");
 });
 

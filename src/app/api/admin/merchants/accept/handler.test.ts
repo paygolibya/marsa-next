@@ -75,3 +75,45 @@ test("grants the full feature-flag set on activation", async () => {
   assert.equal(update.data.codEnabled, true);
   assert.equal(update.data.dpayEnabled, true);
 });
+
+// The actual bug found while auditing this route for test coverage: it
+// used to grant a flat 30 days regardless of what period the admin meant
+// to approve (e.g. after reviewing a bank-transfer receipt for a real
+// paid period) — the same class of bug already fixed once in
+// admin/payments/[id]/approve/handler.ts. These are the regression tests.
+test("defaults to a real 1 calendar month, not a flat 30 days, when no periodMonths is given", async () => {
+  const { db, calls } = makeFakeDb({ subscriptionTier: "basic" });
+  const before = new Date();
+  await handleAcceptMerchant(db, adminReq({ merchantId: "m1" }));
+  const update = calls.update as { data: { subscriptionEndDate: Date; subscriptionPeriodMonths: number } };
+  const expected = new Date(before);
+  expected.setMonth(expected.getMonth() + 1);
+  assert.ok(
+    Math.abs(update.data.subscriptionEndDate.getTime() - expected.getTime()) < 5000,
+    `expected ~${expected.toISOString()}, got ${update.data.subscriptionEndDate.toISOString()}`
+  );
+  assert.equal(update.data.subscriptionPeriodMonths, 1);
+});
+
+test("grants a real 12 calendar months when the admin picks periodMonths: 12 — the actual bug this test catches", async () => {
+  const { db, calls } = makeFakeDb({ subscriptionTier: "basic" });
+  await handleAcceptMerchant(db, adminReq({ merchantId: "m1", periodMonths: 12 }));
+  const update = calls.update as { data: { subscriptionEndDate: Date; subscriptionPeriodMonths: number } };
+  const daysGranted = (update.data.subscriptionEndDate.getTime() - Date.now()) / (24 * 60 * 60 * 1000);
+  assert.ok(daysGranted > 300, `expected ~365 days for a 12-month period, got ${daysGranted.toFixed(0)}`);
+  assert.equal(update.data.subscriptionPeriodMonths, 12);
+});
+
+test("grants a real 3 calendar months when the admin picks periodMonths: 3", async () => {
+  const { db, calls } = makeFakeDb({ subscriptionTier: "basic" });
+  await handleAcceptMerchant(db, adminReq({ merchantId: "m1", periodMonths: 3 }));
+  const update = calls.update as { data: { subscriptionPeriodMonths: number } };
+  assert.equal(update.data.subscriptionPeriodMonths, 3);
+});
+
+test("rejects an unrecognized periodMonths value by falling back to 1, rather than storing garbage", async () => {
+  const { db, calls } = makeFakeDb({ subscriptionTier: "basic" });
+  await handleAcceptMerchant(db, adminReq({ merchantId: "m1", periodMonths: 7 }));
+  const update = calls.update as { data: { subscriptionPeriodMonths: number } };
+  assert.equal(update.data.subscriptionPeriodMonths, 1);
+});

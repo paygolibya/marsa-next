@@ -94,7 +94,7 @@ export default function MerchantsPage() {
     void fetchMerchants(nextCursor);
   }
 
-  async function acceptMerchant(merchantId: string, tier: string) {
+  async function acceptMerchant(merchantId: string, tier: string, periodMonths: number) {
     try {
       const response = await fetch("/api/admin/merchants/accept", {
         method: "POST",
@@ -102,7 +102,7 @@ export default function MerchantsPage() {
           "Content-Type": "application/json",
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ merchantId, tier }),
+        body: JSON.stringify({ merchantId, tier, periodMonths }),
       });
 
       if (response.ok) {
@@ -245,7 +245,7 @@ export default function MerchantsPage() {
       {acceptingMerchant && (
         <AcceptMerchantModal
           merchant={acceptingMerchant}
-          onConfirm={(tier) => void acceptMerchant(acceptingMerchant.id, tier)}
+          onConfirm={(tier, periodMonths) => void acceptMerchant(acceptingMerchant.id, tier, periodMonths)}
           onClose={() => setAcceptingMerchant(null)}
         />
       )}
@@ -461,24 +461,33 @@ function MerchantDetailsModal({
   );
 }
 
+// 1/3/12 months — same real periods the merchant-facing payment flow
+// offers (subscriptionPeriods in checkout-features.ts), so an admin
+// manually approving a merchant (e.g. after reviewing a bank-transfer
+// receipt) can actually grant the period that was paid for, instead of
+// this route's old hardcoded flat 30 days regardless of tier or period.
+const PERIOD_MONTH_OPTIONS = [1, 3, 12];
+const PERIOD_MONTH_LABELS: Record<number, string> = { 1: "شهر واحد", 3: "3 أشهر", 12: "12 شهرًا" };
+
 function AcceptMerchantModal({
   merchant,
   onConfirm,
   onClose,
 }: {
   merchant: Merchant;
-  onConfirm: (tier: string) => void;
+  onConfirm: (tier: string, periodMonths: number) => void;
   onClose: () => void;
 }) {
   const [tier, setTier] = useState(merchant.subscriptionTier || "basic");
+  const [periodMonths, setPeriodMonths] = useState(1);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
       <div className="mx-4 w-full max-w-md rounded-lg bg-white p-8">
         <h2 className="mb-2 text-xl font-bold">قبول {merchant.name}</h2>
-        <p className="mb-6 text-sm text-gray-600">اختر الخطة التي سيتم تفعيل حساب التاجر عليها.</p>
+        <p className="mb-6 text-sm text-gray-600">اختر الخطة والمدة التي سيتم تفعيل حساب التاجر عليها.</p>
 
-        <label className="mb-6 block">
+        <label className="mb-4 block">
           <span className="mb-2 block text-sm font-bold text-gray-700">الخطة</span>
           <select value={tier} onChange={(e) => setTier(e.target.value)} className="w-full rounded-lg border px-3 py-2">
             {Object.entries(TIER_LABELS).map(([value, label]) => (
@@ -489,11 +498,26 @@ function AcceptMerchantModal({
           </select>
         </label>
 
+        <label className="mb-6 block">
+          <span className="mb-2 block text-sm font-bold text-gray-700">المدة</span>
+          <select
+            value={periodMonths}
+            onChange={(e) => setPeriodMonths(Number(e.target.value))}
+            className="w-full rounded-lg border px-3 py-2"
+          >
+            {PERIOD_MONTH_OPTIONS.map((months) => (
+              <option key={months} value={months}>
+                {PERIOD_MONTH_LABELS[months]}
+              </option>
+            ))}
+          </select>
+        </label>
+
         <div className="flex gap-3">
           <button onClick={onClose} className="flex-1 rounded-lg border border-gray-300 py-2 font-bold text-gray-700 hover:bg-gray-50">
             إلغاء
           </button>
-          <button onClick={() => onConfirm(tier)} className="flex-1 rounded-lg bg-emerald-600 py-2 font-bold text-white hover:bg-emerald-700">
+          <button onClick={() => onConfirm(tier, periodMonths)} className="flex-1 rounded-lg bg-emerald-600 py-2 font-bold text-white hover:bg-emerald-700">
             تأكيد القبول
           </button>
         </div>
