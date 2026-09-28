@@ -34,7 +34,7 @@ export async function finalizeWalletOrder(orderId: string, outcome: "paid" | "fa
     where: { id: orderId },
     include: {
       items: { select: { quantity: true } },
-      store: { select: { courier: true, merchant: { select: { phone: true } } } },
+      store: { select: { slug: true, courier: true, merchant: { select: { phone: true } } } },
       vanexArea: { select: { vanexId: true, city: { select: { vanexId: true } } } },
     },
   });
@@ -62,6 +62,7 @@ export async function finalizeWalletOrder(orderId: string, outcome: "paid" | "fa
       buyerEmail: order.buyerEmail,
       totalCents: order.totalCents,
       courierTrackingId: shipment.trackingId,
+      storeSlug: order.store.slug,
     });
     await sendNewOrderSms(order.store.merchant.phone, order.id, order.buyerName);
     return { updated: true, trackingId: shipment.trackingId, courier: order.store.courier };

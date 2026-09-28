@@ -15,6 +15,7 @@ export type EmailOrder = {
   buyerEmail: string | null;
   totalCents: number;
   courierTrackingId?: string | null;
+  storeSlug?: string;
 };
 
 async function sendEmail(to: string, subject: string, text: string): Promise<void> {
@@ -62,7 +63,10 @@ export async function sendOrderConfirmationEmail(order: EmailOrder): Promise<voi
     `تم تأكيد طلبك رقم ${order.id}.`,
     `الإجمالي: ${formatLYD(order.totalCents)}`,
     order.courierTrackingId ? `رقم التتبع: ${order.courierTrackingId}` : "",
-    `يمكنك متابعة حالة طلبك في أي وقت عبر: /track?orderId=${order.id}`,
+    // Store-scoped when we know which store (branded, matches the rest of
+    // that merchant's storefront) — falls back to the generic platform
+    // page only if a caller doesn't pass one.
+    `يمكنك متابعة حالة طلبك في أي وقت عبر: ${order.storeSlug ? `/store/${order.storeSlug}/track` : "/track"}?orderId=${order.id}`,
   ].filter(Boolean);
   await sendEmail(order.buyerEmail, "تم تأكيد طلبك", lines.join("\n"));
 }

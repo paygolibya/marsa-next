@@ -71,7 +71,7 @@ function ConfirmationPageContent() {
             متابعة التسوق
           </Link>
           <Link
-            href={`/track?orderId=${orderId}`}
+            href={`/store/${params.slug}/track?orderId=${orderId}`}
             className="inline-block rounded-full border border-harbor/20 px-8 py-3 font-bold text-harbor hover:bg-harbor/5 transition-colors"
           >
             تتبع طلبك

@@ -250,6 +250,7 @@ export async function POST(req: Request) {
       buyerEmail: order.buyerEmail,
       totalCents,
       courierTrackingId: shipment.trackingId,
+      storeSlug: store.slug,
     });
     await sendNewOrderSms(store.merchant.phone, order.id, order.buyerName);
 
