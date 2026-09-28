@@ -137,7 +137,7 @@ export type Order = {
   paymentMethod: "cod" | "wallet";
   paymentStatus: "pending" | "paid" | "failed";
   courierTrackingId: string | null;
-  status: "pending" | "confirmed" | "shipped" | "delivered" | "cancelled";
+  status: "pending" | "confirmed" | "shipped" | "delivered" | "cancelled" | "refunded";
   productSubtotalCents: number;
   discountCents: number;
   couponCode: string | null;
@@ -147,6 +147,8 @@ export type Order = {
   courierStatusAt: string | null;
   courierNote: string | null;
   createdAt: string;
+  refundedAt: string | null;
+  refundReason: string | null;
   items?: OrderItem[];
 };
 export type VanexArea = { id: string; name: string; priceCents: number };
@@ -404,6 +406,13 @@ export const api = {
 
   ordersByStore: (token: string, storeId: string) =>
     request<Order[]>(`/api/orders/by-store/${storeId}`, { headers: authHeaders(token) }),
+
+  refundOrder: (token: string, orderId: string, reason?: string) =>
+    request<{ success: boolean; note: string | null }>(`/api/orders/${orderId}/refund`, {
+      method: "POST",
+      headers: authHeaders(token),
+      body: JSON.stringify({ reason }),
+    }),
 
   vanexCities: () => request<{ cities: VanexCity[] }>("/api/vanex/cities"),
 

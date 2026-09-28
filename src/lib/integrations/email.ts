@@ -76,6 +76,7 @@ const STATUS_MESSAGES: Record<string, string> = {
   delivered: "تم تسليم طلبك بنجاح.",
   failed_delivery: "تعذّر تسليم طلبك، سيتم التواصل معك.",
   returned: "تم إرجاع شحنتك.",
+  refunded: "تم استرداد قيمة طلبك من قبل المتجر.",
 };
 
 export async function sendOrderStatusEmail(order: EmailOrder, newStatus: string): Promise<void> {

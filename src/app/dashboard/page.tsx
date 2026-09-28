@@ -108,6 +108,7 @@ function StatusChip({ status }: { status: Order["status"] }) {
     shipped: "تم الشحن",
     delivered: "تم التسليم",
     cancelled: "ملغى",
+    refunded: "مسترد",
   };
   return <span className="stamp h-8 px-3 border-brass text-brass text-xs font-bold">{labels[status]}</span>;
 }

@@ -437,7 +437,7 @@ model Order {
   paymentMethod     String   @map("payment_method") // 'cod' | 'wallet'
   paymentStatus     String   @map("payment_status") // 'pending' | 'paid' | 'failed'
   courierTrackingId String?  @map("courier_tracking_id")
-  status            String   @default("pending") // pending -> confirmed -> shipped -> delivered -> cancelled
+  status            String   @default("pending") // pending -> confirmed -> shipped -> delivered -> cancelled | refunded
   productSubtotalCents Int   @default(0) @map("product_subtotal_cents")
   discountCents     Int      @default(0) @map("discount_cents")
   couponCode        String?  @map("coupon_code")
@@ -480,6 +480,15 @@ model Order {
 
   vanexAreaId String?     @map("vanex_area_id")
   vanexArea   VanexArea?  @relation(fields: [vanexAreaId], references: [id], onDelete: SetNull)
+
+  // Internal record only — no Moamalat refund/void API exists (see
+  // docs/moamalat.md), so this does not itself reverse any money. It marks
+  // intent/record for the merchant/admin; a wallet refund still requires a
+  // manual bank-side reversal outside this system. See
+  // src/app/api/orders/[id]/refund/route.ts for what this does and does
+  // NOT do to an already-batched Commission/Payout.
+  refundedAt   DateTime? @map("refunded_at")
+  refundReason String?   @map("refund_reason")
 
   store      Store           @relation(fields: [storeId], references: [id])
   items      OrderItem[]

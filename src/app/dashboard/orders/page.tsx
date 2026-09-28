@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useCurrentStore } from "@/lib/use-current-store";
-import { api, formatLYD, type Order } from "@/lib/api";
-import { DataTable, type DataTableColumn, EmptyState, SkeletonRow } from "@/components/ui";
+import { api, ApiError, formatLYD, type Order } from "@/lib/api";
+import { Button, DataTable, type DataTableColumn, EmptyState, Modal, SkeletonRow, useToast } from "@/components/ui";
 
 const statusLabels: Record<Order["status"], string> = {
   pending: "قيد الانتظار",
@@ -12,6 +12,7 @@ const statusLabels: Record<Order["status"], string> = {
   shipped: "تم الشحن",
   delivered: "تم التسليم",
   cancelled: "ملغى",
+  refunded: "مسترد",
 };
 
 const courierStatusLabels: Record<string, string> = {
@@ -32,8 +33,12 @@ const filters: { value: Order["status"] | "all"; label: string }[] = [
 export default function DashboardOrdersPage() {
   const { token } = useAuth();
   const { store } = useCurrentStore();
+  const { show } = useToast();
   const [orders, setOrders] = useState<Order[] | null>(null);
   const [filter, setFilter] = useState<Order["status"] | "all">("all");
+  const [refundTarget, setRefundTarget] = useState<Order | null>(null);
+  const [refundReason, setRefundReason] = useState("");
+  const [refunding, setRefunding] = useState(false);
 
   useEffect(() => {
     if (!token || !store) return;
@@ -44,6 +49,28 @@ export default function DashboardOrdersPage() {
   if (!store) return null;
 
   const visible = orders === null ? [] : filter === "all" ? orders : orders.filter((o) => o.status === filter);
+
+  function closeRefundModal() {
+    if (refunding) return;
+    setRefundTarget(null);
+    setRefundReason("");
+  }
+
+  async function handleConfirmRefund() {
+    if (!token || !refundTarget) return;
+    setRefunding(true);
+    try {
+      const { note } = await api.refundOrder(token, refundTarget.id, refundReason.trim() || undefined);
+      setOrders((prev) => prev?.map((o) => (o.id === refundTarget.id ? { ...o, status: "refunded" } : o)) ?? prev);
+      show(note ? `تم الاسترداد — ${note}` : "تم استرداد الطلب", note ? "info" : "success");
+      setRefundTarget(null);
+      setRefundReason("");
+    } catch (err) {
+      show(err instanceof ApiError ? err.message : "تعذّر استرداد الطلب", "error");
+    } finally {
+      setRefunding(false);
+    }
+  }
 
   const columns: DataTableColumn<Order>[] = [
     { key: "buyerName", header: "العميل", accessor: (o) => o.buyerName, sortable: true, render: (o) => <span className="font-bold text-harbor">{o.buyerName}</span> },
@@ -69,6 +96,16 @@ export default function DashboardOrdersPage() {
           {o.courierTrackingId ?? "—"}
         </span>
       ),
+    },
+    {
+      key: "actions",
+      header: "",
+      render: (o) =>
+        o.status === "refunded" ? null : (
+          <button onClick={() => setRefundTarget(o)} className="text-xs font-bold text-signal hover:underline">
+            استرداد
+          </button>
+        ),
     },
   ];
 
@@ -107,6 +144,41 @@ export default function DashboardOrdersPage() {
           emptyState={<EmptyState title="لا توجد طلبات مطابقة" />}
         />
       )}
+
+      <Modal
+        open={refundTarget !== null}
+        onClose={closeRefundModal}
+        title="استرداد الطلب"
+        footer={
+          <>
+            <Button variant="secondary" onClick={closeRefundModal} disabled={refunding}>
+              إلغاء
+            </Button>
+            <Button onClick={handleConfirmRefund} loading={refunding} loadingText="جارٍ الاسترداد...">
+              تأكيد الاسترداد
+            </Button>
+          </>
+        }
+      >
+        {refundTarget && (
+          <div className="space-y-4">
+            <p className="text-rope text-sm">
+              سيتم تعليم طلب <span className="font-bold text-harbor">{refundTarget.buyerName}</span> بقيمة{" "}
+              <span className="font-bold text-harbor">{formatLYD(refundTarget.totalCents)}</span> كطلب مسترد.
+            </p>
+            {refundTarget.paymentMethod === "wallet" && (
+              <p className="text-xs text-signal">
+                ملاحظة: هذا الطلب مدفوع عبر المحفظة الإلكترونية — لا توجد واجهة استرداد آلي عبر مؤمالات حاليًا، لذا يجب إرجاع المبلغ للعميل
+                يدويًا خارج المنصة. هذا الإجراء يسجّل عملية الاسترداد فقط.
+              </p>
+            )}
+            <label className="block">
+              <span className="block text-sm font-bold text-harbor mb-1.5">سبب الاسترداد (اختياري)</span>
+              <textarea value={refundReason} onChange={(e) => setRefundReason(e.target.value)} rows={2} className="input" />
+            </label>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }
