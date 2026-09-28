@@ -9,33 +9,37 @@ on:
 jobs:
   e2e:
     runs-on: ubuntu-latest
-    # Skips gracefully (not fails) until a repo secret named
-    # STAGING_DATABASE_URL is added — these are real browser tests that
-    # place real orders, so they run against the staging database only,
-    # never a CI placeholder. See scripts/e2e-server.mjs for the same
-    # guard enforced again at runtime.
-    if: ${{ secrets.STAGING_DATABASE_URL != '' }}
     env:
       STAGING_DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
       JWT_SECRET: "ci-test-secret"
     steps:
       - uses: actions/checkout@v4
 
+      # Steps below skip individually (via env., not secrets., in their
+      # `if:` — the reliably-supported way to gate on an optional secret)
+      # until a repo secret named STAGING_DATABASE_URL is added. These are
+      # real browser tests that place real orders, so they run against the
+      # staging database only, never a CI placeholder. See
+      # scripts/e2e-server.mjs for the same guard enforced again at runtime.
       - uses: actions/setup-node@v4
+        if: ${{ env.STAGING_DATABASE_URL != '' }}
         with:
           node-version: 22
           cache: npm
 
       - run: npm ci
+        if: ${{ env.STAGING_DATABASE_URL != '' }}
 
       - name: Install Playwright's Chromium
+        if: ${{ env.STAGING_DATABASE_URL != '' }}
         run: npx playwright install --with-deps chromium
 
       - name: Run E2E tests
+        if: ${{ env.STAGING_DATABASE_URL != '' }}
         run: npx playwright test
 
       - name: Upload trace on failure
-        if: failure()
+        if: ${{ env.STAGING_DATABASE_URL != '' && failure() }}
         uses: actions/upload-artifact@v4
         with:
           name: playwright-traces
