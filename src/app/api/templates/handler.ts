@@ -1,0 +1,81 @@
+import { NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
+
+type TemplateRow = {
+  id: string;
+  name: string;
+  nameAr: string;
+  slug: string;
+  description: string;
+  descriptionAr: string;
+  price: number;
+  billingType: string;
+  thumbnail: string;
+  previewUrl: string | null;
+  features: unknown;
+  usageCount: number;
+  rating: number;
+  reviews: number;
+  isNew: boolean;
+  featured: boolean;
+};
+
+export type ListTemplatesDb = {
+  template: {
+    findMany: (args: {
+      where: { active: true };
+      orderBy: [{ featured: "desc" }, { usageCount: "desc" }];
+      select: {
+        id: true;
+        name: true;
+        nameAr: true;
+        slug: true;
+        description: true;
+        descriptionAr: true;
+        price: true;
+        billingType: true;
+        thumbnail: true;
+        previewUrl: true;
+        features: true;
+        usageCount: true;
+        rating: true;
+        reviews: true;
+        isNew: true;
+        featured: true;
+      };
+    }) => Promise<TemplateRow[]>;
+  };
+};
+
+export async function handleListTemplates(db: ListTemplatesDb): Promise<Response> {
+  try {
+    const templates = await db.template.findMany({
+      where: { active: true },
+      orderBy: [{ featured: "desc" }, { usageCount: "desc" }],
+      select: {
+        id: true,
+        name: true,
+        nameAr: true,
+        slug: true,
+        description: true,
+        descriptionAr: true,
+        price: true,
+        billingType: true,
+        thumbnail: true,
+        previewUrl: true,
+        features: true,
+        usageCount: true,
+        rating: true,
+        reviews: true,
+        isNew: true,
+        featured: true,
+      },
+    });
+
+    return NextResponse.json({ templates });
+  } catch (error) {
+    console.error("Error fetching templates:", error);
+    Sentry.captureException(error);
+    return NextResponse.json({ error: "Failed to fetch templates" }, { status: 500 });
+  }
+}

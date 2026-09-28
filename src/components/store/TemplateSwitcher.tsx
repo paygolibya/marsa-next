@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/auth-context";
 
 interface Template {
   id: string;
@@ -20,15 +21,17 @@ export default function TemplateSwitcher({ currentTemplateId, storeId, available
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { token } = useAuth();
 
   async function handleSwitch(newTemplateId: string) {
     if (!confirm("هل أنت متأكد؟ سيتم تغيير تصميم متجرك")) return;
+    if (!token) return;
 
     setLoading(true);
     try {
       const response = await fetch(`/api/templates/${newTemplateId}/switch`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ storeId }),
       });
 
