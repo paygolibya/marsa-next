@@ -8,10 +8,18 @@
 //      indexes included).
 //   3. Seeds synthetic data far beyond current real platform scale.
 //   4. Runs the real hot-path Prisma queries (the ones the indexes added
-//      this session target) with concrete timing, at that scale.
+//      this session target) with concrete timing, at that scale, and
+//      FAILS (non-zero exit) if any of them exceeds its latency budget.
 //   5. Tears everything down and deletes the scratch data directory.
 //
-// Run with: node scripts/load-test.mjs
+// Two scales:
+//   - Full (default): 100 stores, one with 30,000 orders — run locally
+//     with `node scripts/load-test.mjs` when you want the real picture.
+//   - CI (`LOAD_TEST_SCALE=ci`): 10 stores, one with 3,000 orders — small
+//     enough to run in a few minutes in the nightly load-test workflow
+//     (.github/workflows/load-test.yml), so the "does it still scale"
+//     question gets re-asked on every schema/query change instead of only
+//     being answered once, by hand, this session.
 import EmbeddedPostgres from "embedded-postgres";
 import { execSync } from "node:child_process";
 import { existsSync, rmSync } from "node:fs";
@@ -21,19 +29,38 @@ const DATA_DIR = path.resolve("./.load-test-pg-data");
 const PORT = 54329;
 const DATABASE_URL = `postgresql://postgres:password@127.0.0.1:${PORT}/loadtest`;
 
-// Far beyond current real scale (~9 merchants, low hundreds of orders
-// total across the whole platform, per the live admin/stats check this
-// session) — this is the "what happens at real scale" question, not a
-// token gesture at it.
-const MERCHANT_COUNT = 100;
-const PRODUCTS_PER_STORE = 100;
-const ORDERS_PER_ORDINARY_STORE = 300;
-const HOT_STORE_ORDER_COUNT = 30000; // one merchant with a genuinely large order history
+const CI_SCALE = process.env.LOAD_TEST_SCALE === "ci";
+
+// Full scale is far beyond current real platform scale (~9 merchants, low
+// hundreds of orders total, per the live admin/stats check this session) —
+// this is the "what happens at real scale" question, not a token gesture
+// at it. CI scale is 10x smaller but still meaningfully larger than
+// today's real data, and still exercises every index/aggregate this
+// benchmarks.
+const MERCHANT_COUNT = CI_SCALE ? 10 : 100;
+const PRODUCTS_PER_STORE = CI_SCALE ? 30 : 100;
+const ORDERS_PER_ORDINARY_STORE = CI_SCALE ? 100 : 300;
+const HOT_STORE_ORDER_COUNT = CI_SCALE ? 3000 : 30000; // one merchant with a genuinely large order history
+
+// Latency budgets — generous relative to what full-scale runs have
+// actually measured (100-200ms typical), so this doesn't flake on a
+// loaded CI runner, but tight enough to catch a real regression (e.g. an
+// index accidentally dropped, or a query reverting to an in-app-memory
+// aggregation the way analytics/by-store did before this session's fix).
+const BUDGET_MS = {
+  "orders/by-store": 1500,
+  "analytics/by-store": 1500,
+  "products/by-store": 1000,
+  "admin/orders": 1000,
+  "admin/merchants": 1000,
+  "admin/stats": 500,
+};
+let anyBudgetExceeded = false;
 
 async function main() {
   if (existsSync(DATA_DIR)) rmSync(DATA_DIR, { recursive: true, force: true });
 
-  console.log("Starting embedded Postgres...");
+  console.log(`Starting embedded Postgres (scale: ${CI_SCALE ? "ci" : "full"})...`);
   const pg = new EmbeddedPostgres({
     databaseDir: DATA_DIR,
     user: "postgres",
@@ -58,7 +85,7 @@ async function main() {
     const { PrismaClient } = await import("@prisma/client");
     const prisma = new PrismaClient({ datasources: { db: { url: DATABASE_URL } } });
 
-    console.log("\nSeeding synthetic data (this takes a minute)...");
+    console.log("\nSeeding synthetic data...");
     const seedStart = Date.now();
     const { hotStoreId } = await seed(prisma);
     console.log(`Seed complete in ${((Date.now() - seedStart) / 1000).toFixed(1)}s`);
@@ -72,6 +99,13 @@ async function main() {
     await pg.stop();
     rmSync(DATA_DIR, { recursive: true, force: true });
     console.log("Done — no trace left on disk, production database never touched.");
+  }
+
+  if (anyBudgetExceeded) {
+    console.error("\nFAILED: one or more queries exceeded their latency budget — see ⚠ lines above.");
+    process.exitCode = 1;
+  } else {
+    console.log("\nAll queries within budget.");
   }
 }
 
@@ -141,7 +175,14 @@ async function timed(label, fn) {
   const result = await fn();
   const ms = Date.now() - start;
   const count = Array.isArray(result) ? result.length : typeof result === "object" ? JSON.stringify(result).length : "";
-  console.log(`${label}: ${ms}ms${count !== "" ? ` (${count} rows/bytes)` : ""}`);
+
+  const budgetKey = Object.keys(BUDGET_MS).find((k) => label.startsWith(k));
+  const budget = budgetKey ? BUDGET_MS[budgetKey] : null;
+  const overBudget = budget !== null && ms > budget;
+  if (overBudget) anyBudgetExceeded = true;
+
+  const marker = budget === null ? "" : overBudget ? ` ⚠ EXCEEDS ${budget}ms BUDGET` : ` (budget ${budget}ms, OK)`;
+  console.log(`${label}: ${ms}ms${count !== "" ? ` (${count} rows/bytes)` : ""}${marker}`);
   return result;
 }
 
@@ -150,9 +191,9 @@ async function bench(prisma, hotStoreId) {
   console.log(`Total orders in DB: ${totalOrders.toLocaleString()} (the hot store alone has ${HOT_STORE_ORDER_COUNT.toLocaleString()})\n`);
 
   // Mirrors GET /api/orders/by-store/:storeId — the exact query, on the
-  // store with 30,000 orders, using the Order(storeId, createdAt) index
-  // added this session.
-  await timed("orders/by-store (hot store, 30k orders, capped+indexed)", () =>
+  // hot store, using the Order(storeId, createdAt) index added this
+  // session.
+  await timed("orders/by-store (hot store, capped+indexed)", () =>
     prisma.order.findMany({ where: { storeId: hotStoreId }, orderBy: { createdAt: "desc" }, include: { items: true }, take: 1000 })
   );
 
@@ -176,18 +217,17 @@ async function bench(prisma, hotStoreId) {
   });
 
   // Mirrors GET /api/products/by-store/:storeId.
-  await timed("products/by-store (hot store, 100 products)", () =>
+  await timed("products/by-store (hot store)", () =>
     prisma.product.findMany({ where: { storeId: hotStoreId, deletedAt: null }, include: { variants: true }, orderBy: { createdAt: "desc" }, take: 1000 })
   );
 
-  // Mirrors GET /api/admin/orders — platform-wide, cursor-paginated, across
-  // ~100 merchants and tens of thousands of orders.
+  // Mirrors GET /api/admin/orders — platform-wide, cursor-paginated.
   await timed("admin/orders (platform-wide, first cursor page)", () =>
     prisma.order.findMany({ include: { store: true }, orderBy: { createdAt: "desc" }, take: 50 })
   );
 
   // Mirrors GET /api/admin/merchants.
-  await timed("admin/merchants (100 merchants, cursor page)", () =>
+  await timed(`admin/merchants (${MERCHANT_COUNT} merchants, cursor page)`, () =>
     prisma.merchant.findMany({ include: { stores: true }, orderBy: { createdAt: "desc" }, take: 100 })
   );
 

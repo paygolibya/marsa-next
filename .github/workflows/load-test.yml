@@ -1,0 +1,37 @@
+name: Load test
+
+on:
+  schedule:
+    # 02:17 UTC daily — an off-the-hour minute on purpose, so this doesn't
+    # land on GitHub Actions' most congested scheduling slots.
+    - cron: "17 2 * * *"
+  workflow_dispatch: {}
+
+jobs:
+  load-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # Runs scripts/load-test.mjs against a real, isolated Postgres
+      # instance (embedded-postgres — a real binary run as a subprocess,
+      # not Docker, not the production database) at CI scale: 10 stores,
+      # one with 3,000 orders. Seeds that data, runs the real hot-path
+      # queries the app's indexes/aggregates were built for, and fails
+      # (non-zero exit) if any of them exceeds its latency budget — so a
+      # dropped index or a query regressing back to an in-app-memory
+      # aggregation gets caught automatically instead of only being
+      # caught once, by hand, the way the original 2-second analytics
+      # bottleneck was found this session.
+      - name: Load test (CI scale)
+        env:
+          LOAD_TEST_SCALE: "ci"
+        run: node scripts/load-test.mjs
