@@ -15,6 +15,7 @@ export async function GET(req: Request) {
       where: { status },
       include: { merchant: true },
       orderBy: { createdAt: "desc" },
+      take: 500,
     });
 
     return NextResponse.json({ payments });

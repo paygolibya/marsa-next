@@ -16,7 +16,17 @@ export async function GET(req: Request, { params }: { params: Promise<{ storeId:
     // deletedAt: null excludes products the merchant deleted, while still
     // showing out-of-stock ones (active: false but not deleted) — see the
     // comment on Product.deletedAt in schema.prisma.
-    const products = await prisma.product.findMany({ where: { storeId, deletedAt: null }, include: { variants: true } });
+    // Capped as a scale safety net (see admin/orders for the same
+    // reasoning) — the new Product.storeId index makes the lookup itself
+    // cheap; this bounds response size once a store has thousands of
+    // products. Ordered explicitly since a cap without one would return an
+    // arbitrary, non-deterministic subset.
+    const products = await prisma.product.findMany({
+      where: { storeId, deletedAt: null },
+      include: { variants: true },
+      orderBy: { createdAt: "desc" },
+      take: 1000,
+    });
     return NextResponse.json(products);
   } catch (err) {
     console.error(err);

@@ -10,10 +10,14 @@ export async function GET(req: Request) {
   try {
     const merchants = await prisma.merchant.count();
     const orders = await prisma.order.count();
-    const approvedPayments = await prisma.payment.findMany({ where: { status: "approved" } });
+    // Was: fetch every approved Payment row into app memory just to sum
+    // one column — an unbounded findMany that grows forever and gets
+    // slower every day. A database-side aggregate sum scales the same
+    // whether there are 10 or 10 million approved payments.
+    const approvedRevenue = await prisma.payment.aggregate({ where: { status: "approved" }, _sum: { amount: true } });
     const pendingPayments = await prisma.payment.count({ where: { status: "pending" } });
 
-    const revenue = approvedPayments.reduce((sum, payment) => sum + payment.amount, 0);
+    const revenue = approvedRevenue._sum.amount ?? 0;
 
     return NextResponse.json({
       merchants,
