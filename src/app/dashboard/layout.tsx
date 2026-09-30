@@ -7,6 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { isAdminMerchant } from "@/lib/is-admin";
 import { useCurrentStore } from "@/lib/use-current-store";
+import { getImpersonationFlag, exitImpersonation } from "@/lib/impersonation";
 import ThemeToggle from "@/components/layout/ThemeToggle";
 import { ToastProvider } from "@/components/ui";
 import { SupportChatWidget } from "@/components/support/SupportChatWidget";
@@ -42,10 +43,28 @@ const STATUS_COPY: Record<string, { title: string; body: string }> = {
 };
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { token, merchant, ready, logout, refreshMerchant } = useAuth();
+  const { token, merchant, ready, logout, login, refreshMerchant } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const { stores, store, selectStore, loading } = useCurrentStore();
+  // Read once on mount — this is already a "use client" file doing other
+  // client-only localStorage reads (useCurrentStore), so the same pattern
+  // applies here. Set by admin/merchants/page.tsx's 🛠️ button.
+  const [impersonation, setImpersonation] = useState(() => getImpersonationFlag());
+
+  function handleExitImpersonation() {
+    const restored = exitImpersonation();
+    if (restored) login(restored.token, restored.merchant);
+    setImpersonation(null);
+    // Not /admin/merchants: this layout's own effect below
+    // (isAdminMerchant(merchant) -> router.replace("/admin")) fires the
+    // instant login() resolves the restored admin, and always wins the
+    // race against a more specific target here. Pushing the same /admin
+    // target it already redirects to makes the destination deterministic
+    // instead of racy — confirmed by testing against staging, where
+    // targeting /admin/merchants here landed on /admin anyway.
+    router.push("/admin");
+  }
   // The sidebar used to be a fixed 256px column always in the flex row —
   // fine on desktop, but on a phone it either crushed the page content
   // into an unusably narrow strip or forced horizontal scrolling. Below
@@ -73,7 +92,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   if (!ready || !token || isAdminMerchant(merchant)) return null;
 
-  if (merchant && !merchant.phoneVerified) {
+  if (merchant && !merchant.phoneVerified && !impersonation) {
     return (
       <div className="min-h-screen flex items-center justify-center px-6">
         <div className="max-w-md text-center rounded-2xl bg-white shadow-xl p-8">
@@ -95,7 +114,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     );
   }
 
-  if (merchant && merchant.subscriptionStatus !== "active") {
+  if (merchant && merchant.subscriptionStatus !== "active" && !impersonation) {
     const copy = STATUS_COPY[merchant.subscriptionStatus] ?? STATUS_COPY.pending;
     return (
       <div className="min-h-screen flex items-center justify-center px-6">
@@ -229,6 +248,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             orange/red gradient to read reliably. Revisit if/when those
             headers get a proper backdrop treatment. */}
         <main className="flex-1 bg-canvas min-w-0">
+          {impersonation && (
+            <div className="bg-purple-100 border-b border-purple-300 px-4 sm:px-6 py-3 text-sm text-purple-900 flex flex-wrap items-center justify-between gap-2">
+              <span>
+                🛠️ تعمل الآن نيابة عن <strong>{impersonation.merchantName}</strong> (بواسطة {impersonation.adminName})
+              </span>
+              <button onClick={handleExitImpersonation} className="font-bold text-purple-700 hover:underline whitespace-nowrap">
+                إنهاء والعودة للإدارة
+              </button>
+            </div>
+          )}
           {trialDaysLeft !== null && trialDaysLeft >= 0 && (
             <div className="bg-brass/10 border-b border-brass/20 px-4 sm:px-6 py-3 text-sm text-harbor flex flex-wrap items-center justify-between gap-2">
               <span>

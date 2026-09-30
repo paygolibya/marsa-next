@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
+import type { Merchant as AuthMerchant } from "@/lib/api";
+import { startImpersonation } from "@/lib/impersonation";
 
 interface MerchantStore {
   id: string;
@@ -39,7 +42,8 @@ const TIER_LABELS: Record<string, string> = {
 };
 
 export default function MerchantsPage() {
-  const { token, ready } = useAuth();
+  const { token, ready, merchant: adminMerchant, login } = useAuth();
+  const router = useRouter();
   const [merchants, setMerchants] = useState<Merchant[]>([]);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
@@ -198,6 +202,39 @@ export default function MerchantsPage() {
     }
   }
 
+  // Mints a real, short-lived token for this merchant and drops the admin
+  // into the merchant's own real dashboard (design/products/settings) to
+  // help them directly — see src/lib/impersonation.ts for the localStorage
+  // handoff and dashboard/layout.tsx for the banner + gate-skip that reads
+  // it. No confirm() dialog: unlike suspend/delete this isn't destructive,
+  // and "إنهاء الجلسة" in the dashboard banner cleanly reverses it.
+  async function impersonateMerchant(merchant: Merchant) {
+    if (!token || !adminMerchant) return;
+    try {
+      const response = await fetch("/api/admin/merchants/impersonate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ merchantId: merchant.id }),
+      });
+
+      if (response.ok) {
+        const data: { token: string; merchant: AuthMerchant } = await response.json();
+        startImpersonation({ token, merchant: adminMerchant }, { merchant: data.merchant });
+        login(data.token, data.merchant);
+        router.push("/dashboard");
+      } else {
+        const data = await response.json().catch(() => null);
+        alert(data?.error || "فشل بدء إدارة المتجر");
+      }
+    } catch (error) {
+      console.error("Error starting impersonation:", error);
+      alert("حدث خطأ");
+    }
+  }
+
   function getStatusLabel(status: string) {
     switch (status) {
       case "active":
@@ -325,6 +362,13 @@ export default function MerchantsPage() {
                         title="عرض المتجر"
                       >
                         🔗
+                      </button>
+                      <button
+                        onClick={() => void impersonateMerchant(merchant)}
+                        className="rounded bg-purple-600 px-3 py-1 text-sm font-bold text-white hover:bg-purple-700"
+                        title="إدارة المتجر"
+                      >
+                        🛠️
                       </button>
                       {(merchant.subscriptionStatus === "pending" || merchant.subscriptionStatus === "inactive") && (
                         <>
