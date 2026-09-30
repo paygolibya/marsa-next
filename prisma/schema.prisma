@@ -179,6 +179,7 @@ model Merchant {
   commissions Commission[]
   supportConversations SupportConversation[]
   bugReports BugReport[]
+  impersonationSessions ImpersonationSession[]
 
   @@map("merchants")
 }
@@ -252,6 +253,28 @@ model BugReport {
   @@index([merchantId])
   @@index([status])
   @@map("bug_reports")
+}
+
+// A record that an admin briefly acted as a merchant (see
+// signImpersonationToken in lib/auth.ts) — logged at start only, no
+// endedAt: the 2h token expiry is the real session bound, and depending on
+// a reliable "exit" call would miss every session where the admin just
+// closed the tab. adminId is deliberately a bare String, not a second
+// relation to Merchant — an admin is just another merchant row
+// (isAdminMerchantId), and a second FK to the same table would be
+// relation-ambiguous with `merchant` below.
+model ImpersonationSession {
+  id         String   @id @default(cuid())
+  adminId    String   @map("admin_id")
+  merchantId String   @map("merchant_id")
+  storeId    String?  @map("store_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  merchant Merchant @relation(fields: [merchantId], references: [id])
+
+  @@index([merchantId])
+  @@index([adminId])
+  @@map("impersonation_sessions")
 }
 
 model Payment {

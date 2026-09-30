@@ -83,6 +83,13 @@ function makeFakeDb(storeIds: string[]) {
         return {};
       },
     },
+    impersonationSession: {
+      deleteMany: async (args) => {
+        callOrder.push("impersonationSession.deleteMany");
+        calls.impersonationSessionWhere = args.where;
+        return {};
+      },
+    },
     merchant: {
       delete: async (args) => {
         callOrder.push("merchant.delete");
@@ -115,6 +122,7 @@ test("deletes in the exact order dependencies require: reviews and order items b
     "store.deleteMany",
     "payment.deleteMany",
     "bugReport.deleteMany",
+    "impersonationSession.deleteMany",
     "merchant.delete",
   ]);
 });
@@ -131,6 +139,17 @@ test("deletes any bug reports scoped to the target merchant before deleting the 
   assert.deepEqual(calls.bugReportWhere, { merchantId: "target-merchant" });
 });
 
+// Same class of gap as bugReport above, closed proactively for the new
+// ImpersonationSession model (also a bare FK to Merchant, no cascade) —
+// see schema.prisma's own comment on that model for why it's not a
+// DB-level cascade instead.
+test("deletes any impersonation-session log rows scoped to the target merchant before deleting the merchant row", async () => {
+  const { db, calls } = makeFakeDb(["store-1"]);
+  const res = await handleDeleteMerchant(db, adminReq({ merchantId: "target-merchant" }));
+  assert.equal(res.status, 200);
+  assert.deepEqual(calls.impersonationSessionWhere, { merchantId: "target-merchant" });
+});
+
 test("scopes every deletion to the target merchant's own stores/id, never a different merchant's data", async () => {
   const { db, calls } = makeFakeDb(["store-a", "store-b"]);
   await handleDeleteMerchant(db, adminReq({ merchantId: "target-merchant" }));
@@ -141,6 +160,7 @@ test("scopes every deletion to the target merchant's own stores/id, never a diff
   assert.deepEqual(calls.storeDeleteManyWhere, { merchantId: "target-merchant" });
   assert.deepEqual(calls.paymentWhere, { merchantId: "target-merchant" });
   assert.deepEqual(calls.bugReportWhere, { merchantId: "target-merchant" });
+  assert.deepEqual(calls.impersonationSessionWhere, { merchantId: "target-merchant" });
   assert.deepEqual((calls.merchantDeleteWhere as any).id, "target-merchant");
 });
 

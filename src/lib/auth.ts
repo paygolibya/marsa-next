@@ -38,24 +38,46 @@ export function signMerchantToken(merchantId: string) {
   return jwt.sign({ merchantId }, JWT_SECRET, { expiresIn: "30d" });
 }
 
+// Issued only by POST /api/admin/merchants/impersonate — a real, validly
+// signed token for the target merchant, so every existing merchant-facing
+// route (all of which trust getAuthMerchantId's returned id completely)
+// treats the bearer as that merchant with zero code changes needed
+// anywhere else. impersonatedBy is additive/safe: every current consumer
+// reads payload.merchantId only. Deliberately short-lived (2h, vs 30d for
+// a real login) — this is a temporary support session, not a new way to
+// authenticate as a merchant long-term.
+export function signImpersonationToken(merchantId: string, adminId: string) {
+  return jwt.sign({ merchantId, impersonatedBy: adminId }, JWT_SECRET, { expiresIn: "2h" });
+}
+
+type AuthPayload = { merchantId: string; impersonatedBy?: string };
+
 /**
  * Reads the `Authorization: Bearer <token>` header from a Next.js Request
- * and returns the merchantId if the token is valid, or null otherwise.
- * This is the App Router equivalent of the old requireMerchant middleware —
- * since route handlers don't have Express-style middleware chaining, each
- * route calls this directly and returns 401 itself when it gets null.
+ * and returns the full decoded payload if the token is valid, or null
+ * otherwise. getAuthMerchantId (below) is the common case every route
+ * actually calls; this exists so the impersonate route itself can read
+ * back `impersonatedBy` for its own response/audit log.
  */
-export function getAuthMerchantId(req: Request): string | null {
+export function getAuthPayload(req: Request): AuthPayload | null {
   const header = req.headers.get("authorization") || "";
   const token = header.startsWith("Bearer ") ? header.slice(7) : null;
   if (!token) return null;
 
   try {
-    const payload = jwt.verify(token, JWT_SECRET) as { merchantId: string };
-    return payload.merchantId;
+    return jwt.verify(token, JWT_SECRET) as AuthPayload;
   } catch {
     return null;
   }
+}
+
+/**
+ * This is the App Router equivalent of the old requireMerchant middleware —
+ * since route handlers don't have Express-style middleware chaining, each
+ * route calls this directly and returns 401 itself when it gets null.
+ */
+export function getAuthMerchantId(req: Request): string | null {
+  return getAuthPayload(req)?.merchantId ?? null;
 }
 
 export async function isAdminMerchantId(merchantId: string | null | undefined) {

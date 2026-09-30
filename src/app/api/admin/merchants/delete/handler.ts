@@ -14,10 +14,11 @@ export type DeleteMerchantDb = {
   coupon: { deleteMany: (args: { where: { storeId: { in: string[] } } }) => Promise<unknown> };
   payment: { deleteMany: (args: { where: { merchantId: string } }) => Promise<unknown> };
   bugReport: { deleteMany: (args: { where: { merchantId: string } }) => Promise<unknown> };
+  impersonationSession: { deleteMany: (args: { where: { merchantId: string } }) => Promise<unknown> };
   merchant: { delete: (args: { where: { id: string } }) => Promise<unknown> };
 };
 
-// DELETE /api/admin/merchants/delete — a real cascading delete across 8
+// DELETE /api/admin/merchants/delete — a real cascading delete across 9
 // tables in a fixed order (reviews and order items before the orders/
 // products they reference; everything scoped to the merchant's own
 // stores before the merchant row itself). The order matters: this is the
@@ -37,7 +38,9 @@ export type DeleteMerchantDb = {
 // app level (an explicit delete, like every other relation this route
 // cleans up) rather than adding a schema-level cascade, since silently
 // erasing escalation-queue history the moment a merchant is deleted is a
-// real product decision, not just a bug fix.
+// real product decision, not just a bug fix. ImpersonationSession.merchant
+// has the exact same shape (FK, no cascade) — cleaned up here proactively
+// for the same reason, before it becomes the same class of bug again.
 export async function handleDeleteMerchant(db: DeleteMerchantDb, req: Request): Promise<Response> {
   const merchantId = getAuthMerchantId(req);
   if (!(await isAdminMerchantId(merchantId))) {
@@ -62,6 +65,7 @@ export async function handleDeleteMerchant(db: DeleteMerchantDb, req: Request): 
     await db.store.deleteMany({ where: { merchantId: targetMerchantId } });
     await db.payment.deleteMany({ where: { merchantId: targetMerchantId } });
     await db.bugReport.deleteMany({ where: { merchantId: targetMerchantId } });
+    await db.impersonationSession.deleteMany({ where: { merchantId: targetMerchantId } });
     await db.merchant.delete({ where: { id: targetMerchantId } });
 
     return NextResponse.json({ success: true });
