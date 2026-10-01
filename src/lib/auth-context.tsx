@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useRef, useState, ReactNode } from "react";
-import { api, type Merchant } from "@/lib/api";
+import { api, ApiError, type Merchant } from "@/lib/api";
 
 type AuthState = {
   token: string | null;
@@ -73,8 +73,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (tokenRef.current !== requestToken) return;
       setMerchant(fresh);
       localStorage.setItem(STORAGE_KEY, JSON.stringify({ token: requestToken, merchant: fresh }));
-    } catch {
-      // network hiccup or expired token — leave the cached merchant as-is
+    } catch (err) {
+      if (tokenRef.current !== requestToken) return;
+      // A 401 here means this specific token is genuinely dead (expired,
+      // or the server's signing secret changed since it was issued) —
+      // not a transient network blip. This used to be swallowed
+      // unconditionally: the UI kept showing stale cached merchant data
+      // with no sign the session was actually dead, until the merchant
+      // attempted a real write (creating a store, saving a product, ...)
+      // and hit a confusing "Missing or invalid token" error with
+      // nothing telling them that simply logging in again would fix it.
+      // Found live: a real merchant whose account predated a later
+      // production deploy hit exactly this. Logging out here lets every
+      // page's own existing "!token -> redirect to /login" effect take
+      // over immediately instead of leaving a half-dead session sitting
+      // there silently. Any other failure (network hiccup, a 500, ...)
+      // still leaves the cached merchant as-is, unchanged from before.
+      if (err instanceof ApiError && err.status === 401) {
+        logout();
+      }
     }
   }
 
