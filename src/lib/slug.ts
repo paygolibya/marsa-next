@@ -2,19 +2,34 @@
 // supports Arabic slugs (؀-ۿ) alongside Latin/numeric characters,
 // since store names are usually entered in Arabic.
 export function slugify(name: string): string {
-  return name
-    .trim()
-    .toLowerCase()
-    .replace(/[^؀-ۿa-z0-9\s-]/g, "")
-    .replace(/\s+/g, "-")
-    // Collapses a run of hyphens left behind by stripped characters (e.g.
-    // a name with an emoji in the middle) into one, then strips any
-    // leading/trailing hyphen — including one newly exposed by the
-    // length cut below, so this must run after it, not just once before.
-    // A name ending in an emoji (confirmed live: "Nova filters 💕") used
-    // to produce a slug ending in "-", an unusual-looking hostname label
-    // once that slug becomes a {slug}.rifqa.ly subdomain.
-    .replace(/-+/g, "-")
-    .slice(0, 60)
-    .replace(/^-+|-+$/g, "");
+  const cleaned = collapseHyphens(
+    name
+      .trim()
+      .toLowerCase()
+      .replace(/[^؀-ۿa-z0-9\s-]/g, "")
+      .replace(/\s+/g, "-")
+  );
+
+  // A slug becomes the label of a real {slug}.rifqa.ly hostname, which
+  // IDNA-encodes it — and IDNA rejects a label mixing Arabic letters
+  // with Latin letters outright, confirmed directly against a real URL
+  // parser for every combination tried (Arabic+Latin, Latin+Arabic, even
+  // a single stray Latin letter). Digits mix fine with either script. A
+  // genuinely bilingual name (found live: a real store named "نعيم
+  // store") would otherwise produce a slug no browser can ever open
+  // ("Invalid URL"), not just an unusual-looking one — so if both
+  // scripts are present, the Latin letters are dropped in favor of the
+  // Arabic, matching this function's own original premise above that
+  // Arabic is the primary case.
+  const hasArabic = /[؀-ۿ]/.test(cleaned);
+  const hasLatinLetter = /[a-z]/.test(cleaned);
+  const scriptSafe = hasArabic && hasLatinLetter ? collapseHyphens(cleaned.replace(/[a-z]/g, "")) : cleaned;
+
+  // Trimmed again after the length cut — the cut itself can expose a new
+  // trailing hyphen.
+  return scriptSafe.slice(0, 60).replace(/^-+|-+$/g, "");
+}
+
+function collapseHyphens(s: string): string {
+  return s.replace(/-+/g, "-").replace(/^-+|-+$/g, "");
 }

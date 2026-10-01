@@ -68,6 +68,26 @@ test("appends a random suffix when the generated slug already exists, rather tha
   assert.ok(create.data.slug.startsWith("my-cool-store-"));
 });
 
+// The actual bug found live: three real stores whose name collided with
+// an existing store's got a slug like "اسم-yPy9" — Arabic mixed with a
+// Latin-letter suffix, which a real browser's URL parser rejects
+// outright ("Invalid URL") when building the {slug}.rifqa.ly subdomain,
+// making that store's link permanently unreachable, not just unusual-
+// looking. Arabic mixed with digits-only encodes fine.
+test("the collision suffix is digits only — never Latin letters, which break IDNA-encoding an Arabic slug", async () => {
+  const arabicSlug = "متجر-رائع";
+  const { db, calls } = makeFakeDb({ existingSlugs: [arabicSlug] });
+  await handleCreateStore(db, req({ name: "متجر رائع" }));
+  const create = calls.create as { data: { slug: string } };
+  assert.ok(create.data.slug.startsWith(`${arabicSlug}-`));
+  const suffix = create.data.slug.slice(arabicSlug.length + 1);
+  assert.match(suffix, /^[0-9]+$/, `expected a digits-only suffix, got: ${suffix}`);
+  // Confirms the fix actually works, not just that the suffix looks
+  // digit-shaped — the real failure mode was the URL constructor itself
+  // throwing.
+  assert.doesNotThrow(() => new URL(`https://${create.data.slug}.rifqa.ly`));
+});
+
 test("defaults courier/codEnabled/theme when not specified", async () => {
   const { db, calls } = makeFakeDb();
   await handleCreateStore(db, req({ name: "Store" }));

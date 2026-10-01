@@ -1,6 +1,16 @@
 import { NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
-import { nanoid } from "nanoid";
+import { nanoid, customAlphabet } from "nanoid";
+
+// Digits only, specifically for disambiguating a slug collision — nanoid's
+// default alphabet includes Latin letters, which (confirmed directly
+// against a real URL parser) breaks IDNA encoding entirely when appended
+// to an Arabic slug: a hostname label mixing Arabic and Latin letters
+// throws "Invalid URL" and can never be opened by any browser, while
+// Arabic mixed with digits only encodes fine. Found live: three real
+// stores whose name collided with another store's got exactly this
+// unreachable-forever subdomain.
+const numericSuffix = customAlphabet("0123456789", 4);
 import { getAuthMerchantId } from "@/lib/auth";
 import { slugify } from "@/lib/slug";
 import { createStoreSchema } from "@/lib/validation";
@@ -54,7 +64,7 @@ export async function handleCreateStore(db: CreateStoreDb, req: Request): Promis
 
     let slug = slugify(name) || nanoid(8);
     const clash = await db.store.findUnique({ where: { slug } });
-    if (clash) slug = `${slug}-${nanoid(4)}`;
+    if (clash) slug = `${slug}-${numericSuffix()}`;
 
     const store = await db.store.create({
       data: {

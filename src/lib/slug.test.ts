@@ -35,3 +35,28 @@ test("still truncates to 60 characters, and trims a trailing hyphen newly expose
   assert.ok(result.length <= 60);
   assert.ok(!result.endsWith("-"), `expected no trailing hyphen, got: ${result}`);
 });
+
+// The actual bug found live: a real store named "نعيم store" produced the
+// slug "نعيم-store" — Arabic mixed with Latin letters, which a real
+// browser's URL parser rejects outright ("Invalid URL") when IDNA-encoding
+// the {slug}.rifqa.ly hostname, making the store permanently unreachable
+// (not just unusual-looking, unlike the trailing-hyphen case above).
+test("a name mixing Arabic and Latin words drops the Latin letters, keeping the slug IDNA-safe", () => {
+  const result = slugify("نعيم store");
+  assert.equal(result, "نعيم");
+  assert.doesNotThrow(() => new URL(`https://${result}.rifqa.ly`));
+});
+
+test("Latin-then-Arabic order is handled the same way", () => {
+  assert.equal(slugify("store نعيم"), "نعيم");
+});
+
+test("Arabic mixed with digits (not letters) is left alone — digits don't break IDNA encoding", () => {
+  const result = slugify("نعيم 2024");
+  assert.equal(result, "نعيم-2024");
+  assert.doesNotThrow(() => new URL(`https://${result}.rifqa.ly`));
+});
+
+test("a pure-Latin name is never affected by the script-mixing check", () => {
+  assert.equal(slugify("Jimmy Fashion"), "jimmy-fashion");
+});
