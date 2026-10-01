@@ -18,6 +18,15 @@ export type DeleteMerchantDb = {
   merchant: { delete: (args: { where: { id: string } }) => Promise<unknown> };
 };
 
+// Prisma's own P2025 ("record to delete does not exist") — thrown by
+// merchant.delete when two delete requests for the same merchant land
+// close enough together (a double-click, a second admin tab, a retried
+// request after a slow response) that the first one already removed the
+// row by the time the second reaches this final step.
+function isRecordNotFoundError(error: unknown): boolean {
+  return typeof error === "object" && error !== null && "code" in error && (error as { code?: unknown }).code === "P2025";
+}
+
 // DELETE /api/admin/merchants/delete — a real cascading delete across 9
 // tables in a fixed order (reviews and order items before the orders/
 // products they reference; everything scoped to the merchant's own
@@ -66,7 +75,16 @@ export async function handleDeleteMerchant(db: DeleteMerchantDb, req: Request): 
     await db.payment.deleteMany({ where: { merchantId: targetMerchantId } });
     await db.bugReport.deleteMany({ where: { merchantId: targetMerchantId } });
     await db.impersonationSession.deleteMany({ where: { merchantId: targetMerchantId } });
-    await db.merchant.delete({ where: { id: targetMerchantId } });
+
+    try {
+      await db.merchant.delete({ where: { id: targetMerchantId } });
+    } catch (error) {
+      // The end state a concurrent duplicate request actually wants —
+      // "this merchant is gone" — is already true. Treating it as success
+      // instead of a 500 means a double-click doesn't surface a false
+      // "فشل حذف التاجر" error on top of the real, successful deletion.
+      if (!isRecordNotFoundError(error)) throw error;
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

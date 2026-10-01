@@ -32,10 +32,23 @@ function baseBody(overrides: Record<string, unknown> = {}) {
   };
 }
 
-function makeFakeDeps(opts: { store?: typeof STORE | null; product?: typeof PRODUCT | null; coupon?: Record<string, unknown> | null } = {}) {
+function makeFakeDeps(
+  opts: {
+    store?: typeof STORE | null;
+    product?: typeof PRODUCT | null;
+    coupon?: Record<string, unknown> | null;
+    // Simulates losing a concurrent race at the atomic decrement/increment
+    // step (real Postgres would return count: 0 here when another
+    // transaction already consumed the stock/coupon use first).
+    productUpdateManyCount?: number;
+    couponUpdateManyCount?: number;
+  } = {}
+) {
   const store = opts.store !== undefined ? opts.store : STORE;
   const product = opts.product !== undefined ? opts.product : PRODUCT;
-  const calls: { orderCreate?: Any; orderUpdate?: Any; productUpdate?: Any; couponUpdate?: Any; shipment?: Any; email?: Any; sms?: Any } = {};
+  const calls: { orderCreate?: Any; orderUpdate?: Any; productUpdateMany?: Any[]; couponUpdateMany?: Any; shipment?: Any; email?: Any; sms?: Any } = {
+    productUpdateMany: [],
+  };
   let createdOrderId = "order-1";
 
   const db: OrdersDb = {
@@ -51,17 +64,17 @@ function makeFakeDeps(opts: { store?: typeof STORE | null; product?: typeof PROD
       const tx = {
         product: {
           findFirst: async () => product,
-          update: async (args: Any) => {
-            calls.productUpdate = args;
-            return {};
+          updateMany: async (args: Any) => {
+            calls.productUpdateMany!.push(args);
+            return { count: opts.productUpdateManyCount ?? 1 };
           },
         },
-        productVariant: { findFirst: async () => null, update: async () => ({}) },
+        productVariant: { findFirst: async () => null, updateMany: async () => ({ count: 1 }) },
         coupon: {
           findUnique: async () => opts.coupon ?? null,
-          update: async (args: Any) => {
-            calls.couponUpdate = args;
-            return {};
+          updateMany: async (args: Any) => {
+            calls.couponUpdateMany = args;
+            return { count: opts.couponUpdateManyCount ?? 1 };
           },
         },
         order: {
@@ -140,7 +153,7 @@ test("a product with trackInventory=false is never stock-checked or stock-update
   const { deps, calls } = makeFakeDeps({ product: { ...PRODUCT, trackInventory: false, stockQty: 0 } });
   const res = await handleCreateOrder(deps, req(baseBody()));
   assert.equal(res.status, 201);
-  assert.equal(calls.productUpdate, undefined);
+  assert.deepEqual(calls.productUpdateMany, []);
 });
 
 test("COD order: total is computed server-side (price × quantity + shipping), never trusting a client-sent total", async () => {
@@ -153,11 +166,42 @@ test("COD order: total is computed server-side (price × quantity + shipping), n
   assert.equal(calls.orderCreate.data.totalCents, 10000);
 });
 
-test("COD order: stock is decremented by the ordered quantity, and hits zero flips active to false", async () => {
+test("COD order: stock is decremented atomically (guarded by gte quantity), and hits zero flips active to false", async () => {
   const { deps, calls } = makeFakeDeps({ product: { ...PRODUCT, stockQty: 2 } });
   await handleCreateOrder(deps, req(baseBody({ items: [{ productId: "p1", quantity: 2 }] })));
-  assert.equal(calls.productUpdate.data.stockQty, 0);
-  assert.equal(calls.productUpdate.data.active, false);
+  const [decrementCall, deactivateCall] = calls.productUpdateMany!;
+  assert.equal(decrementCall.where.stockQty.gte, 2);
+  assert.deepEqual(decrementCall.data.stockQty, { decrement: 2 });
+  assert.equal(deactivateCall.where.stockQty.lte, 0);
+  assert.equal(deactivateCall.data.active, false);
+});
+
+test("stock race: the check above passed, but a concurrent order already took the last unit — the atomic decrement itself catches it with a real 409, not overselling", async () => {
+  const { deps } = makeFakeDeps({ product: { ...PRODUCT, stockQty: 2 }, productUpdateManyCount: 0 });
+  const res = await handleCreateOrder(deps, req(baseBody({ items: [{ productId: "p1", quantity: 2 }] })));
+  assert.equal(res.status, 409);
+});
+
+test("coupon race: usageCount looked valid when read, but a concurrent order already used up the last slot — the atomic increment catches it", async () => {
+  const { deps, calls } = makeFakeDeps({
+    coupon: {
+      id: "coupon-1",
+      code: "SAVE10",
+      active: true,
+      discountType: "percent",
+      discountValue: 10,
+      minOrderCents: null,
+      maxUsage: 5,
+      usageCount: 4,
+      expiresAt: null,
+    },
+    couponUpdateManyCount: 0,
+  });
+  const res = await handleCreateOrder(deps, req(baseBody({ couponCode: "SAVE10" })));
+  const body = await res.json();
+  assert.equal(res.status, 400);
+  assert.ok(body.error);
+  assert.equal(calls.orderCreate, undefined);
 });
 
 test("COD order: dispatches a real shipment, updates the order with the tracking id, and notifies buyer+merchant", async () => {
@@ -213,6 +257,7 @@ test("a valid coupon discounts the total server-side and its usage count is incr
   assert.equal(res.status, 201);
   assert.equal(body.discountCents, 1000); // 10% of 10000
   assert.equal(body.totalCents, 9000);
-  assert.equal(calls.couponUpdate.where.id, "coupon-1");
-  assert.deepEqual(calls.couponUpdate.data.usageCount, { increment: 1 });
+  assert.equal(calls.couponUpdateMany.where.id, "coupon-1");
+  assert.equal(calls.couponUpdateMany.where.usageCount, undefined); // maxUsage null here — no cap to race against, no guard needed
+  assert.deepEqual(calls.couponUpdateMany.data.usageCount, { increment: 1 });
 });

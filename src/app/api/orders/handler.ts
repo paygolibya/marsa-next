@@ -41,10 +41,12 @@ type OrderRow = {
 // pattern (and reasoning) in customize/handler.ts.
 type Any = any;
 
+type CountResult = { count: number };
+
 export type OrdersTx = {
-  product: { findFirst: (args: Any) => Promise<Product | null>; update: (args: Any) => Promise<unknown> };
-  productVariant: { findFirst: (args: Any) => Promise<Variant | null>; update: (args: Any) => Promise<unknown> };
-  coupon: { findUnique: (args: Any) => Promise<Coupon | null>; update: (args: Any) => Promise<unknown> };
+  product: { findFirst: (args: Any) => Promise<Product | null>; updateMany: (args: Any) => Promise<CountResult> };
+  productVariant: { findFirst: (args: Any) => Promise<Variant | null>; updateMany: (args: Any) => Promise<CountResult> };
+  coupon: { findUnique: (args: Any) => Promise<Coupon | null>; updateMany: (args: Any) => Promise<CountResult> };
   order: { create: (args: Any) => Promise<OrderRow> };
 };
 
@@ -180,7 +182,21 @@ export async function handleCreateOrder(deps: OrdersDeps, req: Request): Promise
             if (!result.valid) throw new InvalidCouponError(result.message || "الكوبون غير صالح");
             discountCents = result.discountCents;
             appliedCouponCode = coupon.code;
-            await tx.coupon.update({ where: { id: coupon.id }, data: { usageCount: { increment: 1 } } });
+            // The validity check above reads usageCount as of the start of
+            // this transaction — under concurrent checkout (two buyers
+            // racing for the last use of a maxUsage coupon), both could
+            // read a count that still looks valid. Guarding the increment
+            // itself with the same condition makes the check-and-increment
+            // atomic at the database level: whichever transaction commits
+            // second sees the row it would increment no longer match, and
+            // the count comes back 0 instead of silently overshooting
+            // maxUsage.
+            const couponUsageGuard = coupon.maxUsage != null ? { usageCount: { lt: coupon.maxUsage } } : {};
+            const couponIncrement = await tx.coupon.updateMany({
+              where: { id: coupon.id, ...couponUsageGuard },
+              data: { usageCount: { increment: 1 } },
+            });
+            if (couponIncrement.count === 0) throw new InvalidCouponError("تم استخدام هذا الكوبون بالكامل");
           }
 
           const totalCents = productSubtotalCents - discountCents + shippingCents;
@@ -215,15 +231,33 @@ export async function handleCreateOrder(deps: OrdersDeps, req: Request): Promise
             },
           });
 
+          // Same race as the coupon guard above, for physical stock: the
+          // stock-sufficiency check on resolvedItems above ran against a
+          // read from before this transaction started, so under
+          // concurrent checkout for the last unit of stock, two orders
+          // could both pass it. The decrement itself is the authoritative
+          // check — `gte: quantity` in the WHERE makes "is there enough
+          // stock" and "take it" one atomic database operation, so only
+          // one of two racing orders can ever win the last unit; the
+          // other gets count 0 and a real 409, instead of both succeeding
+          // and overselling.
           for (const { product, quantity, variant } of resolvedItems) {
             if (variant) {
-              const remaining = variant.stockQty - quantity;
-              await tx.productVariant.update({ where: { id: variant.id }, data: { stockQty: remaining, ...(remaining <= 0 ? { active: false } : {}) } });
+              const decremented = await tx.productVariant.updateMany({
+                where: { id: variant.id, stockQty: { gte: quantity } },
+                data: { stockQty: { decrement: quantity } },
+              });
+              if (decremented.count === 0) throw new OutOfStockError(product.name);
+              await tx.productVariant.updateMany({ where: { id: variant.id, stockQty: { lte: 0 } }, data: { active: false } });
               continue;
             }
             if (!product.trackInventory) continue;
-            const remaining = product.stockQty - quantity;
-            await tx.product.update({ where: { id: product.id }, data: { stockQty: remaining, ...(remaining <= 0 ? { active: false } : {}) } });
+            const decremented = await tx.product.updateMany({
+              where: { id: product.id, stockQty: { gte: quantity } },
+              data: { stockQty: { decrement: quantity } },
+            });
+            if (decremented.count === 0) throw new OutOfStockError(product.name);
+            await tx.product.updateMany({ where: { id: product.id, stockQty: { lte: 0 } }, data: { active: false } });
           }
 
           return created;

@@ -179,3 +179,32 @@ test("if a step throws partway through, returns 500 rather than reporting succes
   const res = await handleDeleteMerchant(db, adminReq({ merchantId: "m1" }));
   assert.equal(res.status, 500);
 });
+
+// A double-click (or a second admin tab, or a retried request after a
+// slow response) sends two DELETE requests for the same merchant. The
+// first really does delete it; the second reaches merchant.delete after
+// the row is already gone and Prisma throws P2025. Without this handled,
+// the admin would see the deletion succeed and then immediately see a
+// false "فشل حذف التاجر" error for the exact same, already-successful
+// action.
+test("a concurrent duplicate delete (merchant already gone, P2025) is treated as success, not a 500", async () => {
+  const { db } = makeFakeDb(["store-1"]);
+  db.merchant.delete = async () => {
+    const err = new Error("An operation failed because it depends on one or more records that were required but not found.");
+    (err as { code?: string }).code = "P2025";
+    throw err;
+  };
+  const res = await handleDeleteMerchant(db, adminReq({ merchantId: "m1" }));
+  assert.equal(res.status, 200);
+  const body = await res.json();
+  assert.equal(body.success, true);
+});
+
+test("a genuinely unexpected error from merchant.delete (not P2025) still returns 500", async () => {
+  const { db } = makeFakeDb(["store-1"]);
+  db.merchant.delete = async () => {
+    throw new Error("connection reset");
+  };
+  const res = await handleDeleteMerchant(db, adminReq({ merchantId: "m1" }));
+  assert.equal(res.status, 500);
+});

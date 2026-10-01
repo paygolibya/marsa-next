@@ -52,6 +52,26 @@ export default function MerchantsPage() {
   const [acceptingMerchant, setAcceptingMerchant] = useState<Merchant | null>(null);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
+  // Every row action below is a fetch with no debounce of its own — a
+  // rapid double-click (or a slow network widening the window) used to
+  // fire the request twice, e.g. a second DELETE landing after the first
+  // already removed the merchant and coming back with a confusing error
+  // on top of the real success. Tracked per merchant id, not per button,
+  // since two DIFFERENT actions on the same row racing each other (delete
+  // while suspend is still in flight) is the same class of problem.
+  const [busyMerchantIds, setBusyMerchantIds] = useState<Set<string>>(new Set());
+
+  function withRowBusy(merchantId: string, action: () => Promise<void>) {
+    if (busyMerchantIds.has(merchantId)) return;
+    setBusyMerchantIds((prev) => new Set(prev).add(merchantId));
+    void action().finally(() => {
+      setBusyMerchantIds((prev) => {
+        const next = new Set(prev);
+        next.delete(merchantId);
+        return next;
+      });
+    });
+  }
 
   useEffect(() => {
     // Wait for the auth context to actually finish reading the token from
@@ -282,7 +302,9 @@ export default function MerchantsPage() {
       {acceptingMerchant && (
         <AcceptMerchantModal
           merchant={acceptingMerchant}
-          onConfirm={(tier, periodMonths) => void acceptMerchant(acceptingMerchant.id, tier, periodMonths)}
+          onConfirm={(tier, periodMonths) =>
+            withRowBusy(acceptingMerchant.id, () => acceptMerchant(acceptingMerchant.id, tier, periodMonths))
+          }
           onClose={() => setAcceptingMerchant(null)}
         />
       )}
@@ -364,8 +386,9 @@ export default function MerchantsPage() {
                         🔗
                       </button>
                       <button
-                        onClick={() => void impersonateMerchant(merchant)}
-                        className="rounded bg-purple-600 px-3 py-1 text-sm font-bold text-white hover:bg-purple-700"
+                        onClick={() => withRowBusy(merchant.id, () => impersonateMerchant(merchant))}
+                        disabled={busyMerchantIds.has(merchant.id)}
+                        className="rounded bg-purple-600 px-3 py-1 text-sm font-bold text-white hover:bg-purple-700 disabled:opacity-40"
                         title="إدارة المتجر"
                       >
                         🛠️
@@ -374,14 +397,16 @@ export default function MerchantsPage() {
                         <>
                           <button
                             onClick={() => setAcceptingMerchant(merchant)}
-                            className="rounded bg-emerald-600 px-3 py-1 text-sm font-bold text-white hover:bg-emerald-700"
+                            disabled={busyMerchantIds.has(merchant.id)}
+                            className="rounded bg-emerald-600 px-3 py-1 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-40"
                             title="قبول"
                           >
                             ✓
                           </button>
                           <button
-                            onClick={() => void rejectMerchant(merchant.id)}
-                            className="rounded bg-orange-600 px-3 py-1 text-sm font-bold text-white hover:bg-orange-700"
+                            onClick={() => withRowBusy(merchant.id, () => rejectMerchant(merchant.id))}
+                            disabled={busyMerchantIds.has(merchant.id)}
+                            className="rounded bg-orange-600 px-3 py-1 text-sm font-bold text-white hover:bg-orange-700 disabled:opacity-40"
                             title="رفض"
                           >
                             ✗
@@ -390,16 +415,18 @@ export default function MerchantsPage() {
                       )}
                       {merchant.subscriptionStatus === "active" && (
                         <button
-                          onClick={() => void suspendMerchant(merchant.id)}
-                          className="rounded bg-red-600 px-3 py-1 text-sm font-bold text-white hover:bg-red-700"
+                          onClick={() => withRowBusy(merchant.id, () => suspendMerchant(merchant.id))}
+                          disabled={busyMerchantIds.has(merchant.id)}
+                          className="rounded bg-red-600 px-3 py-1 text-sm font-bold text-white hover:bg-red-700 disabled:opacity-40"
                           title="إيقاف مؤقت"
                         >
                           ⏸️
                         </button>
                       )}
                       <button
-                        onClick={() => void deleteMerchant(merchant.id)}
-                        className="rounded bg-red-800 px-3 py-1 text-sm font-bold text-white hover:bg-red-900"
+                        onClick={() => withRowBusy(merchant.id, () => deleteMerchant(merchant.id))}
+                        disabled={busyMerchantIds.has(merchant.id)}
+                        className="rounded bg-red-800 px-3 py-1 text-sm font-bold text-white hover:bg-red-900 disabled:opacity-40"
                         title="حذف نهائي"
                       >
                         🗑️
