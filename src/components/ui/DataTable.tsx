@@ -123,7 +123,12 @@ export function DataTable<T>({
                     </div>
                   ))}
                   {unlabeled.length > 0 && (
-                    <div className="pt-2 mt-1 border-t border-harbor/10 flex items-center justify-end gap-3">
+                    // justify-start, not -end: in this RTL layout
+                    // justify-end packs toward the LEFT edge — exactly
+                    // where the fixed support-chat button sits, confirmed
+                    // live covering the "استرداد" action on the orders
+                    // page. justify-start keeps it on the right.
+                    <div className="pt-2 mt-1 border-t border-harbor/10 flex items-center justify-start gap-3">
                       {unlabeled.map((col) => (
                         <span key={col.key}>{col.render ? col.render(row) : null}</span>
                       ))}
