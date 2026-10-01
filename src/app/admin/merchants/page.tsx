@@ -375,8 +375,12 @@ export default function MerchantsPage() {
                       <button
                         onClick={() => {
                           const store = merchant.stores[0];
+                          // The subdomain, not the old /store/{slug} path —
+                          // same fix already applied to the merchant's own
+                          // dashboard (dashboard/page.tsx). Storefronts only
+                          // work on their own subdomain now.
                           if (store?.slug) {
-                            window.open(`/store/${store.slug}`, "_blank", "noopener,noreferrer");
+                            window.open(`https://${store.slug}.rifqa.ly`, "_blank", "noopener,noreferrer");
                           }
                         }}
                         disabled={!merchant.stores.length}
@@ -507,7 +511,7 @@ function MerchantDetailsModal({
                       <p className="text-sm text-gray-600">{store.slug}</p>
                     </div>
                     <a
-                      href={`/store/${store.slug}`}
+                      href={`https://${store.slug}.rifqa.ly`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-blue-600 hover:text-blue-800"
