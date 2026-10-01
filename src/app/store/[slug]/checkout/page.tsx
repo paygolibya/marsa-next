@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
@@ -11,35 +11,27 @@ const courierLabels: Record<string, string> = {
   vanex: "Vanex",
 };
 
-declare global {
-  interface Window {
-    Lightbox?: {
-      Checkout: {
-        configure: Record<string, unknown>;
-        showLightbox: () => void;
-        closeLightbox: () => void;
-      };
-    };
-  }
-}
-
-// Loads Moamalat's LightBox widget script at most once per page — the
-// script itself defines window.Lightbox, so a second injection would just
-// redefine the same global.
-let lightboxScriptPromise: Promise<void> | null = null;
-function loadLightboxScript(src: string): Promise<void> {
-  if (window.Lightbox) return Promise.resolve();
-  if (!lightboxScriptPromise) {
-    lightboxScriptPromise = new Promise((resolve, reject) => {
-      const script = document.createElement("script");
-      script.src = src;
-      script.onload = () => resolve();
-      script.onerror = () => reject(new Error("failed to load lightbox.js"));
-      document.body.appendChild(script);
-    });
-  }
-  return lightboxScriptPromise;
-}
+// DPay hosts the entire card-entry + OTP flow on its own page (no
+// embeddable widget, unlike the old direct-Moamalat LightBox) — the
+// buyer finishes paying in a new tab while this one polls for
+// confirmation (api.trackOrder, the same endpoint the public order-
+// tracking page uses). order.status only flips to "confirmed" once the
+// DPay webhook confirms payment server-side (src/lib/payment/dpay-order.ts).
+type WalletSession = {
+  orderId: string;
+  totalCents: number;
+  shippingCents: number;
+  phone: string;
+  paymentLink: string;
+  expiresAt: string;
+  // window.open("", "_blank") must happen synchronously inside the click
+  // handler, before any await — calling it only once we have the real
+  // link (after an await) is reliably treated as NOT a user gesture by
+  // mobile Safari/Chrome and silently blocked. If it WAS blocked (null),
+  // fall back to a visible link the buyer taps themselves.
+  popupBlocked: boolean;
+  expired: boolean;
+};
 
 export default function CheckoutPage() {
   const params = useParams<{ slug: string }>();
@@ -56,10 +48,10 @@ export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState<"cod" | "wallet">("cod");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  // True while the Moamalat widget is open / being finalized — keeps the
-  // submit button disabled without reusing `loading` (which also covers
-  // the initial /api/orders call).
-  const [walletPending, setWalletPending] = useState(false);
+  // Non-null while waiting for the buyer to finish paying in the DPay tab
+  // — keeps the submit button disabled without reusing `loading` (which
+  // only covers the initial /api/orders call).
+  const [walletSession, setWalletSession] = useState<WalletSession | null>(null);
 
   const [couponInput, setCouponInput] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discountCents: number } | null>(null);
@@ -70,11 +62,6 @@ export default function CheckoutPage() {
   const [vanexCities, setVanexCities] = useState<VanexCity[]>([]);
   const [vanexCityId, setVanexCityId] = useState("");
   const [vanexAreaId, setVanexAreaId] = useState("");
-
-  // Cart/order details kept around so completeCallback (fired from inside
-  // Moamalat's widget, well after the initial submit) can still build the
-  // confirmation-page redirect.
-  const pendingOrderRef = useRef<{ orderId: string; totalCents: number; shippingCents: number } | null>(null);
 
   useEffect(() => {
     api.publicStore(slug).then(({ store }) => {
@@ -140,6 +127,11 @@ export default function CheckoutPage() {
     }
     setError(null);
     setLoading(true);
+
+    // Must happen synchronously, before the order-creation await below —
+    // see WalletSession's comment on popupBlocked.
+    const paymentWindow = paymentMethod === "wallet" ? window.open("", "_blank") : null;
+
     try {
       const result = await api.createOrder({
         storeSlug: slug,
@@ -156,53 +148,62 @@ export default function CheckoutPage() {
         couponCode: appliedCoupon?.code,
       });
 
-      if (result.moamalat && result.moamalatScriptUrl) {
-        pendingOrderRef.current = { orderId: result.orderId, totalCents: result.totalCents, shippingCents: result.shippingCents };
-        setWalletPending(true);
-        await loadLightboxScript(result.moamalatScriptUrl);
-        const lightbox = result.moamalat;
-        window.Lightbox!.Checkout.configure = {
-          MID: lightbox.MID,
-          TID: lightbox.TID,
-          AmountTrxn: lightbox.AmountTrxn,
-          MerchantReference: lightbox.MerchantReference,
-          TrxDateTime: lightbox.TrxDateTime,
-          SecureHash: lightbox.SecureHash,
-          completeCallback: async (data: Record<string, string>) => {
-            try {
-              const completeResult = await api.moamalatComplete(data);
-              const pending = pendingOrderRef.current;
-              if (completeResult.status === "paid" && pending) {
-                goToConfirmation({ ...pending, trackingId: completeResult.trackingId, courier: completeResult.courier, paymentStatus: "paid" });
-                return;
-              }
-              setError(completeResult.error ?? "تعذّر تأكيد الدفع، تواصل معنا إن تم خصم المبلغ");
-            } catch (err) {
-              setError(err instanceof ApiError ? err.message : "تعذّر تأكيد الدفع، تواصل معنا إن تم خصم المبلغ");
-            } finally {
-              setWalletPending(false);
-            }
-          },
-          errorCallback: () => {
-            setError("فشلت عملية الدفع، حاول مجددًا");
-            setWalletPending(false);
-          },
-          cancelCallback: () => {
-            setWalletPending(false);
-          },
-        };
-        window.Lightbox!.Checkout.showLightbox();
+      if (result.dpayPaymentLink) {
+        if (paymentWindow) paymentWindow.location.href = result.dpayPaymentLink;
+        setWalletSession({
+          orderId: result.orderId,
+          totalCents: result.totalCents,
+          shippingCents: result.shippingCents,
+          phone,
+          paymentLink: result.dpayPaymentLink,
+          expiresAt: result.dpaySessionExpiresAt ?? new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+          popupBlocked: !paymentWindow,
+          expired: false,
+        });
         return;
       }
 
       goToConfirmation(result);
     } catch (err) {
+      paymentWindow?.close();
       setError(err instanceof ApiError ? err.message : "تعذّر إتمام الطلب، حاول مجددًا");
-      setWalletPending(false);
     } finally {
       setLoading(false);
     }
   }
+
+  // Polls the same public endpoint the order-tracking page uses — no new
+  // backend surface needed. Stops at the session's own expiry rather than
+  // polling forever if the buyer abandons the DPay tab without paying.
+  useEffect(() => {
+    if (!walletSession || walletSession.expired) return;
+    const expiresAtMs = new Date(walletSession.expiresAt).getTime();
+
+    const interval = setInterval(async () => {
+      if (Date.now() > expiresAtMs) {
+        setWalletSession((s) => (s ? { ...s, expired: true } : s));
+        return;
+      }
+      try {
+        const track = await api.trackOrder(walletSession.orderId, walletSession.phone);
+        if (track.status === "confirmed") {
+          goToConfirmation({
+            orderId: walletSession.orderId,
+            totalCents: walletSession.totalCents,
+            shippingCents: walletSession.shippingCents,
+            trackingId: track.courierTrackingId ?? undefined,
+            courier: store?.courier,
+            paymentStatus: "paid",
+          });
+        }
+      } catch {
+        // transient network hiccup — the next tick retries
+      }
+    }, 3000);
+
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [walletSession?.orderId, walletSession?.expired]);
 
   if (!store) return null;
 
@@ -228,6 +229,40 @@ export default function CheckoutPage() {
       <main className="mx-auto max-w-4xl px-6 py-16 grid md:grid-cols-[1.2fr_1fr] gap-8 items-start">
         <div className="rounded-2xl bg-white shadow-xl p-8">
           <h1 className="font-display text-2xl font-extrabold text-harbor mb-6">إتمام الطلب</h1>
+          {walletSession ? (
+            <div className="text-center py-6">
+              {walletSession.expired ? (
+                <>
+                  <p className="text-harbor font-bold mb-2">انتهت صلاحية جلسة الدفع</p>
+                  <p className="text-rope text-sm mb-6">لم يتم إكمال الدفع في الوقت المحدد. يمكنك المحاولة مجددًا.</p>
+                  <button
+                    type="button"
+                    onClick={() => setWalletSession(null)}
+                    className="rounded-full bg-signal px-6 py-2.5 font-bold text-canvas hover:bg-signal-dark transition-colors"
+                  >
+                    حاول مجددًا
+                  </button>
+                </>
+              ) : (
+                <>
+                  <p className="text-harbor font-bold mb-2">في انتظار تأكيد الدفع...</p>
+                  <p className="text-rope text-sm mb-6">
+                    أكمل الدفع في النافذة التي فُتحت لك. سننقلك تلقائيًا إلى صفحة التأكيد فور نجاح الدفع.
+                  </p>
+                  {walletSession.popupBlocked && (
+                    <a
+                      href={walletSession.paymentLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-block rounded-full bg-signal px-6 py-2.5 font-bold text-canvas hover:bg-signal-dark transition-colors"
+                    >
+                      اضغط هنا لإكمال الدفع
+                    </a>
+                  )}
+                </>
+              )}
+            </div>
+          ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <label className="block">
               <span className="block text-sm font-bold text-harbor mb-1.5">الاسم الكامل</span>
@@ -358,15 +393,16 @@ export default function CheckoutPage() {
             </div>
   
             {error && <p className="text-signal text-sm">{error}</p>}
-  
+
             <button
               type="submit"
-              disabled={loading || walletPending || (usesVanexPricing && !selectedArea)}
+              disabled={loading || (usesVanexPricing && !selectedArea)}
               className="w-full rounded-full bg-signal py-3.5 font-bold text-canvas shadow-lg shadow-signal/20 hover:bg-signal-dark hover:-translate-y-0.5 transition-all disabled:opacity-60 disabled:translate-y-0"
             >
-              {loading || walletPending ? "جارٍ التأكيد..." : `تأكيد الطلب — ${formatLYD(grandTotalCents)}`}
+              {loading ? "جارٍ التأكيد..." : `تأكيد الطلب — ${formatLYD(grandTotalCents)}`}
             </button>
           </form>
+          )}
         </div>
   
         <aside className="rounded-2xl bg-white shadow-xl p-6 h-fit">

@@ -294,14 +294,21 @@ model Payment {
   approvedBy        String?   @map("approved_by") // admin merchantId for a manual approval; null for an automatic gateway confirmation
   rejectionReason   String?   @map("rejection_reason")
 
-  // Legacy DPay session tracking — frozen historical data, see the
-  // matching comment on Order above.
+  // DPay session tracking — reused from an even older full-DPay-aggregator
+  // era (was frozen/unused while this app ran a direct Moamalat
+  // integration). Active again: set at session-open time
+  // (dpay-client.ts's openDpaySession, called from subscription-init) —
+  // dpayPayMethod is always the literal "moamalat" for now (the only
+  // pay_method in scope).
   dpaySessionId String? @unique @map("dpay_session_id")
   dpayPayMethod String? @map("dpay_pay_method")
   dpayFeeCents  Int?    @map("dpay_fee_cents")
 
-  // Direct Moamalat LightBox tracking — see moamalat-subscription.ts.
-  // MerchantReference sent to Moamalat is always this Payment's own id.
+  // Moamalat's own system/network reference numbers, now relayed via
+  // DPay's webhook (system_reference/network_reference in its payload)
+  // rather than received directly — see dpay-subscription.ts and
+  // /api/dpay/webhook. The reference sent to DPay is always this
+  // Payment's own id (dpay-client.ts's makeSubscriptionReference).
   moamalatSystemReference  String? @map("moamalat_system_reference")
   moamalatNetworkReference String? @map("moamalat_network_reference")
 
@@ -487,23 +494,25 @@ model Order {
   courierNote       String?  @map("courier_note") // failure/return reason from the courier
   createdAt         DateTime @default(now()) @map("created_at")
 
-  // Legacy DPay wallet payment tracking — DPay (the aggregator) was
-  // removed in favor of a direct Moamalat integration; these three
-  // columns are frozen historical data for orders paid before that
-  // switch, never written to by new code. See moamalatSystemReference
-  // etc. below for the current integration.
+  // DPay session tracking — reused from an even older full-DPay-aggregator
+  // era (was frozen/unused while this app ran a direct Moamalat
+  // integration). Active again: set at session-open time
+  // (dpay-client.ts's openDpaySession, called from orders/handler.ts).
+  // dpayPayMethod is always the literal "moamalat" for now (the only
+  // pay_method in scope) — the fuller edfali/sadad/... set it could hold
+  // is from that older aggregator era.
   dpaySessionId String? @unique @map("dpay_session_id")
-  dpayPayMethod String? @map("dpay_pay_method") // edfali | sadad | masrefypay | yousrpay | saharapay | mobicash | moamalat
+  dpayPayMethod String? @map("dpay_pay_method")
   dpayFeeCents  Int?    @map("dpay_fee_cents") // DPay's own fee, separate from Rifqa's commission
 
-  // Direct Moamalat LightBox payment tracking — set once Moamalat's
-  // completeCallback or server notification confirms the transaction
-  // (src/lib/payment/moamalat-client.ts). paymentStatus flips from
-  // pending to paid/failed only via src/lib/payment/moamalat-order.ts,
-  // called from either the client-relayed complete callback or Moamalat's
-  // own server notification (whichever confirms first) — never written
-  // directly anywhere else. MerchantReference sent to Moamalat is always
-  // this Order's own id, so no separate correlation column is needed.
+  // Moamalat's own system/network reference numbers, now relayed via
+  // DPay's signed webhook (system_reference/network_reference in its
+  // payload) rather than received directly — see
+  // src/app/api/dpay/webhook/handler.ts. paymentStatus flips from pending
+  // to paid/failed only via src/lib/payment/dpay-order.ts, called from
+  // that webhook — never written directly anywhere else. The reference
+  // sent to DPay is always this Order's own id (dpay-client.ts's
+  // makeOrderReference), so no separate correlation column is needed.
   moamalatSystemReference  String? @map("moamalat_system_reference")
   moamalatNetworkReference String? @map("moamalat_network_reference")
 

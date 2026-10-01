@@ -1,11 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import crypto from "crypto";
 import { handleCreateOrder, type OrdersDb, type OrdersDeps } from "./handler";
 
-process.env.MOAMALAT_MERCHANT_ID = "TESTMID";
-process.env.MOAMALAT_TERMINAL_ID = "TESTTID";
-process.env.MOAMALAT_SECRET_KEY = crypto.randomBytes(16).toString("hex");
+process.env.DPAY_API_TOKEN = "test-dpay-token";
 
 const STORE: { id: string; slug: string; courier: string; codEnabled: boolean; walletProvider: string | null; merchant: { phone: string } & Record<string, unknown> } = {
   id: "store-1",
@@ -46,7 +43,16 @@ function makeFakeDeps(
 ) {
   const store = opts.store !== undefined ? opts.store : STORE;
   const product = opts.product !== undefined ? opts.product : PRODUCT;
-  const calls: { orderCreate?: Any; orderUpdate?: Any; productUpdateMany?: Any[]; couponUpdateMany?: Any; shipment?: Any; email?: Any; sms?: Any } = {
+  const calls: {
+    orderCreate?: Any;
+    orderUpdate?: Any;
+    productUpdateMany?: Any[];
+    couponUpdateMany?: Any;
+    shipment?: Any;
+    email?: Any;
+    sms?: Any;
+    openDpaySession?: Any;
+  } = {
     productUpdateMany: [],
   };
   let createdOrderId = "order-1";
@@ -96,6 +102,10 @@ function makeFakeDeps(
 
   const deps: OrdersDeps = {
     db,
+    openDpaySession: async (amountCents, ref, idempotencyKey) => {
+      calls.openDpaySession = { amountCents, ref, idempotencyKey };
+      return { sessionId: 683, paymentLink: "https://dpay.ly/moamalat-pay/683", feeCents: 1, expiresAt: "2026-01-01T00:00:00.000000Z" };
+    },
     createShipment: async (courier, order) => {
       calls.shipment = { courier, order };
       return { trackingId: "TRK-TEST-1", raw: {} };
@@ -216,19 +226,46 @@ test("COD order: dispatches a real shipment, updates the order with the tracking
   assert.ok(calls.sms);
 });
 
-test("wallet order: returns a signed LightBox config and 201, WITHOUT dispatching a shipment or sending notifications yet", async () => {
+test("wallet order: opens a DPay session and returns its payment_link with 201, WITHOUT dispatching a shipment or sending notifications yet", async () => {
   // Wallet orders only get shipped/notified once payment actually confirms
-  // (see moamalat-order.ts's finalizeWalletOrder) — this route must not
-  // jump the gun.
+  // (see dpay-order.ts's finalizeWalletOrder, triggered by the DPay
+  // webhook) — this route must not jump the gun.
   const { deps, calls } = makeFakeDeps();
   const res = await handleCreateOrder(deps, req(baseBody({ paymentMethod: "wallet" })));
   assert.equal(res.status, 201);
   const body = await res.json();
-  assert.ok(body.moamalat.SecureHash);
+  assert.equal(body.dpayPaymentLink, "https://dpay.ly/moamalat-pay/683");
+  assert.ok(body.dpaySessionExpiresAt);
   assert.equal(body.paymentStatus, "pending");
   assert.equal(calls.shipment, undefined);
   assert.equal(calls.email, undefined);
   assert.equal(calls.sms, undefined);
+});
+
+test("wallet order: opens the DPay session with the server-computed total (not client-trusted), the order's own reference, and the order id as the idempotency key", async () => {
+  const { deps, calls } = makeFakeDeps();
+  await handleCreateOrder(deps, req(baseBody({ paymentMethod: "wallet", items: [{ productId: "p1", quantity: 2 }] })));
+  assert.equal(calls.openDpaySession.amountCents, 10000); // 5000 * 2
+  assert.equal(calls.openDpaySession.ref, "order:order-1");
+  assert.equal(calls.openDpaySession.idempotencyKey, "order-1");
+});
+
+test("wallet order: stores the DPay session id, pay method, and fee on the order row", async () => {
+  const { deps, calls } = makeFakeDeps();
+  await handleCreateOrder(deps, req(baseBody({ paymentMethod: "wallet" })));
+  assert.equal(calls.orderUpdate.where.id, "order-1");
+  assert.equal(calls.orderUpdate.data.dpaySessionId, "683");
+  assert.equal(calls.orderUpdate.data.dpayPayMethod, "moamalat");
+  assert.equal(calls.orderUpdate.data.dpayFeeCents, 1);
+});
+
+test("wallet order below DPay's real minimum (5 LYD) gets a clear 400 instead of letting DPay's own error leak through", async () => {
+  const { deps, calls } = makeFakeDeps({ product: { ...PRODUCT, priceCents: 200 } }); // 2 LYD * 2 = 4 LYD, below the 5 LYD minimum
+  const res = await handleCreateOrder(deps, req(baseBody({ paymentMethod: "wallet", items: [{ productId: "p1", quantity: 2 }] })));
+  assert.equal(res.status, 400);
+  const body = await res.json();
+  assert.ok(body.error);
+  assert.equal(calls.openDpaySession, undefined);
 });
 
 test("an invalid coupon code returns 400 and never creates the order", async () => {

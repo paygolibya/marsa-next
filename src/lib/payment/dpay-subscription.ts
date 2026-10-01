@@ -5,14 +5,13 @@ import { addMonths } from "@/lib/subscription/period";
 export type FinalizeSubscriptionPaymentResult = { updated: boolean };
 
 /**
- * The single place a Moamalat-paid subscription Payment's status is ever
- * written, and the single place it actually activates the merchant's
- * subscription — same shape as finalizeWalletOrder (moamalat-order.ts),
- * and for the same reason: called from two independent triggers that can
- * race each other (the client-relayed complete callback, and Moamalat's
- * server notification), guarded by the same atomic `status: "pending"`
- * updateMany so whichever confirms first wins and the other is a safe
- * no-op, not a double-activation.
+ * The single place a DPay-paid (moamalat) subscription Payment's status
+ * is ever written, and the single place it actually activates the
+ * merchant's subscription — same shape as finalizeWalletOrder
+ * (dpay-order.ts), and for the same reason: called from the DPay webhook,
+ * guarded by the same atomic `status: "pending"` updateMany so a
+ * duplicate/retried webhook delivery is a safe no-op, not a
+ * double-activation.
  *
  * Mirrors exactly what an admin's manual approval already does
  * (/api/admin/payments/[id]/approve) — this is the same activation,

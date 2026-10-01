@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
-import { buildLightboxConfig, getLightboxScriptUrl, isMoamalatConfigured, makeOrderReference } from "@/lib/payment/moamalat-client";
+import { DPAY_MIN_AMOUNT_CENTS, isDpayConfigured, makeOrderReference } from "@/lib/payment/dpay-client";
 import { createOrderSchema } from "@/lib/validation";
 import { getSubscriptionState, getCheckoutPaymentMethods } from "@/lib/checkout-features";
 import { resolveCouponDiscount } from "@/lib/coupons";
@@ -90,6 +90,7 @@ export type OrdersDb = {
 
 export type OrdersDeps = {
   db: OrdersDb;
+  openDpaySession: (amountCents: number, ref: string, idempotencyKey: string) => Promise<{ sessionId: number; paymentLink: string; feeCents: number; expiresAt: string }>;
   createShipment: (courier: string, order: ShipmentOrder) => Promise<ShipmentResult>;
   sendOrderConfirmationEmail: (order: {
     id: string;
@@ -124,7 +125,7 @@ export async function handleCreateOrder(deps: OrdersDeps, req: Request): Promise
 
     if (paymentMethod === "wallet") {
       const walletAvailable = getCheckoutPaymentMethods(getSubscriptionState(store.merchant as Any)).dpay;
-      if (!store.walletProvider || !walletAvailable || !isMoamalatConfigured()) {
+      if (!store.walletProvider || !walletAvailable || !isDpayConfigured()) {
         return NextResponse.json({ error: "This store has no wallet payment option enabled" }, { status: 400 });
       }
     }
@@ -275,9 +276,24 @@ export async function handleCreateOrder(deps: OrdersDeps, req: Request): Promise
     const discountCents = order.discountCents;
 
     if (paymentMethod === "wallet") {
-      const lightbox = buildLightboxConfig(totalCents, makeOrderReference(order.id));
+      // Known, accepted gap (same shape as createShipment failing after
+      // order-creation for a COD order below — not specially handled
+      // there either): the order row above is already committed by the
+      // time this runs. A below-minimum total is a predictable business
+      // case and gets a clean, actionable 400; an actual DPay/network
+      // failure here bubbles to the outer catch (500) with the order
+      // left pending and session-less, same risk tolerance as the
+      // existing COD/shipment path.
+      if (totalCents < DPAY_MIN_AMOUNT_CENTS) {
+        return NextResponse.json({ error: "الحد الأدنى للدفع الإلكتروني 5 د.ل — اختر الدفع عند الاستلام لهذا الطلب" }, { status: 400 });
+      }
+      const session = await deps.openDpaySession(totalCents, makeOrderReference(order.id), order.id);
+      await db.order.update({
+        where: { id: order.id },
+        data: { dpaySessionId: String(session.sessionId), dpayPayMethod: "moamalat", dpayFeeCents: session.feeCents },
+      });
       return NextResponse.json(
-        { orderId: order.id, totalCents, shippingCents, discountCents, paymentStatus: "pending", moamalat: lightbox, moamalatScriptUrl: getLightboxScriptUrl() },
+        { orderId: order.id, totalCents, shippingCents, discountCents, paymentStatus: "pending", dpayPaymentLink: session.paymentLink, dpaySessionExpiresAt: session.expiresAt },
         { status: 201 }
       );
     }
