@@ -20,8 +20,8 @@ export type ApprovePaymentDb = {
 // whether the merchant actually paid for a 1/3/12-month plan (periodMonths
 // on the Payment row), and never updated subscriptionPeriodMonths at all —
 // silently shortchanging anyone approved for a 3- or 12-month period via
-// this admin path. The automatic DPay-confirmed path
-// (finalizeSubscriptionPayment, dpay-subscription.ts) already did this
+// this admin path. The automatic Moamalat-confirmed path
+// (finalizeSubscriptionPayment, moamalat-subscription.ts) already did this
 // correctly; its own comment even said this route "mirrors exactly" that
 // one, which wasn't true. Both now share addMonths (subscription/period.ts).
 export async function handleApprovePayment(db: ApprovePaymentDb, req: Request, paymentId: string): Promise<Response> {

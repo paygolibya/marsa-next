@@ -1,8 +1,8 @@
 // Real calendar-month arithmetic (not periodMonths * 30 days) so a
 // 12-month period lands on the same date next year rather than drifting
 // ~5 days short from treating every month as exactly 30 days. Shared
-// between the automatic DPay-confirmed activation
-// (dpay-subscription.ts) and the manual admin-approval activation
+// between the automatic Moamalat-confirmed activation
+// (moamalat-subscription.ts) and the manual admin-approval activation
 // (admin/payments/[id]/approve) — these two paths are supposed to be the
 // exact same activation, just automatic vs. human-triggered (see the
 // comment on finalizeSubscriptionPayment), and before this were NOT: the

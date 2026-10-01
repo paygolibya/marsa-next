@@ -3,6 +3,7 @@
 // calls to a Next.js API.
 
 import type { Payout, PlatformStats, MerchantPayoutSummary, CronLog } from "@/types/payment";
+import type { LightboxConfig } from "@/lib/payment/moamalat-client";
 import type { SectionData } from "@/components/storefront/sections/types";
 
 export class ApiError extends Error {
@@ -386,12 +387,18 @@ export const api = {
       trackingId?: string;
       courier?: string;
       paymentStatus: string;
-      dpayPaymentLink?: string;
-      dpaySessionExpiresAt?: string;
+      moamalat?: LightboxConfig;
+      moamalatScriptUrl?: string;
     }>("/api/orders", { method: "POST", body: JSON.stringify(body) }),
 
-  subscriptionDpayInit: (token: string, period: "1m" | "3m" | "12m") =>
-    request<{ paymentId: string; dpayPaymentLink: string; dpaySessionExpiresAt: string }>("/api/payments/dpay/subscription-init", {
+  moamalatComplete: (fields: Record<string, string>) =>
+    request<{ status: string; kind?: "order" | "subscription"; trackingId?: string; courier?: string; error?: string }>(
+      "/api/payments/moamalat/complete",
+      { method: "POST", body: JSON.stringify(fields) }
+    ),
+
+  subscriptionMoamalatInit: (token: string, period: "1m" | "3m" | "12m") =>
+    request<{ paymentId: string; lightbox: LightboxConfig; moamalatScriptUrl: string }>("/api/payments/moamalat/subscription-init", {
       method: "POST",
       headers: authHeaders(token),
       body: JSON.stringify({ period }),
