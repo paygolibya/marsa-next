@@ -88,11 +88,16 @@ export default function MarketplaceTemplate({
   return (
     <div style={{ backgroundColor: secondary }} className="min-h-screen">
       <header className="sticky top-0 z-30 bg-white border-b border-harbor/10">
-        <div className="mx-auto max-w-7xl px-4 py-3 flex items-center gap-4">
-          <div className="flex items-center gap-2 shrink-0">
+        <div className="mx-auto max-w-7xl px-4 py-3 flex items-center gap-2 sm:gap-4">
+          {/* min-w-0 + truncate (not shrink-0/whitespace-nowrap) — a long
+              store name used to force this row wider than the viewport on
+              mobile, cutting off the cart button and search input instead
+              of just eliding the name. Confirmed live: horizontal page
+              overflow with the cart button partially off-screen. */}
+          <div className="flex items-center gap-2 min-w-0">
             {showLogo && store.customization?.logo && <StorefrontLogo src={store.customization.logo} alt={store.name} sizePx={logoPx} rounded="lg" />}
             {showStoreName && (
-              <span className={`font-display font-extrabold text-harbor whitespace-nowrap ${textSize.heading}`} style={{ color: colors.text }}>
+              <span className={`font-display font-extrabold text-harbor truncate ${textSize.heading}`} style={{ color: colors.text }}>
                 {store.name}
               </span>
             )}
@@ -101,12 +106,12 @@ export default function MarketplaceTemplate({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="ابحث في المتجر..."
-            className="input flex-1 !py-2"
+            className="input flex-1 min-w-0 !py-2"
           />
           <button
             onClick={onOpenCart}
             style={{ backgroundColor: primary }}
-            className="relative rounded-lg px-4 py-2 text-white font-bold text-sm shrink-0 hover:opacity-90 transition-opacity"
+            className="relative rounded-lg px-3 sm:px-4 py-2 text-white font-bold text-sm shrink-0 hover:opacity-90 transition-opacity"
           >
             السلة
             {cartTotalItems > 0 && (

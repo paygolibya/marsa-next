@@ -270,7 +270,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </div>
           )}
           {!loading && store ? (
-            children
+            // pb-24: clearance for the floating support-chat button
+            // (SupportChatWidget, fixed bottom-5 left-5, h-14/h-12) —
+            // without it, any page short enough that its own trailing
+            // content lands near the bottom of the first viewport gets
+            // that content covered by the button on load. Confirmed live
+            // across several dashboard pages (a form's last textarea, a
+            // payouts summary card). Doesn't fully prevent the button
+            // from passing over content mid-scroll on longer pages — that
+            // much is normal floating-widget behavior — but removes the
+            // worst, most jarring case of it sitting on content the
+            // instant a page loads.
+            <div className="pb-24">{children}</div>
           ) : loading ? (
             <p className="p-10 text-rope">جارٍ التحميل...</p>
           ) : null}

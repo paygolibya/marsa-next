@@ -59,13 +59,13 @@ export function SupportChatWidget() {
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-label="الدعم الفني"
-        className="fixed bottom-5 left-5 z-40 h-14 w-14 rounded-full bg-signal text-canvas shadow-lg shadow-signal/30 hover:bg-signal-dark transition-colors flex items-center justify-center text-2xl"
+        className="fixed bottom-4 left-4 sm:bottom-5 sm:left-5 z-40 h-12 w-12 sm:h-14 sm:w-14 rounded-full bg-signal text-canvas shadow-lg shadow-signal/30 hover:bg-signal-dark transition-colors flex items-center justify-center text-xl sm:text-2xl"
       >
         {open ? "✕" : "💬"}
       </button>
 
       {open && (
-        <div className="fixed bottom-24 left-5 z-40 w-[calc(100vw-2.5rem)] max-w-sm h-[28rem] rounded-2xl border border-harbor/10 bg-white shadow-2xl flex flex-col overflow-hidden">
+        <div className="fixed bottom-20 left-4 sm:bottom-24 sm:left-5 z-40 w-[calc(100vw-2rem)] sm:w-[calc(100vw-2.5rem)] max-w-sm h-[28rem] rounded-2xl border border-harbor/10 bg-white shadow-2xl flex flex-col overflow-hidden">
           <div className="bg-harbor text-canvas px-4 py-3">
             <p className="font-display font-bold text-sm">الدعم الفني الذكي</p>
             <p className="text-xs text-canvas/70">اسأل عن أي شيء يخص متجرك</p>

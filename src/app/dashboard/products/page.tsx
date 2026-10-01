@@ -128,7 +128,7 @@ export default function DashboardProductsPage() {
             ))}
           </div>
         ) : products.length === 0 ? (
-          <EmptyState title="لا توجد منتجات بعد" description="أضف أول منتج من النموذج على اليمين." />
+          <EmptyState title="لا توجد منتجات بعد" description="استخدم النموذج أعلاه لإضافة أول منتج." />
         ) : (
           <ul className="space-y-3">
             {products.map((p) =>
@@ -144,7 +144,15 @@ export default function DashboardProductsPage() {
                   onCancel={() => setEditingId(null)}
                 />
               ) : (
-                <Card key={p.id} className="flex flex-wrap items-center justify-between gap-3 px-4 sm:px-5 py-3">
+                // flex-col on mobile, not flex-wrap — relying on wrapping to
+                // push the edit/delete buttons onto their own line only
+                // works when the info block alone is wide enough to force
+                // the wrap; a short product name (e.g. a single word) left
+                // enough room on the row for the wrap algorithm to place
+                // edit/delete ABOVE the name instead, confirmed live. An
+                // explicit stacked layout on mobile makes the order
+                // deterministic regardless of content width.
+                <Card key={p.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 sm:px-5 py-3">
                   <div className="flex items-center gap-3 min-w-0">
                     {p.imageUrl && (
                       // eslint-disable-next-line @next/next/no-img-element

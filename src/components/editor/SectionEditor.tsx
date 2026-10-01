@@ -114,34 +114,51 @@ export function SectionEditor({ storeId, onSaved }: { storeId: string; onSaved?:
         if (cancelled) return;
         setStore(found);
 
-        const [{ customization, sections: fetchedSections }, publicData] = await Promise.all([
-          api.getStoreCustomization(token!, storeId),
+        const [customizationResult, publicData] = await Promise.all([
+          api.getStoreCustomization(token!, storeId).catch((err) => {
+            // A store with no TemplateCustomization row yet (never
+            // customized before) is a real, valid state — 404, not a
+            // failure. Previously this rejection fell through to the
+            // catch below, which set `error` but never `loaded`, and the
+            // render gate only checks `loaded` — so the page got stuck on
+            // "جارٍ التحميل..." forever with the error silently ignored.
+            // Falling back to defaults here lets the merchant customize
+            // their store for the first time instead of hitting a dead end.
+            if (err instanceof ApiError && err.status === 404) return null;
+            throw err;
+          }),
           api.publicStore(found.slug),
         ]);
         if (cancelled) return;
 
-        setDraft({
-          primaryColor: customization.primaryColor,
-          secondaryColor: customization.secondaryColor,
-          accentColor: customization.accentColor,
-          logo: customization.logo,
-          favicon: customization.favicon,
-          coverImage: customization.coverImage,
-          coverImageSize: customization.coverImageSize,
-          tagline: customization.tagline ?? "",
-          description: customization.description ?? "",
-          headerStyle: customization.headerStyle,
-          footerStyle: customization.footerStyle,
-          showLogo: customization.showLogo,
-          showStoreName: customization.showStoreName,
-          logoSize: customization.logoSize,
-          textColor: customization.textColor,
-          textSize: customization.textSize,
-          heroEnabled: customization.heroEnabled,
-          heroSize: customization.heroSize,
-          cartPosition: customization.cartPosition,
-        });
-        setSections(fetchedSections.map((s) => ({ id: s.id ?? makeLocalId(), type: s.type, enabled: s.enabled, settings: s.settings })));
+        if (customizationResult) {
+          const { customization } = customizationResult;
+          setDraft({
+            primaryColor: customization.primaryColor,
+            secondaryColor: customization.secondaryColor,
+            accentColor: customization.accentColor,
+            logo: customization.logo,
+            favicon: customization.favicon,
+            coverImage: customization.coverImage,
+            coverImageSize: customization.coverImageSize,
+            tagline: customization.tagline ?? "",
+            description: customization.description ?? "",
+            headerStyle: customization.headerStyle,
+            footerStyle: customization.footerStyle,
+            showLogo: customization.showLogo,
+            showStoreName: customization.showStoreName,
+            logoSize: customization.logoSize,
+            textColor: customization.textColor,
+            textSize: customization.textSize,
+            heroEnabled: customization.heroEnabled,
+            heroSize: customization.heroSize,
+            cartPosition: customization.cartPosition,
+          });
+          setSections(customizationResult.sections.map((s) => ({ id: s.id ?? makeLocalId(), type: s.type, enabled: s.enabled, settings: s.settings })));
+        } else {
+          setDraft(DEFAULT_DRAFT);
+          setSections([]);
+        }
         setProducts(publicData.products);
         setStats(publicData.stats);
         setTestimonials(publicData.testimonials);
@@ -243,38 +260,58 @@ export function SectionEditor({ storeId, onSaved }: { storeId: string; onSaved?:
 
   const draftStore: Store | null = useMemo(() => {
     if (!store) return null;
+    // Always builds a full customization object from `draft`, even when
+    // the store had no TemplateCustomization row to begin with (see the
+    // 404-handling comment in load() above) — previously this stayed
+    // `null` whenever store.customization was null, which meant the live
+    // preview on the right never reflected ANY of the merchant's edits
+    // for a store being customized for the first time.
+    const base = store.customization ?? {
+      showNewsletter: true,
+      showReviews: true,
+      showTestimonials: false,
+      showSocialProof: true,
+      template: null,
+    };
     return {
       ...store,
-      customization: store.customization
-        ? {
-            ...store.customization,
-            primaryColor: draft.primaryColor,
-            secondaryColor: draft.secondaryColor,
-            accentColor: draft.accentColor,
-            logo: draft.logo,
-            favicon: draft.favicon,
-            coverImage: draft.coverImage,
-            coverImageSize: draft.coverImageSize,
-            tagline: draft.tagline || null,
-            description: draft.description || null,
-            headerStyle: draft.headerStyle,
-            footerStyle: draft.footerStyle,
-            showLogo: draft.showLogo,
-            showStoreName: draft.showStoreName,
-            logoSize: draft.logoSize,
-            textColor: draft.textColor,
-            textSize: draft.textSize,
-            heroEnabled: draft.heroEnabled,
-            heroSize: draft.heroSize,
-            cartPosition: draft.cartPosition,
-          }
-        : null,
+      customization: {
+        ...base,
+        primaryColor: draft.primaryColor,
+        secondaryColor: draft.secondaryColor,
+        accentColor: draft.accentColor,
+        logo: draft.logo,
+        favicon: draft.favicon,
+        coverImage: draft.coverImage,
+        coverImageSize: draft.coverImageSize,
+        tagline: draft.tagline || null,
+        description: draft.description || null,
+        headerStyle: draft.headerStyle,
+        footerStyle: draft.footerStyle,
+        showLogo: draft.showLogo,
+        showStoreName: draft.showStoreName,
+        logoSize: draft.logoSize,
+        textColor: draft.textColor,
+        textSize: draft.textSize,
+        heroEnabled: draft.heroEnabled,
+        heroSize: draft.heroSize,
+        cartPosition: draft.cartPosition,
+      },
     };
   }, [store, draft]);
 
   const filtered = useMemo(() => products.filter((p) => p.name.includes(query)), [products, query]);
   const selectedSection = sections.find((s) => s.id === selectedId) ?? null;
   const Template = draftStore ? STOREFRONT_TEMPLATES[draftStore.customization?.template?.slug ?? "modern"] ?? ModernTemplate : ModernTemplate;
+
+  if (error && !loaded) {
+    return (
+      <div className="p-10 text-center">
+        <p className="text-signal mb-4">{error}</p>
+        <Button onClick={() => window.location.reload()}>إعادة المحاولة</Button>
+      </div>
+    );
+  }
 
   if (!loaded || !draftStore) {
     return <p className="p-10 text-rope">جارٍ التحميل...</p>;

@@ -99,7 +99,42 @@ export function DataTable<T>({
         <p className="text-rope text-sm py-10 text-center">لا توجد نتائج مطابقة</p>
       ) : (
         <>
-          <div className="overflow-x-auto rounded-2xl border border-harbor/10">
+          {/* Mobile: one card per row instead of the real <table> below —
+              a 6+ column table crammed into a phone-width screen forced
+              horizontal scroll with no visible affordance and columns
+              cut off at the edge, confirmed live across the orders,
+              payouts, and admin-escalations pages that all share this
+              component. Sorting (header click) has no mobile equivalent
+              here — search still works, which covers the common case;
+              not adding a mobile sort-by control is a deliberate scope
+              cut, not an oversight. */}
+          <div className="sm:hidden space-y-3">
+            {pageRows.map((row) => {
+              const labeled = columns.filter((c) => c.header);
+              const unlabeled = columns.filter((c) => !c.header);
+              return (
+                <div key={rowKey(row)} className="rounded-2xl border border-harbor/10 bg-white p-4 shadow-sm space-y-2">
+                  {labeled.map((col) => (
+                    <div key={col.key} className="flex items-start justify-between gap-3 text-sm">
+                      <span className="text-rope shrink-0">{col.header}</span>
+                      <span className="text-harbor font-bold text-left min-w-0">
+                        {col.render ? col.render(row) : col.accessor ? String(col.accessor(row)) : ""}
+                      </span>
+                    </div>
+                  ))}
+                  {unlabeled.length > 0 && (
+                    <div className="pt-2 mt-1 border-t border-harbor/10 flex items-center justify-end gap-3">
+                      {unlabeled.map((col) => (
+                        <span key={col.key}>{col.render ? col.render(row) : null}</span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="hidden sm:block overflow-x-auto rounded-2xl border border-harbor/10">
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-harbor/5 border-b border-harbor/10">

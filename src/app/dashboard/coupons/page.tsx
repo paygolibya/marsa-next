@@ -123,7 +123,7 @@ export default function DashboardCouponsPage() {
             ))}
           </div>
         ) : coupons.length === 0 ? (
-          <EmptyState title="لا توجد كوبونات بعد" description="أنشئ أول كوبون من النموذج على اليمين." />
+          <EmptyState title="لا توجد كوبونات بعد" description="استخدم النموذج أعلاه لإنشاء أول كوبون." />
         ) : (
           <ul className="space-y-3">
             {coupons.map((c) => (
