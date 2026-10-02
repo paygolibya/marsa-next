@@ -39,6 +39,7 @@ export default function DashboardOrdersPage() {
   const [refundTarget, setRefundTarget] = useState<Order | null>(null);
   const [refundReason, setRefundReason] = useState("");
   const [refunding, setRefunding] = useState(false);
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!token || !store) return;
@@ -72,6 +73,20 @@ export default function DashboardOrdersPage() {
     }
   }
 
+  async function handleConfirmOrder(order: Order) {
+    if (!token || confirmingId) return;
+    setConfirmingId(order.id);
+    try {
+      await api.confirmOrder(token, order.id);
+      setOrders((prev) => prev?.map((o) => (o.id === order.id ? { ...o, status: "confirmed" } : o)) ?? prev);
+      show("تم تأكيد الطلب", "success");
+    } catch (err) {
+      show(err instanceof ApiError ? err.message : "تعذّر تأكيد الطلب", "error");
+    } finally {
+      setConfirmingId(null);
+    }
+  }
+
   const columns: DataTableColumn<Order>[] = [
     { key: "buyerName", header: "العميل", accessor: (o) => o.buyerName, sortable: true, render: (o) => <span className="font-bold text-harbor">{o.buyerName}</span> },
     { key: "buyerCity", header: "المدينة", accessor: (o) => o.buyerCity },
@@ -100,12 +115,24 @@ export default function DashboardOrdersPage() {
     {
       key: "actions",
       header: "",
-      render: (o) =>
-        o.status === "refunded" ? null : (
-          <button onClick={() => setRefundTarget(o)} className="text-xs font-bold text-signal hover:underline">
-            استرداد
-          </button>
-        ),
+      render: (o) => (
+        <div className="flex items-center gap-3">
+          {o.status === "pending" && (
+            <button
+              onClick={() => handleConfirmOrder(o)}
+              disabled={confirmingId === o.id}
+              className="text-xs font-bold text-harbor hover:underline disabled:opacity-50"
+            >
+              {confirmingId === o.id ? "جارٍ التأكيد..." : "تأكيد الطلب"}
+            </button>
+          )}
+          {o.status !== "refunded" && (
+            <button onClick={() => setRefundTarget(o)} className="text-xs font-bold text-signal hover:underline">
+              استرداد
+            </button>
+          )}
+        </div>
+      ),
     },
   ];
 

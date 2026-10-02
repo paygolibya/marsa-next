@@ -415,6 +415,12 @@ export const api = {
       body: JSON.stringify({ reason }),
     }),
 
+  confirmOrder: (token: string, orderId: string) =>
+    request<{ success: boolean }>(`/api/orders/${orderId}/confirm`, {
+      method: "POST",
+      headers: authHeaders(token),
+    }),
+
   vanexCities: () => request<{ cities: VanexCity[] }>("/api/vanex/cities"),
 
   validateCoupon: (body: { storeSlug: string; code: string; subtotalCents: number }) =>
