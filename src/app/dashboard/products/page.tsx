@@ -20,6 +20,14 @@ export default function DashboardProductsPage() {
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  // Non-null right after a product is created — variants need a real
+  // product id to exist server-side (ProductVariant rows reference
+  // productId), so there's no way to define them before creation. Instead
+  // of making the merchant find the new product in the list and click
+  // "تعديل" separately, the variants manager shows inline here for the
+  // product that was just created, as the natural next step of the same
+  // flow, before the form resets for the next product.
+  const [justCreated, setJustCreated] = useState<Product | null>(null);
 
   function refresh() {
     if (!token || !store) return;
@@ -36,20 +44,25 @@ export default function DashboardProductsPage() {
     try {
       const priceCents = Math.round(parseFloat(price) * 100);
       const created = await api.createProduct(token, { storeId: store.id, name, priceCents, images });
-      if (trackInventory) {
-        await api.updateProduct(token, created.id, { trackInventory: true, stockQty: Number(stockQty) || 0 });
-      }
-      setName("");
-      setPrice("");
-      setImages([]);
-      setTrackInventory(false);
-      setStockQty("");
+      const final = trackInventory
+        ? await api.updateProduct(token, created.id, { trackInventory: true, stockQty: Number(stockQty) || 0 })
+        : created;
+      setJustCreated(final);
       refresh();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "تعذّر إضافة المنتج");
     } finally {
       setSaving(false);
     }
+  }
+
+  function finishAdding() {
+    setJustCreated(null);
+    setName("");
+    setPrice("");
+    setImages([]);
+    setTrackInventory(false);
+    setStockQty("");
   }
 
   async function handleDelete(id: string) {
@@ -64,59 +77,79 @@ export default function DashboardProductsPage() {
     <div className="p-4 sm:p-6 lg:p-10 grid grid-cols-1 lg:grid-cols-[1fr_1.4fr] gap-6 lg:gap-10">
       <div>
         <h1 className="font-display text-2xl font-extrabold text-harbor mb-6">أضف منتجًا</h1>
-        <form onSubmit={handleAdd} className="space-y-4">
-          <label className="block">
-            <span className="block text-sm font-bold text-harbor mb-1.5">اسم المنتج</span>
-            <input required value={name} onChange={(e) => setName(e.target.value)} className="input" />
-          </label>
-          <label className="block">
-            <span className="block text-sm font-bold text-harbor mb-1.5">السعر (د.ل)</span>
-            <input
-              required
-              type="number"
-              step="0.01"
-              min="0.01"
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
-              className="input"
-              dir="ltr"
-            />
-          </label>
-          <ProductGalleryUpload images={images} onChange={setImages} />
 
-          <div className="flex items-center justify-between rounded-xl border border-harbor/15 bg-white px-4 py-3">
-            <span className="font-bold text-harbor text-sm">تتبع المخزون</span>
-            <input
-              type="checkbox"
-              checked={trackInventory}
-              onChange={(e) => setTrackInventory(e.target.checked)}
-              className="h-5 w-5 accent-brass"
+        {justCreated ? (
+          <div className="space-y-4">
+            <p className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+              ✓ تمت إضافة <span className="font-bold">{justCreated.name}</span> — يمكنك الآن إضافة متغيرات (مقاسات، ألوان...) إن أردت، أو المتابعة مباشرة.
+            </p>
+            <ProductVariantsManager
+              productId={justCreated.id}
+              variantOptions={justCreated.variantOptions}
+              variants={justCreated.variants}
+              onUpdate={(variantOptions, variants) =>
+                setJustCreated((prev) => (prev ? { ...prev, variantOptions: variantOptions.length > 0 ? variantOptions : null, variants } : prev))
+              }
             />
+            <Button onClick={finishAdding}>تم — أضف منتجًا آخر</Button>
           </div>
-          {trackInventory && (
-            <label className="block">
-              <span className="block text-sm font-bold text-harbor mb-1.5">الكمية المتوفرة</span>
-              <input
-                type="number"
-                min="0"
-                value={stockQty}
-                onChange={(e) => setStockQty(e.target.value)}
-                className="input"
-                dir="ltr"
-              />
-            </label>
-          )}
+        ) : (
+          <>
+            <form onSubmit={handleAdd} className="space-y-4">
+              <label className="block">
+                <span className="block text-sm font-bold text-harbor mb-1.5">اسم المنتج</span>
+                <input required value={name} onChange={(e) => setName(e.target.value)} className="input" />
+              </label>
+              <label className="block">
+                <span className="block text-sm font-bold text-harbor mb-1.5">السعر (د.ل)</span>
+                <input
+                  required
+                  type="number"
+                  step="0.01"
+                  min="0.01"
+                  value={price}
+                  onChange={(e) => setPrice(e.target.value)}
+                  className="input"
+                  dir="ltr"
+                />
+              </label>
+              <ProductGalleryUpload images={images} onChange={setImages} />
 
-          <p className="text-xs text-rope">يمكنك إضافة متغيرات (مقاسات، ألوان...) بعد إنشاء المنتج من زر "تعديل".</p>
+              <div className="flex items-center justify-between rounded-xl border border-harbor/15 bg-white px-4 py-3">
+                <span className="font-bold text-harbor text-sm">تتبع المخزون</span>
+                <input
+                  type="checkbox"
+                  checked={trackInventory}
+                  onChange={(e) => setTrackInventory(e.target.checked)}
+                  className="h-5 w-5 accent-brass"
+                />
+              </div>
+              {trackInventory && (
+                <label className="block">
+                  <span className="block text-sm font-bold text-harbor mb-1.5">الكمية المتوفرة</span>
+                  <input
+                    type="number"
+                    min="0"
+                    value={stockQty}
+                    onChange={(e) => setStockQty(e.target.value)}
+                    className="input"
+                    dir="ltr"
+                  />
+                </label>
+              )}
 
-          {error && <p className="text-signal text-sm">{error}</p>}
+              <p className="text-xs text-rope">يمكنك إضافة متغيرات (مقاسات، ألوان...) في الخطوة التالية بعد الإضافة.</p>
 
-          <Button type="submit" loading={saving} loadingText="جارٍ الإضافة...">
-            إضافة المنتج
-          </Button>
-        </form>
+              {error && <p className="text-signal text-sm">{error}</p>}
 
-        <CsvImport token={token} storeId={store.id} onImported={refresh} />
+              <Button type="submit" loading={saving} loadingText="جارٍ الإضافة...">
+                إضافة المنتج
+              </Button>
+            </form>
+
+            <CsvImport token={token} storeId={store.id} onImported={refresh} />
+          </>
+        )}
       </div>
 
       <div>
