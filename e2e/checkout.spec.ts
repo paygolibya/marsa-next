@@ -64,7 +64,10 @@ test("a buyer can browse the storefront, add a product to the cart, and complete
   // chain (form -> API -> DB write -> redirect with real query params)
   // actually worked.
   await expect(page).toHaveURL(/\/confirmation/, { timeout: 15000 });
-  await expect(page.getByText("تم تأكيد طلبك")).toBeVisible();
+  // getByText would also match Next.js's own accessibility route-announcer
+  // div (which echoes the new page's heading after a client-side
+  // navigation) — getByRole("heading") targets only the real page content.
+  await expect(page.getByRole("heading", { name: "تم تأكيد طلبك" })).toBeVisible();
   await expect(page.getByText("رقم الطلب")).toBeVisible();
 });
 
