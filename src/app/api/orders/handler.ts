@@ -66,6 +66,7 @@ export type OrdersDb = {
       courier: string;
       codEnabled: boolean;
       walletProvider: string | null;
+      isDigital: boolean;
       merchant: { phone: string } & Record<string, unknown>;
     } | null>;
   };
@@ -280,6 +281,25 @@ export async function handleCreateOrder(deps: OrdersDeps, req: Request): Promise
         { orderId: order.id, totalCents, shippingCents, discountCents, paymentStatus: "pending", moamalat: lightbox, moamalatScriptUrl: getLightboxScriptUrl() },
         { status: 201 }
       );
+    }
+
+    // Digital-goods stores (confirmed live: a real merchant selling
+    // Snapchat filters) have no physical delivery at all — there's no
+    // courier to dispatch to, so the order is confirmed immediately
+    // instead of waiting on a shipment step that would never happen.
+    if (store.isDigital) {
+      await db.order.update({ where: { id: order.id }, data: { status: "confirmed" } });
+
+      await deps.sendOrderConfirmationEmail({
+        id: order.id,
+        buyerName: order.buyerName,
+        buyerEmail: order.buyerEmail,
+        totalCents,
+        storeSlug: store.slug,
+      });
+      await deps.sendNewOrderSms(store.merchant.phone, order.id, order.buyerName);
+
+      return NextResponse.json({ orderId: order.id, totalCents, shippingCents, discountCents, paymentStatus: "pending" }, { status: 201 });
     }
 
     const shipment = await deps.createShipment(store.courier, {

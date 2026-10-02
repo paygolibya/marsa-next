@@ -82,6 +82,7 @@ export type Store = {
   theme: string;
   courier: string;
   codEnabled: boolean;
+  isDigital: boolean;
   walletProvider: string | null;
   currency: string;
   createdAt: string;

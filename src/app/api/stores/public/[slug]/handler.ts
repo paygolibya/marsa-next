@@ -8,6 +8,7 @@ type StoredSection = { id: string; type: string; position: number; enabled: bool
 type StoreRow = {
   id: string;
   courier: string;
+  isDigital: boolean;
   customization: {
     sectionOrder?: unknown;
     showSocialProof?: boolean | null;

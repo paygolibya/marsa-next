@@ -66,7 +66,7 @@ export default function CheckoutPage() {
   const [couponMessage, setCouponMessage] = useState<string | null>(null);
   const [couponChecking, setCouponChecking] = useState(false);
 
-  const usesVanexPricing = store?.courier === "vanex";
+  const usesVanexPricing = store?.courier === "vanex" && !store?.isDigital;
   const [vanexCities, setVanexCities] = useState<VanexCity[]>([]);
   const [vanexCityId, setVanexCityId] = useState("");
   const [vanexAreaId, setVanexAreaId] = useState("");
@@ -304,13 +304,15 @@ export default function CheckoutPage() {
               />
             </label>
   
-            <div>
-              <span className="block text-sm font-bold text-harbor mb-1.5">شركة الشحن</span>
-              <p className="rounded-xl border border-harbor/15 bg-canvas px-4 py-3 text-sm text-rope">
-                {courierLabels[store.courier] ?? store.courier}
-              </p>
-            </div>
-  
+            {!store.isDigital && (
+              <div>
+                <span className="block text-sm font-bold text-harbor mb-1.5">شركة الشحن</span>
+                <p className="rounded-xl border border-harbor/15 bg-canvas px-4 py-3 text-sm text-rope">
+                  {courierLabels[store.courier] ?? store.courier}
+                </p>
+              </div>
+            )}
+
             <div>
               <span className="block text-sm font-bold text-harbor mb-2">طريقة الدفع</span>
               <div className="space-y-2">

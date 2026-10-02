@@ -34,7 +34,7 @@ export async function finalizeWalletOrder(orderId: string, outcome: "paid" | "fa
     where: { id: orderId },
     include: {
       items: { select: { quantity: true } },
-      store: { select: { slug: true, courier: true, merchant: { select: { phone: true } } } },
+      store: { select: { slug: true, courier: true, isDigital: true, merchant: { select: { phone: true } } } },
       vanexArea: { select: { vanexId: true, city: { select: { vanexId: true } } } },
     },
   });
@@ -44,6 +44,21 @@ export async function finalizeWalletOrder(orderId: string, outcome: "paid" | "fa
   // already-recorded payment — a courier or SMS/email outage must never
   // make it look like the payment itself failed.
   try {
+    // Digital-goods stores have no physical delivery — see the matching
+    // comment in orders/handler.ts's COD path.
+    if (order.store.isDigital) {
+      await prisma.order.update({ where: { id: order.id }, data: { status: "confirmed" } });
+      await sendOrderConfirmationEmail({
+        id: order.id,
+        buyerName: order.buyerName,
+        buyerEmail: order.buyerEmail,
+        totalCents: order.totalCents,
+        storeSlug: order.store.slug,
+      });
+      await sendNewOrderSms(order.store.merchant.phone, order.id, order.buyerName);
+      return { updated: true };
+    }
+
     const shipment = await createShipment(order.store.courier, {
       id: order.id,
       buyer: { name: order.buyerName, phone: order.buyerPhone, city: order.buyerCity, address: order.buyerAddress },

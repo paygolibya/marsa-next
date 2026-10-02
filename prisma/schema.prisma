@@ -319,6 +319,15 @@ model Store {
   theme          String   @default("souk")
   courier        String   @default("vanex") // 'vanex' — Sabil/Shaheen removed, no real integration yet
   codEnabled     Boolean  @default(true) @map("cod_enabled")
+  // Digital-goods store (no physical delivery) — found live: a real
+  // merchant selling Snapchat filters had no use for Vanex at all, and
+  // wanted every order auto-confirmed instead of waiting on a courier
+  // step that will never happen. When true: checkout skips Vanex
+  // city/area selection and shipping cost entirely, and order creation
+  // skips courier dispatch and marks the order confirmed immediately
+  // (see src/app/api/orders/handler.ts and
+  // src/lib/payment/moamalat-order.ts).
+  isDigital      Boolean  @default(false) @map("is_digital")
   walletProvider String?  @map("wallet_provider") // e.g. 'anis' (DPay aggregator merchant)
   currency       String   @default("LYD")
   templateId     String?  @map("template_id")

@@ -7,12 +7,13 @@ process.env.MOAMALAT_MERCHANT_ID = "TESTMID";
 process.env.MOAMALAT_TERMINAL_ID = "TESTTID";
 process.env.MOAMALAT_SECRET_KEY = crypto.randomBytes(16).toString("hex");
 
-const STORE: { id: string; slug: string; courier: string; codEnabled: boolean; walletProvider: string | null; merchant: { phone: string } & Record<string, unknown> } = {
+const STORE: { id: string; slug: string; courier: string; codEnabled: boolean; walletProvider: string | null; isDigital: boolean; merchant: { phone: string } & Record<string, unknown> } = {
   id: "store-1",
   slug: "test-store",
   courier: "vanex",
   codEnabled: true,
   walletProvider: "anis",
+  isDigital: false,
   merchant: { phone: "0900000000", subscriptionTier: "advanced" },
 };
 
@@ -212,6 +213,24 @@ test("COD order: dispatches a real shipment, updates the order with the tracking
   assert.equal(calls.shipment.courier, "vanex");
   assert.equal(calls.orderUpdate.data.courierTrackingId, "TRK-TEST-1");
   assert.equal(calls.orderUpdate.data.status, "confirmed");
+  assert.ok(calls.email);
+  assert.ok(calls.sms);
+});
+
+// The actual feature this covers: a real merchant selling digital goods
+// (Snapchat filters) has no physical delivery at all — no courier to
+// dispatch to, so the order confirms immediately instead of waiting on
+// a shipment step that would never happen.
+test("COD order on a digital store: confirms immediately without dispatching a shipment, still notifies buyer+merchant", async () => {
+  const { deps, calls } = makeFakeDeps({ store: { ...STORE, isDigital: true } });
+  const res = await handleCreateOrder(deps, req(baseBody()));
+  const body = await res.json();
+  assert.equal(res.status, 201);
+  assert.equal(body.trackingId, undefined);
+  assert.equal(body.courier, undefined);
+  assert.equal(calls.shipment, undefined, "must never call createShipment for a digital store");
+  assert.equal(calls.orderUpdate.data.status, "confirmed");
+  assert.equal(calls.orderUpdate.data.courierTrackingId, undefined);
   assert.ok(calls.email);
   assert.ok(calls.sms);
 });
