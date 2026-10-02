@@ -63,6 +63,13 @@ export default function DashboardProductsPage() {
     setImages([]);
     setTrackInventory(false);
     setStockQty("");
+    // Variants added in the inline step above only ever updated local
+    // justCreated state, never the main products list — confirmed live:
+    // the list kept showing "0 variants" after finishing until something
+    // else happened to refetch it. The initial refresh() right after
+    // creation (in handleAdd) ran before any variants existed yet, so it
+    // can't substitute for this one.
+    refresh();
   }
 
   async function handleDelete(id: string) {
