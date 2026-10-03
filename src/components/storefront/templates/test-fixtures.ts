@@ -40,7 +40,7 @@ export function makeTestStore(customizationOverrides: Partial<StoreCustomization
     theme: "souk",
     courier: "vanex",
     codEnabled: true,
-    isDigital: false,
+    type: "physical",
     walletProvider: null,
     currency: "LYD",
     createdAt: new Date().toISOString(),

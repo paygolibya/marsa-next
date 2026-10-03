@@ -34,7 +34,7 @@ export async function finalizeWalletOrder(orderId: string, outcome: "paid" | "fa
     where: { id: orderId },
     include: {
       items: { select: { quantity: true } },
-      store: { select: { slug: true, courier: true, isDigital: true, merchant: { select: { phone: true } } } },
+      store: { select: { slug: true, courier: true, type: true, merchant: { select: { phone: true } } } },
       vanexArea: { select: { vanexId: true, city: { select: { vanexId: true } } } },
     },
   });
@@ -46,7 +46,7 @@ export async function finalizeWalletOrder(orderId: string, outcome: "paid" | "fa
   try {
     // Digital-goods stores have no physical delivery — see the matching
     // comment in orders/handler.ts's COD path.
-    if (order.store.isDigital) {
+    if (order.store.type === "digital") {
       await prisma.order.update({ where: { id: order.id }, data: { status: "confirmed" } });
       await sendOrderConfirmationEmail({
         id: order.id,

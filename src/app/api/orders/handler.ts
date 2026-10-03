@@ -66,7 +66,7 @@ export type OrdersDb = {
       courier: string;
       codEnabled: boolean;
       walletProvider: string | null;
-      isDigital: boolean;
+      type: string;
       merchant: { phone: string } & Record<string, unknown>;
     } | null>;
   };
@@ -287,7 +287,7 @@ export async function handleCreateOrder(deps: OrdersDeps, req: Request): Promise
     // Snapchat filters) have no physical delivery at all — there's no
     // courier to dispatch to, so the order is confirmed immediately
     // instead of waiting on a shipment step that would never happen.
-    if (store.isDigital) {
+    if (store.type === "digital") {
       await db.order.update({ where: { id: order.id }, data: { status: "confirmed" } });
 
       await deps.sendOrderConfirmationEmail({

@@ -74,6 +74,8 @@ export type StoreCustomization = {
 };
 export type StoreStats = { deliveredOrderCount: number; averageRating: number | null; reviewCount: number };
 export type StoreTestimonial = { buyerName: string; rating: number; reviewText: string | null; productName: string };
+export type StoreType = "physical" | "digital" | "booking" | "rental" | "showcase";
+
 export type Store = {
   id: string;
   merchantId: string;
@@ -82,7 +84,7 @@ export type Store = {
   theme: string;
   courier: string;
   codEnabled: boolean;
-  isDigital: boolean;
+  type: StoreType;
   walletProvider: string | null;
   currency: string;
   createdAt: string;

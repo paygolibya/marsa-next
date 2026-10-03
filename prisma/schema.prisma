@@ -319,15 +319,22 @@ model Store {
   theme          String   @default("souk")
   courier        String   @default("vanex") // 'vanex' — Sabil/Shaheen removed, no real integration yet
   codEnabled     Boolean  @default(true) @map("cod_enabled")
-  // Digital-goods store (no physical delivery) — found live: a real
-  // merchant selling Snapchat filters had no use for Vanex at all, and
-  // wanted every order auto-confirmed instead of waiting on a courier
-  // step that will never happen. When true: checkout skips Vanex
-  // city/area selection and shipping cost entirely, and order creation
-  // skips courier dispatch and marks the order confirmed immediately
-  // (see src/app/api/orders/handler.ts and
-  // src/lib/payment/moamalat-order.ts).
-  isDigital      Boolean  @default(false) @map("is_digital")
+  // What kind of store this is — started as a single isDigital boolean
+  // (one real merchant selling Snapchat filters: no physical delivery, so
+  // skip Vanex and auto-confirm every order instead of waiting on a
+  // courier step that will never happen) and generalized from there:
+  //   physical — default; ships via Vanex, courier dispatch on order.
+  //   digital  — no delivery at all; same auto-confirm behavior as before.
+  //   booking  — appointment slot instead of an address; see
+  //              bookingSlotMinutes/bookingWorkingHours below and
+  //              Order.scheduledStartAt/scheduledEndAt.
+  //   rental   — a date range instead of an address; priceCents on the
+  //              product IS the daily rate, total = rate * days * qty.
+  //   showcase — catalog only, no checkout at all; buyers send an Inquiry
+  //              (see the Inquiry model) instead of placing an order.
+  // Read everywhere order creation/checkout branches on store kind — see
+  // src/app/api/orders/handler.ts and src/lib/payment/moamalat-order.ts.
+  type           String   @default("physical")
   walletProvider String?  @map("wallet_provider") // e.g. 'anis' (DPay aggregator merchant)
   currency       String   @default("LYD")
   templateId     String?  @map("template_id")
@@ -515,6 +522,18 @@ model Order {
   // this Order's own id, so no separate correlation column is needed.
   moamalatSystemReference  String? @map("moamalat_system_reference")
   moamalatNetworkReference String? @map("moamalat_network_reference")
+
+  // A booking appointment slot (store.type "booking") or a rental period
+  // (store.type "rental") — one pair of columns, two meanings, set only
+  // for those two store types. For booking, a partial unique index on
+  // (storeId, scheduledStartAt) — added in a later migration, see that
+  // migration's own comment, since Prisma's schema language can't express
+  // a partial WHERE — prevents double-booking the same slot atomically at
+  // the DB level, the same way the existing stock-decrement guard prevents
+  // overselling. Never trust a client-sent scheduledEndAt; it's always
+  // recomputed server-side from scheduledStartAt + Store.bookingSlotMinutes.
+  scheduledStartAt DateTime? @map("scheduled_start_at")
+  scheduledEndAt   DateTime? @map("scheduled_end_at")
 
   // Automatic payout tracking — set the moment the real-time trigger (or
   // its daily-cron backstop) calculates this order's commission. Denormalized

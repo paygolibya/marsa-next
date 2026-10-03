@@ -22,7 +22,7 @@ function baseStore(overrides: Partial<{ customization: any; sections: any[] }> =
     id: "store-1",
     name: "متجري",
     courier: "vanex",
-    isDigital: false,
+    type: "physical",
     customization: { sectionOrder: null, showSocialProof: true, showTestimonials: false, showNewsletter: true },
     merchant: fullMerchant,
     sections: [],

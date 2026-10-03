@@ -7,13 +7,13 @@ process.env.MOAMALAT_MERCHANT_ID = "TESTMID";
 process.env.MOAMALAT_TERMINAL_ID = "TESTTID";
 process.env.MOAMALAT_SECRET_KEY = crypto.randomBytes(16).toString("hex");
 
-const STORE: { id: string; slug: string; courier: string; codEnabled: boolean; walletProvider: string | null; isDigital: boolean; merchant: { phone: string } & Record<string, unknown> } = {
+const STORE: { id: string; slug: string; courier: string; codEnabled: boolean; walletProvider: string | null; type: string; merchant: { phone: string } & Record<string, unknown> } = {
   id: "store-1",
   slug: "test-store",
   courier: "vanex",
   codEnabled: true,
   walletProvider: "anis",
-  isDigital: false,
+  type: "physical",
   merchant: { phone: "0900000000", subscriptionTier: "advanced" },
 };
 
@@ -222,7 +222,7 @@ test("COD order: dispatches a real shipment, updates the order with the tracking
 // dispatch to, so the order confirms immediately instead of waiting on
 // a shipment step that would never happen.
 test("COD order on a digital store: confirms immediately without dispatching a shipment, still notifies buyer+merchant", async () => {
-  const { deps, calls } = makeFakeDeps({ store: { ...STORE, isDigital: true } });
+  const { deps, calls } = makeFakeDeps({ store: { ...STORE, type: "digital" } });
   const res = await handleCreateOrder(deps, req(baseBody()));
   const body = await res.json();
   assert.equal(res.status, 201);

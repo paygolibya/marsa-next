@@ -24,7 +24,7 @@ export type ConfirmDb = {
 // Lets a merchant manually move an order out of "pending" — needed because
 // automatic confirmation only happens via courier dispatch (physical-goods
 // stores) or a payment webhook (wallet orders); a digital-goods order placed
-// before Store.isDigital existed, or any order whose automatic path simply
+// before Store.type "digital" existed, or any order whose automatic path simply
 // failed, would otherwise be stuck pending forever with no way forward.
 export async function handleConfirmOrder(db: ConfirmDb, req: Request, orderId: string): Promise<Response> {
   const merchantId = getAuthMerchantId(req);
