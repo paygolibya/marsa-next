@@ -1,6 +1,8 @@
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { formatLYD } from "@/lib/api";
+import { formatLYD, type Product } from "@/lib/api";
+import { InquiryModal } from "@/components/storefront/InquiryModal";
 import { safeParseSettings, productsSettingsSchema } from "./schemas";
 import type { SectionRenderProps } from "./types";
 
@@ -17,6 +19,18 @@ export function ProductsSection({
 }: SectionRenderProps) {
   const settings = safeParseSettings(productsSettingsSchema, rawSettings);
   const slug = store.slug;
+  const isShowcase = store.type === "showcase";
+  const [inquiryProduct, setInquiryProduct] = useState<Product | null>(null);
+
+  const inquiryModal = (
+    <InquiryModal
+      open={inquiryProduct !== null}
+      onClose={() => setInquiryProduct(null)}
+      storeSlug={slug}
+      productId={inquiryProduct?.id}
+      productName={inquiryProduct?.name}
+    />
+  );
 
   const empty = <p className="text-rope text-center py-16">لا توجد منتجات مطابقة حاليًا.</p>;
 
@@ -54,7 +68,15 @@ export function ProductsSection({
                   <p className="font-extrabold text-xl mt-2" style={{ color: colors.accent }}>
                     {formatLYD(product.priceCents)}{store.type === "rental" && " / يوم"}
                   </p>
-                  {product.variantOptions?.length ? (
+                  {isShowcase ? (
+                    <button
+                      onClick={() => setInquiryProduct(product)}
+                      style={{ backgroundColor: colors.primary }}
+                      className="mt-4 rounded-xl text-white py-3 font-extrabold shadow-lg hover:opacity-90 transition-opacity"
+                    >
+                      استفسر
+                    </button>
+                  ) : product.variantOptions?.length ? (
                     <Link
                       href={`/store/${slug}/product/${product.id}`}
                       style={{ backgroundColor: colors.primary }}
@@ -76,6 +98,7 @@ export function ProductsSection({
             ))}
           </div>
         )}
+        {inquiryModal}
       </div>
     );
   }
@@ -117,7 +140,15 @@ export function ProductsSection({
                   <p className="mt-1 font-bold tracking-wide" style={{ color: colors.accent }}>
                     {formatLYD(product.priceCents)}{store.type === "rental" && " / يوم"}
                   </p>
-                  {product.variantOptions?.length ? (
+                  {isShowcase ? (
+                    <button
+                      onClick={() => setInquiryProduct(product)}
+                      className="mt-3 rounded-full border px-6 py-2 text-xs font-bold tracking-widest hover:bg-white/5 transition-colors"
+                      style={{ borderColor: colors.accent, color: colors.accent }}
+                    >
+                      استفسر
+                    </button>
+                  ) : product.variantOptions?.length ? (
                     <Link
                       href={`/store/${slug}/product/${product.id}`}
                       className="mt-3 inline-block rounded-full border px-6 py-2 text-xs font-bold tracking-widest hover:bg-white/5 transition-colors"
@@ -139,6 +170,7 @@ export function ProductsSection({
             ))}
           </div>
         )}
+        {inquiryModal}
       </div>
     );
   }
@@ -172,7 +204,15 @@ export function ProductsSection({
                   <p className="font-extrabold text-sm mt-1" style={{ color: colors.primary }}>
                     {formatLYD(product.priceCents)}{store.type === "rental" && " / يوم"}
                   </p>
-                  {product.variantOptions?.length ? (
+                  {isShowcase ? (
+                    <button
+                      onClick={() => setInquiryProduct(product)}
+                      style={{ backgroundColor: colors.primary }}
+                      className="mt-2 rounded text-white py-1.5 text-xs font-bold hover:opacity-90 transition-opacity"
+                    >
+                      استفسر
+                    </button>
+                  ) : product.variantOptions?.length ? (
                     <Link
                       href={`/store/${slug}/product/${product.id}`}
                       style={{ backgroundColor: colors.primary }}
@@ -194,6 +234,7 @@ export function ProductsSection({
             ))}
           </div>
         )}
+        {inquiryModal}
       </div>
     );
   }
@@ -223,7 +264,15 @@ export function ProductsSection({
                 <p className="font-bold mt-1" style={{ color: colors.primary }}>
                   {formatLYD(product.priceCents)}{store.type === "rental" && " / يوم"}
                 </p>
-                {product.variantOptions?.length ? (
+                {isShowcase ? (
+                  <button
+                    onClick={() => setInquiryProduct(product)}
+                    style={{ backgroundColor: colors.primary }}
+                    className="mt-4 rounded-full text-white py-2 font-bold text-sm hover:opacity-90 transition-opacity"
+                  >
+                    استفسر
+                  </button>
+                ) : product.variantOptions?.length ? (
                   <Link
                     href={`/store/${slug}/product/${product.id}`}
                     style={{ backgroundColor: colors.primary }}
@@ -245,6 +294,7 @@ export function ProductsSection({
           ))}
         </div>
       )}
+      {inquiryModal}
     </div>
   );
 }

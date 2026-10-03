@@ -102,18 +102,20 @@ export default function BoldTemplate({
             )
           }
           cartButton={
-            <button
-              onClick={onOpenCart}
-              style={{ backgroundColor: primary }}
-              className="relative rounded-xl px-5 py-2 text-white font-extrabold text-sm shadow-lg hover:opacity-90 transition-opacity"
-            >
-              🛒 السلة
-              {cartTotalItems > 0 && (
-                <span className="absolute -top-2 -left-2 h-5 w-5 rounded-full bg-harbor text-[11px] font-bold flex items-center justify-center text-white">
-                  {cartTotalItems}
-                </span>
-              )}
-            </button>
+            store.type === "showcase" ? null : (
+              <button
+                onClick={onOpenCart}
+                style={{ backgroundColor: primary }}
+                className="relative rounded-xl px-5 py-2 text-white font-extrabold text-sm shadow-lg hover:opacity-90 transition-opacity"
+              >
+                🛒 السلة
+                {cartTotalItems > 0 && (
+                  <span className="absolute -top-2 -left-2 h-5 w-5 rounded-full bg-harbor text-[11px] font-bold flex items-center justify-center text-white">
+                    {cartTotalItems}
+                  </span>
+                )}
+              </button>
+            )
           }
         />
       </div>

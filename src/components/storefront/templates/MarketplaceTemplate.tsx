@@ -108,18 +108,20 @@ export default function MarketplaceTemplate({
             placeholder="ابحث في المتجر..."
             className="input flex-1 min-w-0 !py-2"
           />
-          <button
-            onClick={onOpenCart}
-            style={{ backgroundColor: primary }}
-            className="relative rounded-lg px-3 sm:px-4 py-2 text-white font-bold text-sm shrink-0 hover:opacity-90 transition-opacity"
-          >
-            السلة
-            {cartTotalItems > 0 && (
-              <span className="absolute -top-2 -left-2 h-5 w-5 rounded-full bg-signal text-[11px] flex items-center justify-center text-white">
-                {cartTotalItems}
-              </span>
-            )}
-          </button>
+          {store.type !== "showcase" && (
+            <button
+              onClick={onOpenCart}
+              style={{ backgroundColor: primary }}
+              className="relative rounded-lg px-3 sm:px-4 py-2 text-white font-bold text-sm shrink-0 hover:opacity-90 transition-opacity"
+            >
+              السلة
+              {cartTotalItems > 0 && (
+                <span className="absolute -top-2 -left-2 h-5 w-5 rounded-full bg-signal text-[11px] flex items-center justify-center text-white">
+                  {cartTotalItems}
+                </span>
+              )}
+            </button>
+          )}
         </div>
         <div className="mx-auto max-w-7xl px-4 pb-3 flex items-center gap-2 text-xs">
           <span className="rounded-full px-3 py-1 font-bold text-white" style={{ backgroundColor: accent }}>

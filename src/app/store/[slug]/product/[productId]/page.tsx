@@ -8,6 +8,7 @@ import { api, ApiError, formatLYD, type Product, type ProductReview, type Store 
 import { useCart } from "@/lib/use-cart";
 import { CartDrawer } from "@/components/cart-drawer";
 import { SiteFooter } from "@/components/site-footer";
+import { InquiryModal } from "@/components/storefront/InquiryModal";
 
 export default function ProductDetailPage() {
   const params = useParams<{ slug: string; productId: string }>();
@@ -22,6 +23,7 @@ export default function ProductDetailPage() {
   const [average, setAverage] = useState(0);
   const [activeImage, setActiveImage] = useState(0);
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({});
+  const [inquiryOpen, setInquiryOpen] = useState(false);
 
   const cart = useCart(slug);
 
@@ -168,7 +170,15 @@ export default function ProductDetailPage() {
               </div>
             ))}
 
-            {outOfStock ? (
+            {store.type === "showcase" ? (
+              <button
+                onClick={() => setInquiryOpen(true)}
+                style={{ backgroundColor: primary }}
+                className="mt-6 rounded-full text-white py-3 px-8 font-bold hover:opacity-90 transition-opacity"
+              >
+                استفسر عن هذا المنتج
+              </button>
+            ) : outOfStock ? (
               <p className="mt-6 text-signal font-bold">{hasVariants && !selectedVariant ? "هذا الخيار غير متوفر" : "نفدت الكمية"}</p>
             ) : (
               <button
@@ -198,6 +208,8 @@ export default function ProductDetailPage() {
             : undefined
         }
       />
+
+      <InquiryModal open={inquiryOpen} onClose={() => setInquiryOpen(false)} storeSlug={slug} productId={product.id} productName={product.name} />
 
       <CartDrawer
         open={cartOpen}

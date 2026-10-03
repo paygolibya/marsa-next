@@ -99,21 +99,23 @@ export default function LuxuryTemplate({
             </h1>
           )}
           {store.customization?.tagline && <p className="text-white/60 text-sm tracking-wide">{store.customization.tagline}</p>}
-          <button
-            onClick={onOpenCart}
-            className="relative mt-2 rounded-full border px-6 py-2 text-sm font-bold tracking-wide hover:bg-white/5 transition-colors"
-            style={{ borderColor: gold, color: gold }}
-          >
-            سلة التسوق
-            {cartTotalItems > 0 && (
-              <span
-                className="absolute -top-2 -left-2 h-5 w-5 rounded-full text-[11px] font-bold flex items-center justify-center"
-                style={{ backgroundColor: gold, color: dark }}
-              >
-                {cartTotalItems}
-              </span>
-            )}
-          </button>
+          {store.type !== "showcase" && (
+            <button
+              onClick={onOpenCart}
+              className="relative mt-2 rounded-full border px-6 py-2 text-sm font-bold tracking-wide hover:bg-white/5 transition-colors"
+              style={{ borderColor: gold, color: gold }}
+            >
+              سلة التسوق
+              {cartTotalItems > 0 && (
+                <span
+                  className="absolute -top-2 -left-2 h-5 w-5 rounded-full text-[11px] font-bold flex items-center justify-center"
+                  style={{ backgroundColor: gold, color: dark }}
+                >
+                  {cartTotalItems}
+                </span>
+              )}
+            </button>
+          )}
         </div>
       </header>
 

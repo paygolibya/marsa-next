@@ -100,17 +100,19 @@ export default function ModernTemplate({
             )
           }
           cartButton={
-            <button
-              onClick={onOpenCart}
-              className="rounded-full bg-white/15 px-5 py-2 text-white font-bold text-sm hover:bg-white/25 transition-colors relative"
-            >
-              سلة التسوق
-              {cartTotalItems > 0 && (
-                <span className="absolute -top-2 -left-2 h-5 w-5 rounded-full bg-signal text-[11px] flex items-center justify-center text-white">
-                  {cartTotalItems}
-                </span>
-              )}
-            </button>
+            store.type === "showcase" ? null : (
+              <button
+                onClick={onOpenCart}
+                className="rounded-full bg-white/15 px-5 py-2 text-white font-bold text-sm hover:bg-white/25 transition-colors relative"
+              >
+                سلة التسوق
+                {cartTotalItems > 0 && (
+                  <span className="absolute -top-2 -left-2 h-5 w-5 rounded-full bg-signal text-[11px] flex items-center justify-center text-white">
+                    {cartTotalItems}
+                  </span>
+                )}
+              </button>
+            )
           }
         />
       </header>

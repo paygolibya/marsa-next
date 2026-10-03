@@ -158,6 +158,21 @@ export async function sendNewOrderSms(merchantPhone: string, orderId: string, bu
   return sendTemplateSms(templateId, merchantPhone, [orderId, buyerName]);
 }
 
+// Showcase stores (store.type === "showcase") have no order/payment at
+// all — a buyer interested in a product sends an Inquiry instead, and
+// this is how the merchant finds out. Merchants have no email on file
+// (Merchant has no email column), so SMS is the only notification
+// channel here, same template-id-driven convention as sendNewOrderSms.
+export async function sendNewInquirySms(merchantPhone: string, buyerName: string, buyerPhone: string): Promise<SendSmsResult> {
+  const templateId = process.env.RESALA_TEMPLATE_NEW_INQUIRY_ID;
+  if (!templateId) {
+    console.log(`[sms mock, no template configured] new inquiry to=${merchantPhone} from=${buyerName} (${buyerPhone})`);
+    return { success: true };
+  }
+  // Convention assumed for this template: $1 = buyer name, $2 = buyer phone.
+  return sendTemplateSms(templateId, merchantPhone, [buyerName, buyerPhone]);
+}
+
 const SHIPMENT_STATUS_MESSAGES: Record<string, string> = {
   accepted: "طلبك في الطريق إلى مركز الشحن!",
   delivered: "تم التسليم بنجاح! شكراً لاستخدامك رفقة",

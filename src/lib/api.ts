@@ -156,6 +156,16 @@ export type Order = {
   scheduledEndAt: string | null;
   items?: OrderItem[];
 };
+export type Inquiry = {
+  id: string;
+  productId: string | null;
+  buyerName: string;
+  buyerPhone: string;
+  message: string;
+  handled: boolean;
+  createdAt: string;
+  product: { name: string } | null;
+};
 export type VanexArea = { id: string; name: string; priceCents: number };
 export type VanexCity = { id: string; name: string; priceCents: number; areas: VanexArea[] };
 export type Coupon = {
@@ -426,6 +436,15 @@ export const api = {
       method: "POST",
       headers: authHeaders(token),
     }),
+
+  createInquiry: (body: { storeSlug: string; productId?: string; buyerName: string; buyerPhone: string; message: string }) =>
+    request<{ id: string }>("/api/inquiries", { method: "POST", body: JSON.stringify(body) }),
+
+  inquiriesByStore: (token: string, storeId: string) =>
+    request<Inquiry[]>(`/api/inquiries/by-store/${storeId}`, { headers: authHeaders(token) }),
+
+  markInquiryHandled: (token: string, inquiryId: string) =>
+    request<{ success: boolean }>(`/api/inquiries/${inquiryId}`, { method: "PATCH", headers: authHeaders(token) }),
 
   vanexCities: () => request<{ cities: VanexCity[] }>("/api/vanex/cities"),
 

@@ -361,6 +361,7 @@ model Store {
   coupons        Coupon[]
   newsletterSubscribers NewsletterSubscriber[]
   sections       StoreSection[]
+  inquiries      Inquiry[]
 
   @@map("stores")
 }
@@ -454,6 +455,7 @@ model Product {
   orderItems OrderItem[]
   reviews    ProductReview[]
   variants   ProductVariant[]
+  inquiries  Inquiry[]
 
   // Postgres doesn't auto-index foreign-key scalar columns (unlike MySQL) —
   // every merchant-facing product list filters by storeId, so without this
@@ -479,6 +481,30 @@ model ProductVariant {
   orderItems OrderItem[]
 
   @@map("product_variants")
+}
+
+// A showcase store (store.type === "showcase", e.g. a car exhibition) has
+// no checkout at all — no price-based purchase, no payment, no stock
+// decrement. A buyer who wants a product sends an Inquiry instead; the
+// merchant follows up with them directly (phone call, in person), outside
+// this system. productId is nullable (not every inquiry has to reference
+// a specific product, and a referenced product can later be deleted
+// without losing the inquiry's own record).
+model Inquiry {
+  id         String   @id @default(cuid())
+  storeId    String   @map("store_id")
+  productId  String?  @map("product_id")
+  buyerName  String   @map("buyer_name")
+  buyerPhone String   @map("buyer_phone")
+  message    String
+  handled    Boolean  @default(false)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  store   Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  product Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  @@index([storeId, createdAt])
+  @@map("inquiries")
 }
 
 model Order {

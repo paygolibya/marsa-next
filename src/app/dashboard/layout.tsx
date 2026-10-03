@@ -12,16 +12,24 @@ import ThemeToggle from "@/components/layout/ThemeToggle";
 import { ToastProvider } from "@/components/ui";
 import { SupportChatWidget } from "@/components/support/SupportChatWidget";
 
-const navItems = [
-  { href: "/dashboard", label: "نظرة عامة", icon: "📊" },
-  { href: "/dashboard/products", label: "المنتجات", icon: "📦" },
-  { href: "/dashboard/orders", label: "الطلبات", icon: "🧾" },
-  { href: "/dashboard/design", label: "تصميم المتجر", icon: "🎨" },
-  { href: "/dashboard/payouts", label: "المستحقات المالية", icon: "💰" },
-  { href: "/dashboard/coupons", label: "كوبونات الخصم", icon: "🏷️" },
-  { href: "/dashboard/analytics", label: "التحليلات", icon: "📈" },
-  { href: "/dashboard/settings", label: "إعدادات المتجر", icon: "⚙️" },
-];
+// Showcase stores never create a real Order (no checkout at all — see
+// store.type) — "الطلبات" is replaced by "الاستفسارات" (Inquiry list) for
+// them, everything else stays the same.
+function getNavItems(storeType: string | undefined) {
+  const isShowcase = storeType === "showcase";
+  return [
+    { href: "/dashboard", label: "نظرة عامة", icon: "📊" },
+    { href: "/dashboard/products", label: "المنتجات", icon: "📦" },
+    isShowcase
+      ? { href: "/dashboard/inquiries", label: "الاستفسارات", icon: "💬" }
+      : { href: "/dashboard/orders", label: "الطلبات", icon: "🧾" },
+    { href: "/dashboard/design", label: "تصميم المتجر", icon: "🎨" },
+    { href: "/dashboard/payouts", label: "المستحقات المالية", icon: "💰" },
+    { href: "/dashboard/coupons", label: "كوبونات الخصم", icon: "🏷️" },
+    { href: "/dashboard/analytics", label: "التحليلات", icon: "📈" },
+    { href: "/dashboard/settings", label: "إعدادات المتجر", icon: "⚙️" },
+  ];
+}
 
 const STATUS_COPY: Record<string, { title: string; body: string }> = {
   pending: {
@@ -188,7 +196,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       )}
 
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-        {navItems.map((item) => (
+        {getNavItems(store?.type).map((item) => (
           <Link
             key={item.href}
             href={item.href}

@@ -102,6 +102,16 @@ export const createOrderSchema = z
     scheduledEndAt: z.string().optional(),
   });
 
+// Showcase stores (store.type === "showcase") have no checkout — a buyer
+// interested in a product sends this instead of placing an order.
+export const createInquirySchema = z.object({
+  storeSlug: z.string().min(1),
+  productId: z.string().optional(),
+  buyerName: z.string().min(1, "الاسم مطلوب"),
+  buyerPhone: z.string().min(6, "رقم هاتف غير صالح"),
+  message: z.string().min(1, "الرسالة مطلوبة").max(1000),
+});
+
 export const createCouponSchema = z.object({
   storeId: z.string().min(1),
   code: z.string().min(1, "رمز الكوبون مطلوب").transform((v) => v.trim().toUpperCase()),
