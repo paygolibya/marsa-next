@@ -63,11 +63,23 @@ export const updateProductVariantSchema = z.object({
   active: z.boolean().optional(),
 });
 
+// Keyed by day-of-week as a string ("0" = Sunday ... "6" = Saturday); a
+// missing/null day means closed that day. See src/lib/booking.ts for how
+// this turns into actual appointment slots.
+const bookingDaySchema = z.object({
+  open: z.string().regex(/^\d{1,2}:\d{2}$/, "صيغة وقت غير صحيحة"),
+  close: z.string().regex(/^\d{1,2}:\d{2}$/, "صيغة وقت غير صحيحة"),
+});
+export const bookingWorkingHoursSchema = z.record(z.string(), bookingDaySchema.nullable());
+
 export const updateStoreSettingsSchema = z.object({
   aboutText: z.string().optional().nullable(),
   returnPolicy: z.string().optional().nullable(),
   shippingPolicy: z.string().optional().nullable(),
   businessHours: z.string().optional().nullable(),
+  type: z.enum(["physical", "digital", "booking", "rental", "showcase"]).optional(),
+  bookingSlotMinutes: z.number().int().positive().max(24 * 60).optional().nullable(),
+  bookingWorkingHours: bookingWorkingHoursSchema.optional().nullable(),
 });
 
 export const createOrderSchema = z

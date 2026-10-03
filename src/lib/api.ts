@@ -85,6 +85,8 @@ export type Store = {
   courier: string;
   codEnabled: boolean;
   type: StoreType;
+  bookingSlotMinutes: number | null;
+  bookingWorkingHours: Record<string, { open: string; close: string } | null> | null;
   walletProvider: string | null;
   currency: string;
   createdAt: string;
@@ -343,7 +345,15 @@ export const api = {
   updateStoreSettings: (
     token: string,
     id: string,
-    body: Partial<{ aboutText: string | null; returnPolicy: string | null; shippingPolicy: string | null; businessHours: string | null }>
+    body: Partial<{
+      aboutText: string | null;
+      returnPolicy: string | null;
+      shippingPolicy: string | null;
+      businessHours: string | null;
+      type: StoreType;
+      bookingSlotMinutes: number | null;
+      bookingWorkingHours: Record<string, { open: string; close: string } | null> | null;
+    }>
   ) =>
     request<Store>(`/api/stores/${id}`, {
       method: "PATCH",
@@ -447,6 +457,9 @@ export const api = {
     request<{ success: boolean }>(`/api/inquiries/${inquiryId}`, { method: "PATCH", headers: authHeaders(token) }),
 
   vanexCities: () => request<{ cities: VanexCity[] }>("/api/vanex/cities"),
+
+  availability: (storeSlug: string, date: string) =>
+    request<{ slots: string[] }>(`/api/stores/public/${storeSlug}/availability?date=${date}`),
 
   validateCoupon: (body: { storeSlug: string; code: string; subtotalCents: number }) =>
     request<{ valid: boolean; discountCents: number; message?: string }>("/api/orders/validate-coupon", {

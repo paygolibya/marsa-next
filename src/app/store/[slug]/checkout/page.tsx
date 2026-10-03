@@ -88,6 +88,25 @@ export default function CheckoutPage() {
       ? Math.max(1, Math.ceil((new Date(rentalEnd).getTime() - new Date(rentalStart).getTime()) / 86_400_000))
       : 1;
 
+  const isBooking = store?.type === "booking";
+  const [bookingDate, setBookingDate] = useState("");
+  const [availableSlots, setAvailableSlots] = useState<string[]>([]);
+  const [slotsLoading, setSlotsLoading] = useState(false);
+  const [selectedSlot, setSelectedSlot] = useState("");
+
+  useEffect(() => {
+    if (!isBooking || !bookingDate) {
+      setAvailableSlots([]);
+      return;
+    }
+    setSlotsLoading(true);
+    setSelectedSlot("");
+    api
+      .availability(slug, bookingDate)
+      .then(({ slots }) => setAvailableSlots(slots))
+      .finally(() => setSlotsLoading(false));
+  }, [isBooking, slug, bookingDate]);
+
   // Cart/order details kept around so completeCallback (fired from inside
   // Moamalat's widget, well after the initial submit) can still build the
   // confirmation-page redirect.
@@ -163,6 +182,10 @@ export default function CheckoutPage() {
       setError("اختر تاريخ الاستلام والإرجاع");
       return;
     }
+    if (isBooking && !selectedSlot) {
+      setError("اختر موعدًا");
+      return;
+    }
     setError(null);
     setLoading(true);
     try {
@@ -179,7 +202,7 @@ export default function CheckoutPage() {
         },
         paymentMethod,
         couponCode: appliedCoupon?.code,
-        scheduledStartAt: isRental && rentalStart ? new Date(rentalStart).toISOString() : undefined,
+        scheduledStartAt: isRental && rentalStart ? new Date(rentalStart).toISOString() : isBooking ? selectedSlot : undefined,
         scheduledEndAt: isRental && rentalEnd ? new Date(rentalEnd).toISOString() : undefined,
       });
 
@@ -305,6 +328,47 @@ export default function CheckoutPage() {
                 </label>
               </div>
             )}
+            {isBooking && (
+              <div>
+                <label className="block">
+                  <span className="block text-sm font-bold text-harbor mb-1.5">التاريخ</span>
+                  <input
+                    type="date"
+                    required
+                    min={new Date().toISOString().slice(0, 10)}
+                    value={bookingDate}
+                    onChange={(e) => setBookingDate(e.target.value)}
+                    className="input"
+                  />
+                </label>
+                {bookingDate && (
+                  <div className="mt-3">
+                    <span className="block text-sm font-bold text-harbor mb-1.5">الوقت المتاح</span>
+                    {slotsLoading ? (
+                      <p className="text-sm text-rope">جارٍ تحميل المواعيد...</p>
+                    ) : availableSlots.length === 0 ? (
+                      <p className="text-sm text-rope">لا توجد مواعيد متاحة في هذا اليوم</p>
+                    ) : (
+                      <div className="flex flex-wrap gap-2">
+                        {availableSlots.map((slot) => (
+                          <button
+                            key={slot}
+                            type="button"
+                            onClick={() => setSelectedSlot(slot)}
+                            className={`rounded-full border-2 px-4 py-1.5 text-sm font-bold transition-colors ${
+                              selectedSlot === slot ? "border-signal bg-signal/5 text-signal" : "border-harbor/15 text-harbor hover:border-harbor/25"
+                            }`}
+                          >
+                            {/* Sliced from the ISO string directly, not toLocaleTimeString — see src/lib/booking.ts's module comment on why. */}
+                            {slot.slice(11, 16)}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
             {usesVanexPricing ? (
               <div className="grid grid-cols-2 gap-3">
                 <label className="block">
@@ -420,7 +484,13 @@ export default function CheckoutPage() {
   
             <button
               type="submit"
-              disabled={loading || walletPending || (usesVanexPricing && !selectedArea) || (isRental && (!rentalStart || !rentalEnd))}
+              disabled={
+                loading ||
+                walletPending ||
+                (usesVanexPricing && !selectedArea) ||
+                (isRental && (!rentalStart || !rentalEnd)) ||
+                (isBooking && !selectedSlot)
+              }
               className="w-full rounded-full bg-signal py-3.5 font-bold text-canvas shadow-lg shadow-signal/20 hover:bg-signal-dark hover:-translate-y-0.5 transition-all disabled:opacity-60 disabled:translate-y-0"
             >
               {loading || walletPending ? "جارٍ التأكيد..." : `تأكيد الطلب — ${formatLYD(grandTotalCents)}`}

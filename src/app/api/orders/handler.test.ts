@@ -7,13 +7,25 @@ process.env.MOAMALAT_MERCHANT_ID = "TESTMID";
 process.env.MOAMALAT_TERMINAL_ID = "TESTTID";
 process.env.MOAMALAT_SECRET_KEY = crypto.randomBytes(16).toString("hex");
 
-const STORE: { id: string; slug: string; courier: string; codEnabled: boolean; walletProvider: string | null; type: string; merchant: { phone: string } & Record<string, unknown> } = {
+const STORE: {
+  id: string;
+  slug: string;
+  courier: string;
+  codEnabled: boolean;
+  walletProvider: string | null;
+  type: string;
+  bookingSlotMinutes: number | null;
+  bookingWorkingHours: unknown;
+  merchant: { phone: string } & Record<string, unknown>;
+} = {
   id: "store-1",
   slug: "test-store",
   courier: "vanex",
   codEnabled: true,
   walletProvider: "anis",
   type: "physical",
+  bookingSlotMinutes: null,
+  bookingWorkingHours: null,
   merchant: { phone: "0900000000", subscriptionTier: "advanced" },
 };
 
@@ -271,6 +283,57 @@ test("rental order: missing dates are rejected with 400", async () => {
   const res = await handleCreateOrder(deps, req(baseBody()));
   assert.equal(res.status, 400);
   assert.equal(calls.orderCreate, undefined);
+});
+
+const BOOKING_STORE = {
+  ...STORE,
+  type: "booking",
+  bookingSlotMinutes: 60,
+  bookingWorkingHours: { "1": { open: "09:00", close: "17:00" } }, // Monday only
+};
+
+test("booking order: an open, grid-aligned slot is accepted, confirms immediately with the server-recomputed end time", async () => {
+  const { deps, calls } = makeFakeDeps({ store: BOOKING_STORE });
+  const res = await handleCreateOrder(deps, req(baseBody({ scheduledStartAt: "2026-11-02T09:00:00.000Z" }))); // a Monday
+  const body = await res.json();
+  assert.equal(res.status, 201);
+  assert.equal(calls.shipment, undefined, "must never call createShipment for a booking store");
+  assert.equal(calls.orderUpdate.data.status, "confirmed");
+  assert.equal(calls.orderCreate.data.scheduledKind, "booking");
+  assert.equal(calls.orderCreate.data.scheduledStartAt.toISOString(), "2026-11-02T09:00:00.000Z");
+  // Recomputed server-side from bookingSlotMinutes, never from a client value.
+  assert.equal(calls.orderCreate.data.scheduledEndAt.toISOString(), "2026-11-02T10:00:00.000Z");
+  assert.equal(body.totalCents, 10000); // unaffected by booking — still plain price × quantity
+});
+
+test("booking order: an off-grid time (not a real slot start) is rejected with 400", async () => {
+  const { deps, calls } = makeFakeDeps({ store: BOOKING_STORE });
+  const res = await handleCreateOrder(deps, req(baseBody({ scheduledStartAt: "2026-11-02T09:30:00.000Z" })));
+  assert.equal(res.status, 400);
+  assert.equal(calls.orderCreate, undefined);
+});
+
+test("booking order: a slot outside working hours (a closed day) is rejected with 400", async () => {
+  const { deps, calls } = makeFakeDeps({ store: BOOKING_STORE });
+  const res = await handleCreateOrder(deps, req(baseBody({ scheduledStartAt: "2026-11-03T09:00:00.000Z" }))); // Tuesday: closed
+  assert.equal(res.status, 400);
+  assert.equal(calls.orderCreate, undefined);
+});
+
+test("booking order: no slot at all is rejected with 400", async () => {
+  const { deps, calls } = makeFakeDeps({ store: BOOKING_STORE });
+  const res = await handleCreateOrder(deps, req(baseBody()));
+  assert.equal(res.status, 400);
+  assert.equal(calls.orderCreate, undefined);
+});
+
+test("booking order: a concurrent order already took this exact slot — the DB's own unique-violation maps to a real 409, not a 500", async () => {
+  const { deps } = makeFakeDeps({ store: BOOKING_STORE });
+  deps.db.$transaction = async () => {
+    throw { code: "P2002" };
+  };
+  const res = await handleCreateOrder(deps, req(baseBody({ scheduledStartAt: "2026-11-02T09:00:00.000Z" })));
+  assert.equal(res.status, 409);
 });
 
 test("wallet order: returns a signed LightBox config and 201, WITHOUT dispatching a shipment or sending notifications yet", async () => {

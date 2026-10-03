@@ -336,6 +336,20 @@ model Store {
   // src/app/api/orders/handler.ts and src/lib/payment/moamalat-order.ts.
   type           String   @default("physical")
   walletProvider String?  @map("wallet_provider") // e.g. 'anis' (DPay aggregator merchant)
+
+  // Booking-only (store.type === "booking"): a store-wide (not per-product)
+  // appointment grid. bookingWorkingHours is a weekly schedule keyed by
+  // day-of-week as a string "0" (Sunday) through "6" (Saturday), e.g.
+  // {"1":{"open":"09:00","close":"17:00"}} — a missing/null day means
+  // closed. No per-date overrides/holidays, no timezone handling (single-
+  // timezone merchants only). See
+  // src/app/api/stores/public/[slug]/availability/handler.ts for how this
+  // turns into actual open slots for a given date, and the partial unique
+  // index on Order below for how double-booking the same slot is
+  // prevented.
+  bookingSlotMinutes  Int?  @map("booking_slot_minutes")
+  bookingWorkingHours Json? @map("booking_working_hours")
+
   currency       String   @default("LYD")
   templateId     String?  @map("template_id")
   createdAt      DateTime @default(now()) @map("created_at")
@@ -551,15 +565,23 @@ model Order {
 
   // A booking appointment slot (store.type "booking") or a rental period
   // (store.type "rental") — one pair of columns, two meanings, set only
-  // for those two store types. For booking, a partial unique index on
-  // (storeId, scheduledStartAt) — added in a later migration, see that
-  // migration's own comment, since Prisma's schema language can't express
-  // a partial WHERE — prevents double-booking the same slot atomically at
-  // the DB level, the same way the existing stock-decrement guard prevents
-  // overselling. Never trust a client-sent scheduledEndAt; it's always
-  // recomputed server-side from scheduledStartAt + Store.bookingSlotMinutes.
+  // for those two store types. scheduledKind records WHICH meaning this
+  // row has ("booking" | "rental" | null) — needed because only booking
+  // slots must be unique per store: a partial unique index on
+  // (storeId, scheduledStartAt) WHERE scheduledKind = 'booking' (hand-
+  // written migration, see its own comment — Prisma's schema language
+  // can't express a partial WHERE) prevents double-booking the same
+  // appointment atomically at the DB level, the same way the existing
+  // stock-decrement guard prevents overselling. Two rental orders
+  // legitimately CAN share a start date, so the index must not catch
+  // them too — that's what scheduledKind filters on. Never trust a
+  // client-sent scheduledEndAt; it's always recomputed server-side
+  // (booking: scheduledStartAt + Store.bookingSlotMinutes; rental: from
+  // the buyer's own chosen end date, but the day-count/total is still
+  // recomputed server-side).
   scheduledStartAt DateTime? @map("scheduled_start_at")
   scheduledEndAt   DateTime? @map("scheduled_end_at")
+  scheduledKind    String?   @map("scheduled_kind") // 'booking' | 'rental' | null
 
   // Automatic payout tracking — set the moment the real-time trigger (or
   // its daily-cron backstop) calculates this order's commission. Denormalized

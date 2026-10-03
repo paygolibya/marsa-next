@@ -109,6 +109,18 @@ export default function DashboardOrdersPage() {
           },
         ]
       : []),
+    ...(store.type === "booking"
+      ? [
+          {
+            key: "appointment",
+            header: "الموعد",
+            render: (o: Order) =>
+              // Sliced from the ISO string directly, not toLocaleString —
+              // see src/lib/booking.ts's module comment on why.
+              o.scheduledStartAt ? `${o.scheduledStartAt.slice(0, 10)} — ${o.scheduledStartAt.slice(11, 16)}` : "—",
+          },
+        ]
+      : []),
     {
       key: "status",
       header: "الحالة",

@@ -44,9 +44,12 @@ export async function finalizeWalletOrder(orderId: string, outcome: "paid" | "fa
   // already-recorded payment — a courier or SMS/email outage must never
   // make it look like the payment itself failed.
   try {
-    // Digital-goods and rental stores have no courier delivery — see the
-    // matching comment in orders/handler.ts's COD path.
-    if (order.store.type === "digital" || order.store.type === "rental") {
+    // Digital, rental, and booking stores have no courier delivery — see
+    // the matching comment in orders/handler.ts's COD path. The booking
+    // slot itself is already locked at order-creation time (same
+    // transaction, regardless of payment method) — nothing left to do
+    // here except confirm and notify.
+    if (order.store.type === "digital" || order.store.type === "rental" || order.store.type === "booking") {
       await prisma.order.update({ where: { id: order.id }, data: { status: "confirmed" } });
       await sendOrderConfirmationEmail({
         id: order.id,

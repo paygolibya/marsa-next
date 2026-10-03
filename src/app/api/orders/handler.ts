@@ -4,6 +4,7 @@ import { buildLightboxConfig, getLightboxScriptUrl, isMoamalatConfigured, makeOr
 import { createOrderSchema } from "@/lib/validation";
 import { getSubscriptionState, getCheckoutPaymentMethods } from "@/lib/checkout-features";
 import { resolveCouponDiscount } from "@/lib/coupons";
+import { isSlotOpen, type WorkingHours } from "@/lib/booking";
 import type { ShipmentOrder, ShipmentResult } from "@/lib/integrations/couriers";
 
 class OutOfStockError extends Error {
@@ -67,6 +68,8 @@ export type OrdersDb = {
       codEnabled: boolean;
       walletProvider: string | null;
       type: string;
+      bookingSlotMinutes: number | null;
+      bookingWorkingHours: unknown;
       merchant: { phone: string } & Record<string, unknown>;
     } | null>;
   };
@@ -141,6 +144,27 @@ export async function handleCreateOrder(deps: OrdersDeps, req: Request): Promise
         return NextResponse.json({ error: "تاريخ الإرجاع يجب أن يكون بعد تاريخ الاستلام" }, { status: 400 });
       }
       rentalDays = Math.max(1, Math.ceil((scheduledEndAt.getTime() - scheduledStartAt.getTime()) / 86_400_000));
+    }
+
+    // Booking: the buyer picked a slot start from the availability
+    // endpoint's own output; the end is always recomputed here from the
+    // store's own slot length — never trusted from the client. Actual
+    // double-booking prevention is the partial unique index on
+    // (storeId, scheduledStartAt) WHERE scheduledKind='booking' — this
+    // isSlotOpen check is just an early, friendlier 400 for an obviously
+    // bad request (off-hours, off-grid), not the real safety net.
+    let scheduledKind: "booking" | "rental" | null = store.type === "rental" ? "rental" : null;
+    if (store.type === "booking") {
+      scheduledStartAt = parsed.data.scheduledStartAt ? new Date(parsed.data.scheduledStartAt) : null;
+      if (!scheduledStartAt || isNaN(scheduledStartAt.getTime())) {
+        return NextResponse.json({ error: "اختر موعدًا" }, { status: 400 });
+      }
+      const slotMinutes = store.bookingSlotMinutes ?? 0;
+      if (!isSlotOpen(scheduledStartAt, store.bookingWorkingHours as WorkingHours | null, slotMinutes)) {
+        return NextResponse.json({ error: "هذا الموعد غير متاح، اختر موعدًا آخر" }, { status: 400 });
+      }
+      scheduledEndAt = new Date(scheduledStartAt.getTime() + slotMinutes * 60_000);
+      scheduledKind = "booking";
     }
 
     if (paymentMethod === "wallet") {
@@ -241,6 +265,7 @@ export async function handleCreateOrder(deps: OrdersDeps, req: Request): Promise
               vanexAreaId: buyer.vanexAreaId || null,
               scheduledStartAt,
               scheduledEndAt,
+              scheduledKind,
               items: {
                 create: resolvedItems.map(({ product, quantity, variant, unitPriceCents, variantLabel }) => ({
                   productId: product.id,
@@ -291,6 +316,15 @@ export async function handleCreateOrder(deps: OrdersDeps, req: Request): Promise
       if (err instanceof OutOfStockError) return NextResponse.json({ error: err.message }, { status: 409 });
       if (err instanceof ProductNotFoundError) return NextResponse.json({ error: err.message }, { status: 400 });
       if (err instanceof InvalidCouponError) return NextResponse.json({ error: err.message }, { status: 400 });
+      // The real safety net for double-booking: a concurrent order won
+      // the race between this request's isSlotOpen check and its own
+      // commit — the partial unique index on orders(storeId,
+      // scheduledStartAt) WHERE scheduledKind='booking' catches it here
+      // as a real Postgres unique-violation (code P2002), the same way
+      // OutOfStockError's `gte` guard catches a stock race.
+      if (typeof err === "object" && err !== null && "code" in err && err.code === "P2002") {
+        return NextResponse.json({ error: "هذا الموعد محجوز بالفعل، اختر موعدًا آخر" }, { status: 409 });
+      }
       throw err;
     }
 
@@ -305,12 +339,13 @@ export async function handleCreateOrder(deps: OrdersDeps, req: Request): Promise
       );
     }
 
-    // Digital-goods and rental stores have no courier delivery at all —
-    // digital because there's no physical item to ship, rental because
-    // pickup/return is handled by the merchant in person — so the order
-    // is confirmed immediately instead of waiting on a shipment step
-    // that would never happen.
-    if (store.type === "digital" || store.type === "rental") {
+    // Digital, rental, and booking stores have no courier delivery at all
+    // — digital because there's no physical item to ship, rental because
+    // pickup/return is handled by the merchant in person, booking because
+    // the atomic slot reservation IS the confirmation moment — so the
+    // order is confirmed immediately instead of waiting on a shipment
+    // step that would never happen.
+    if (store.type === "digital" || store.type === "rental" || store.type === "booking") {
       await db.order.update({ where: { id: order.id }, data: { status: "confirmed" } });
 
       await deps.sendOrderConfirmationEmail({

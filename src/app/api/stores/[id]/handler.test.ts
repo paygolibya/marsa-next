@@ -48,3 +48,37 @@ test("updates an owned store's settings", async () => {
   assert.equal(res.status, 200);
   assert.equal((calls.update as any).data.aboutText, "About us");
 });
+
+test("updates a store's type and booking schedule together", async () => {
+  const { db, calls } = makeFakeDb("store-1");
+  const res = await handleUpdateStore(
+    db,
+    authReq(
+      "http://localhost/x",
+      {
+        method: "PATCH",
+        body: JSON.stringify({
+          type: "booking",
+          bookingSlotMinutes: 30,
+          bookingWorkingHours: { "1": { open: "09:00", close: "17:00" } },
+        }),
+      }
+    ),
+    "store-1"
+  );
+  assert.equal(res.status, 200);
+  assert.equal((calls.update as any).data.type, "booking");
+  assert.equal((calls.update as any).data.bookingSlotMinutes, 30);
+  assert.deepEqual((calls.update as any).data.bookingWorkingHours, { "1": { open: "09:00", close: "17:00" } });
+});
+
+test("rejects a malformed booking-hours time with 400", async () => {
+  const { db, calls } = makeFakeDb("store-1");
+  const res = await handleUpdateStore(
+    db,
+    authReq("http://localhost/x", { method: "PATCH", body: JSON.stringify({ bookingWorkingHours: { "1": { open: "9am", close: "17:00" } } }) }),
+    "store-1"
+  );
+  assert.equal(res.status, 400);
+  assert.equal(calls.update, undefined);
+});

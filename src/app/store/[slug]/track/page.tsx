@@ -114,7 +114,12 @@ function StoreTrackPageContent() {
               )}
               {result.courierTrackingId && <Row label="رقم التتبع" value={result.courierTrackingId} mono />}
               {result.courierNote && <Row label="ملاحظة الشحن" value={result.courierNote} />}
-              {result.scheduledStartAt && result.scheduledEndAt && (
+              {store?.type === "booking" && result.scheduledStartAt && (
+                // Sliced from the ISO string directly, not toLocaleString
+                // — see src/lib/booking.ts's module comment on why.
+                <Row label="الموعد" value={`${result.scheduledStartAt.slice(0, 10)} — ${result.scheduledStartAt.slice(11, 16)}`} />
+              )}
+              {store?.type === "rental" && result.scheduledStartAt && result.scheduledEndAt && (
                 <Row
                   label="فترة الاستئجار"
                   value={`${new Date(result.scheduledStartAt).toLocaleDateString("ar-LY")} → ${new Date(result.scheduledEndAt).toLocaleDateString("ar-LY")}`}

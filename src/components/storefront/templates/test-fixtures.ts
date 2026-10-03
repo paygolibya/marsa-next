@@ -41,6 +41,8 @@ export function makeTestStore(customizationOverrides: Partial<StoreCustomization
     courier: "vanex",
     codEnabled: true,
     type: "physical",
+    bookingSlotMinutes: null,
+    bookingWorkingHours: null,
     walletProvider: null,
     currency: "LYD",
     createdAt: new Date().toISOString(),
