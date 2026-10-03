@@ -6,8 +6,16 @@ import { SiteNav } from "@/components/site-nav";
 import TemplateSelector from "@/components/onboarding/TemplateSelector";
 import { useAuth } from "@/lib/auth-context";
 import { isAdminMerchant } from "@/lib/is-admin";
-import { api, ApiError } from "@/lib/api";
+import { api, ApiError, type StoreType } from "@/lib/api";
 import { templatesData } from "@/lib/templates-data";
+
+const STORE_TYPES: { value: StoreType; label: string; description: string }[] = [
+  { value: "physical", label: "منتجات فعلية", description: "شحن عبر Vanex، دفع عند الاستلام أو إلكتروني" },
+  { value: "digital", label: "منتجات رقمية", description: "لا يوجد شحن — يُؤكَّد الطلب فورًا" },
+  { value: "booking", label: "حجز مواعيد", description: "العميل يحجز موعدًا بدلاً من عنوان توصيل" },
+  { value: "rental", label: "تأجير", description: "السعر يومي، العميل يحدد تاريخ الاستلام والإرجاع" },
+  { value: "showcase", label: "عرض فقط (استفسار)", description: "بدون شراء مباشر — العميل يرسل استفسارًا" },
+];
 
 function slugPreview(name: string) {
   return (
@@ -25,6 +33,7 @@ export default function OnboardingPage() {
   const { token, merchant, ready } = useAuth();
   const [step, setStep] = useState<1 | 2>(1);
   const [name, setName] = useState("");
+  const [storeType, setStoreType] = useState<StoreType>("physical");
   const courier = "vanex";
   const [codEnabled, setCodEnabled] = useState(true);
   const [walletEnabled, setWalletEnabled] = useState(true);
@@ -54,9 +63,10 @@ export default function OnboardingPage() {
       const store = await api.createStore(token, {
         name,
         courier,
-        codEnabled,
-        walletProvider: walletEnabled ? "anis" : null,
+        codEnabled: storeType === "showcase" ? false : codEnabled,
+        walletProvider: storeType === "showcase" ? null : walletEnabled ? "anis" : null,
         templateId: selectedTemplateId,
+        type: storeType,
       });
       router.push(`/onboarding/customize?storeId=${store.id}`);
     } catch (err) {
@@ -118,6 +128,25 @@ export default function OnboardingPage() {
             </div>
 
             <div className="rounded-2xl border border-harbor/10 bg-white p-4">
+              <h2 className="mb-4 text-lg font-bold text-harbor">نوع المتجر</h2>
+              <div className="grid sm:grid-cols-2 gap-2">
+                {STORE_TYPES.map((t) => (
+                  <button
+                    key={t.value}
+                    type="button"
+                    onClick={() => setStoreType(t.value)}
+                    className={`text-right rounded-xl border-2 px-4 py-3 transition-colors ${
+                      storeType === t.value ? "border-signal bg-signal/5" : "border-harbor/15 bg-canvas hover:border-harbor/25"
+                    }`}
+                  >
+                    <span className="block font-bold text-harbor text-sm">{t.label}</span>
+                    <span className="block text-xs text-rope mt-0.5">{t.description}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-harbor/10 bg-white p-4">
               <h2 className="mb-4 text-lg font-bold text-harbor">اختر قالب المتجر</h2>
               <TemplateSelector
                 templates={templatesData}
@@ -126,29 +155,35 @@ export default function OnboardingPage() {
               />
             </div>
 
-            <div>
-              <span className="block text-sm font-bold text-harbor mb-1.5">شركة الشحن</span>
-              <p className="rounded-xl border border-harbor/15 bg-white px-4 py-3 text-sm text-rope">Vanex</p>
-            </div>
+            {storeType === "physical" && (
+              <div>
+                <span className="block text-sm font-bold text-harbor mb-1.5">شركة الشحن</span>
+                <p className="rounded-xl border border-harbor/15 bg-white px-4 py-3 text-sm text-rope">Vanex</p>
+              </div>
+            )}
 
-            <div className="flex items-center justify-between rounded-xl border border-harbor/15 bg-white px-4 py-3">
-              <span className="font-bold text-harbor">الدفع عند الاستلام</span>
-              <input
-                type="checkbox"
-                checked={codEnabled}
-                onChange={(e) => setCodEnabled(e.target.checked)}
-                className="h-5 w-5 accent-brass"
-              />
-            </div>
-            <div className="flex items-center justify-between rounded-xl border border-harbor/15 bg-white px-4 py-3">
-              <span className="font-bold text-harbor">الدفع الإلكتروني (دي‑باي)</span>
-              <input
-                type="checkbox"
-                checked={walletEnabled}
-                onChange={(e) => setWalletEnabled(e.target.checked)}
-                className="h-5 w-5 accent-brass"
-              />
-            </div>
+            {storeType !== "showcase" && (
+              <>
+                <div className="flex items-center justify-between rounded-xl border border-harbor/15 bg-white px-4 py-3">
+                  <span className="font-bold text-harbor">الدفع عند الاستلام</span>
+                  <input
+                    type="checkbox"
+                    checked={codEnabled}
+                    onChange={(e) => setCodEnabled(e.target.checked)}
+                    className="h-5 w-5 accent-brass"
+                  />
+                </div>
+                <div className="flex items-center justify-between rounded-xl border border-harbor/15 bg-white px-4 py-3">
+                  <span className="font-bold text-harbor">الدفع الإلكتروني (دي‑باي)</span>
+                  <input
+                    type="checkbox"
+                    checked={walletEnabled}
+                    onChange={(e) => setWalletEnabled(e.target.checked)}
+                    className="h-5 w-5 accent-brass"
+                  />
+                </div>
+              </>
+            )}
 
             {error && <p className="text-signal text-sm">{error}</p>}
 
@@ -161,7 +196,7 @@ export default function OnboardingPage() {
               </button>
               <button
                 onClick={handleCreate}
-                disabled={loading || (!codEnabled && !walletEnabled)}
+                disabled={loading || (storeType !== "showcase" && !codEnabled && !walletEnabled)}
                 className="flex-1 rounded-full bg-signal py-3 font-bold text-canvas hover:bg-signal-dark transition-colors disabled:opacity-40"
               >
                 {loading ? "جارٍ الإنشاء..." : "إنشاء المتجر"}

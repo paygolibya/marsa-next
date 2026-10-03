@@ -22,6 +22,7 @@ export const createStoreSchema = z.object({
   codEnabled: z.boolean().optional(),
   walletProvider: z.string().optional().nullable(),
   templateId: z.string().optional().nullable(),
+  type: z.enum(["physical", "digital", "booking", "rental", "showcase"]).optional(),
 });
 
 // Up to 8 photos per product — enough for a real gallery without inviting

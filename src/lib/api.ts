@@ -235,7 +235,15 @@ export const api = {
 
   createStore: (
     token: string,
-    body: { name: string; theme?: string; courier?: string; codEnabled?: boolean; walletProvider?: string | null; templateId?: string | null }
+    body: {
+      name: string;
+      theme?: string;
+      courier?: string;
+      codEnabled?: boolean;
+      walletProvider?: string | null;
+      templateId?: string | null;
+      type?: StoreType;
+    }
   ) =>
     request<Store>("/api/stores", {
       method: "POST",

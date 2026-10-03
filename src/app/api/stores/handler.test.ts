@@ -88,13 +88,27 @@ test("the collision suffix is digits only — never Latin letters, which break I
   assert.doesNotThrow(() => new URL(`https://${create.data.slug}.rifqa.ly`));
 });
 
-test("defaults courier/codEnabled/theme when not specified", async () => {
+test("defaults courier/codEnabled/theme/type when not specified", async () => {
   const { db, calls } = makeFakeDb();
   await handleCreateStore(db, req({ name: "Store" }));
-  const create = calls.create as { data: { theme: string; courier: string; codEnabled: boolean } };
+  const create = calls.create as { data: { theme: string; courier: string; codEnabled: boolean; type: string } };
   assert.equal(create.data.theme, "souk");
   assert.equal(create.data.courier, "vanex");
   assert.equal(create.data.codEnabled, true);
+  assert.equal(create.data.type, "physical");
+});
+
+test("creates a store with an explicit non-physical type", async () => {
+  const { db, calls } = makeFakeDb();
+  await handleCreateStore(db, req({ name: "Store", type: "showcase" }));
+  const create = calls.create as { data: { type: string } };
+  assert.equal(create.data.type, "showcase");
+});
+
+test("rejects an invalid type value with 400", async () => {
+  const { db } = makeFakeDb();
+  const res = await handleCreateStore(db, req({ name: "Store", type: "not-a-real-type" }));
+  assert.equal(res.status, 400);
 });
 
 test("applies the chosen template's own default colors, not a hardcoded blue", async () => {
