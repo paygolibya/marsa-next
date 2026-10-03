@@ -152,6 +152,8 @@ export type Order = {
   createdAt: string;
   refundedAt: string | null;
   refundReason: string | null;
+  scheduledStartAt: string | null;
+  scheduledEndAt: string | null;
   items?: OrderItem[];
 };
 export type VanexArea = { id: string; name: string; priceCents: number };
@@ -381,6 +383,8 @@ export const api = {
     buyer: { name: string; phone: string; email?: string; city: string; address: string; vanexAreaId?: string };
     paymentMethod: "cod" | "wallet";
     couponCode?: string;
+    scheduledStartAt?: string;
+    scheduledEndAt?: string;
   }) =>
     request<{
       orderId: string;
@@ -463,6 +467,8 @@ export const api = {
       totalCents: number;
       shippingCents: number;
       createdAt: string;
+      scheduledStartAt: string | null;
+      scheduledEndAt: string | null;
       items: OrderItem[];
     }>(`/api/orders/track?orderId=${encodeURIComponent(orderId)}&phone=${encodeURIComponent(phone)}`),
 

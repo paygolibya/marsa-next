@@ -114,6 +114,12 @@ function StoreTrackPageContent() {
               )}
               {result.courierTrackingId && <Row label="رقم التتبع" value={result.courierTrackingId} mono />}
               {result.courierNote && <Row label="ملاحظة الشحن" value={result.courierNote} />}
+              {result.scheduledStartAt && result.scheduledEndAt && (
+                <Row
+                  label="فترة الاستئجار"
+                  value={`${new Date(result.scheduledStartAt).toLocaleDateString("ar-LY")} → ${new Date(result.scheduledEndAt).toLocaleDateString("ar-LY")}`}
+                />
+              )}
               <Row label="الإجمالي" value={formatLYD(result.totalCents)} />
 
               <div className="border-t border-harbor/10 pt-4">

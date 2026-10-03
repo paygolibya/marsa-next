@@ -17,6 +17,8 @@ const fullOrder = {
   totalCents: 10000,
   shippingCents: 1500,
   createdAt: new Date(),
+  scheduledStartAt: null,
+  scheduledEndAt: null,
   items: [{ id: "i1", productId: "p1", productName: "Widget", unitPriceCents: 8500, quantity: 1, variantLabel: null }],
   // Fields that must NEVER appear in the response — the whole point of
   // this endpoint being a restricted view, not the full order row.
@@ -57,6 +59,28 @@ test("a matching order returns only the restricted field set — buyer PII never
   assert.equal(body.buyerEmail, undefined);
   assert.deepEqual(
     Object.keys(body).sort(),
-    ["courierNote", "courierStatus", "courierStatusAt", "courierTrackingId", "createdAt", "items", "shippingCents", "status", "totalCents"].sort()
+    [
+      "courierNote",
+      "courierStatus",
+      "courierStatusAt",
+      "courierTrackingId",
+      "createdAt",
+      "items",
+      "scheduledStartAt",
+      "scheduledEndAt",
+      "shippingCents",
+      "status",
+      "totalCents",
+    ].sort()
   );
+});
+
+test("a rental order's pickup/return dates pass through to the buyer-facing response", async () => {
+  const start = new Date("2026-11-01T00:00:00.000Z");
+  const end = new Date("2026-11-04T00:00:00.000Z");
+  const deps: TrackOrderDeps = { verifyBuyerOrder: async () => ({ ...fullOrder, scheduledStartAt: start, scheduledEndAt: end }) as any };
+  const res = await handleTrackOrder(deps, req({ orderId: "order-1", phone: "0912345678" }));
+  const body = await res.json();
+  assert.equal(new Date(body.scheduledStartAt).getTime(), start.getTime());
+  assert.equal(new Date(body.scheduledEndAt).getTime(), end.getTime());
 });

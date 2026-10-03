@@ -123,6 +123,26 @@ export async function handleCreateOrder(deps: OrdersDeps, req: Request): Promise
     const store = await db.store.findUnique({ where: { slug: storeSlug }, include: { merchant: true } });
     if (!store) return NextResponse.json({ error: "Store not found" }, { status: 404 });
 
+    // Rental: the buyer picked a date range, price = daily rate (the
+    // product's own priceCents) × days × quantity — computed here, never
+    // trusted from the client, and folded into unitPriceCents below so
+    // every existing display of an order item (track page, dashboard,
+    // confirmation) just works without knowing rental is a thing.
+    let rentalDays = 1;
+    let scheduledStartAt: Date | null = null;
+    let scheduledEndAt: Date | null = null;
+    if (store.type === "rental") {
+      scheduledStartAt = parsed.data.scheduledStartAt ? new Date(parsed.data.scheduledStartAt) : null;
+      scheduledEndAt = parsed.data.scheduledEndAt ? new Date(parsed.data.scheduledEndAt) : null;
+      if (!scheduledStartAt || !scheduledEndAt || isNaN(scheduledStartAt.getTime()) || isNaN(scheduledEndAt.getTime())) {
+        return NextResponse.json({ error: "تاريخ الاستلام والإرجاع مطلوبان" }, { status: 400 });
+      }
+      if (scheduledEndAt <= scheduledStartAt) {
+        return NextResponse.json({ error: "تاريخ الإرجاع يجب أن يكون بعد تاريخ الاستلام" }, { status: 400 });
+      }
+      rentalDays = Math.max(1, Math.ceil((scheduledEndAt.getTime() - scheduledStartAt.getTime()) / 86_400_000));
+    }
+
     if (paymentMethod === "wallet") {
       const walletAvailable = getCheckoutPaymentMethods(getSubscriptionState(store.merchant as Any)).dpay;
       if (!store.walletProvider || !walletAvailable || !isMoamalatConfigured()) {
@@ -166,7 +186,7 @@ export async function handleCreateOrder(deps: OrdersDeps, req: Request): Promise
               product,
               quantity,
               variant,
-              unitPriceCents: variant?.priceCents ?? product.priceCents,
+              unitPriceCents: (variant?.priceCents ?? product.priceCents) * rentalDays,
               variantLabel: variant ? Object.entries(variant.options).map(([k, v]) => `${k}: ${v}`).join("، ") : null,
             });
           }
@@ -219,6 +239,8 @@ export async function handleCreateOrder(deps: OrdersDeps, req: Request): Promise
               totalCents,
               shippingCents,
               vanexAreaId: buyer.vanexAreaId || null,
+              scheduledStartAt,
+              scheduledEndAt,
               items: {
                 create: resolvedItems.map(({ product, quantity, variant, unitPriceCents, variantLabel }) => ({
                   productId: product.id,
@@ -283,11 +305,12 @@ export async function handleCreateOrder(deps: OrdersDeps, req: Request): Promise
       );
     }
 
-    // Digital-goods stores (confirmed live: a real merchant selling
-    // Snapchat filters) have no physical delivery at all — there's no
-    // courier to dispatch to, so the order is confirmed immediately
-    // instead of waiting on a shipment step that would never happen.
-    if (store.type === "digital") {
+    // Digital-goods and rental stores have no courier delivery at all —
+    // digital because there's no physical item to ship, rental because
+    // pickup/return is handled by the merchant in person — so the order
+    // is confirmed immediately instead of waiting on a shipment step
+    // that would never happen.
+    if (store.type === "digital" || store.type === "rental") {
       await db.order.update({ where: { id: order.id }, data: { status: "confirmed" } });
 
       await deps.sendOrderConfirmationEmail({

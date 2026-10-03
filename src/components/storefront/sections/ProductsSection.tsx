@@ -52,7 +52,7 @@ export function ProductsSection({
                     {product.name}
                   </Link>
                   <p className="font-extrabold text-xl mt-2" style={{ color: colors.accent }}>
-                    {formatLYD(product.priceCents)}
+                    {formatLYD(product.priceCents)}{store.type === "rental" && " / يوم"}
                   </p>
                   {product.variantOptions?.length ? (
                     <Link
@@ -115,7 +115,7 @@ export function ProductsSection({
                     {product.name}
                   </Link>
                   <p className="mt-1 font-bold tracking-wide" style={{ color: colors.accent }}>
-                    {formatLYD(product.priceCents)}
+                    {formatLYD(product.priceCents)}{store.type === "rental" && " / يوم"}
                   </p>
                   {product.variantOptions?.length ? (
                     <Link
@@ -170,7 +170,7 @@ export function ProductsSection({
                     {product.name}
                   </Link>
                   <p className="font-extrabold text-sm mt-1" style={{ color: colors.primary }}>
-                    {formatLYD(product.priceCents)}
+                    {formatLYD(product.priceCents)}{store.type === "rental" && " / يوم"}
                   </p>
                   {product.variantOptions?.length ? (
                     <Link
@@ -221,7 +221,7 @@ export function ProductsSection({
                   {product.name}
                 </Link>
                 <p className="font-bold mt-1" style={{ color: colors.primary }}>
-                  {formatLYD(product.priceCents)}
+                  {formatLYD(product.priceCents)}{store.type === "rental" && " / يوم"}
                 </p>
                 {product.variantOptions?.length ? (
                   <Link

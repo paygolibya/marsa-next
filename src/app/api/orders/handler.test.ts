@@ -235,6 +235,44 @@ test("COD order on a digital store: confirms immediately without dispatching a s
   assert.ok(calls.sms);
 });
 
+test("rental order: total is daily rate × days × quantity (never trusting a client-sent total), confirms immediately with no shipment", async () => {
+  const { deps, calls } = makeFakeDeps({ store: { ...STORE, type: "rental" }, product: { ...PRODUCT, priceCents: 5000 } });
+  const res = await handleCreateOrder(
+    deps,
+    req(
+      baseBody({
+        items: [{ productId: "p1", quantity: 2 }],
+        scheduledStartAt: "2026-11-01T00:00:00.000Z",
+        scheduledEndAt: "2026-11-04T00:00:00.000Z", // 3 days
+      })
+    )
+  );
+  const body = await res.json();
+  assert.equal(res.status, 201);
+  assert.equal(body.totalCents, 5000 * 3 * 2); // rate * days * qty
+  assert.equal(calls.shipment, undefined, "must never call createShipment for a rental store");
+  assert.equal(calls.orderUpdate.data.status, "confirmed");
+  assert.equal(calls.orderCreate.data.scheduledStartAt.toISOString(), "2026-11-01T00:00:00.000Z");
+  assert.equal(calls.orderCreate.data.scheduledEndAt.toISOString(), "2026-11-04T00:00:00.000Z");
+});
+
+test("rental order: a same-day or inverted range is rejected with 400 before touching the database", async () => {
+  const { deps, calls } = makeFakeDeps({ store: { ...STORE, type: "rental" } });
+  const res = await handleCreateOrder(
+    deps,
+    req(baseBody({ scheduledStartAt: "2026-11-04T00:00:00.000Z", scheduledEndAt: "2026-11-01T00:00:00.000Z" }))
+  );
+  assert.equal(res.status, 400);
+  assert.equal(calls.orderCreate, undefined);
+});
+
+test("rental order: missing dates are rejected with 400", async () => {
+  const { deps, calls } = makeFakeDeps({ store: { ...STORE, type: "rental" } });
+  const res = await handleCreateOrder(deps, req(baseBody()));
+  assert.equal(res.status, 400);
+  assert.equal(calls.orderCreate, undefined);
+});
+
 test("wallet order: returns a signed LightBox config and 201, WITHOUT dispatching a shipment or sending notifications yet", async () => {
   // Wallet orders only get shipped/notified once payment actually confirms
   // (see moamalat-order.ts's finalizeWalletOrder) — this route must not

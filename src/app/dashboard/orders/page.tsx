@@ -97,6 +97,18 @@ export default function DashboardOrdersPage() {
       render: (o) => (o.paymentMethod === "cod" ? "عند الاستلام" : o.paymentStatus === "paid" ? "مدفوع" : "قيد الدفع"),
     },
     { key: "shipping", header: "الشحن", render: (o) => (o.shippingCents > 0 ? formatLYD(o.shippingCents) : "—") },
+    ...(store.type === "rental"
+      ? [
+          {
+            key: "rentalPeriod",
+            header: "فترة الاستئجار",
+            render: (o: Order) =>
+              o.scheduledStartAt && o.scheduledEndAt
+                ? `${new Date(o.scheduledStartAt).toLocaleDateString("ar-LY")} → ${new Date(o.scheduledEndAt).toLocaleDateString("ar-LY")}`
+                : "—",
+          },
+        ]
+      : []),
     {
       key: "status",
       header: "الحالة",

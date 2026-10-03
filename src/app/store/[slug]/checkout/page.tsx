@@ -11,6 +11,12 @@ const courierLabels: Record<string, string> = {
   vanex: "Vanex",
 };
 
+function addDays(dateStr: string, days: number): string {
+  const d = new Date(dateStr);
+  d.setDate(d.getDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
 declare global {
   interface Window {
     Lightbox?: {
@@ -71,6 +77,17 @@ export default function CheckoutPage() {
   const [vanexCityId, setVanexCityId] = useState("");
   const [vanexAreaId, setVanexAreaId] = useState("");
 
+  const isRental = store?.type === "rental";
+  const [rentalStart, setRentalStart] = useState("");
+  const [rentalEnd, setRentalEnd] = useState("");
+  // ceil(ms diff / a day) — must match orders/handler.ts's server-side
+  // computation exactly, since this is only a preview; the server never
+  // trusts this number, it recomputes the same way from the same two dates.
+  const rentalDays =
+    isRental && rentalStart && rentalEnd
+      ? Math.max(1, Math.ceil((new Date(rentalEnd).getTime() - new Date(rentalStart).getTime()) / 86_400_000))
+      : 1;
+
   // Cart/order details kept around so completeCallback (fired from inside
   // Moamalat's widget, well after the initial submit) can still build the
   // confirmation-page redirect.
@@ -95,7 +112,11 @@ export default function CheckoutPage() {
   const selectedArea = selectedCity?.areas.find((a) => a.id === vanexAreaId);
   const shippingCents = usesVanexPricing ? selectedArea?.priceCents ?? 0 : 0;
   const discountCents = appliedCoupon?.discountCents ?? 0;
-  const grandTotalCents = cart.subtotalCents + shippingCents - discountCents;
+  // cart.subtotalCents is quantity × the product's own priceCents, which
+  // for a rental store IS the daily rate — multiply by the selected
+  // number of days for the real total (server recomputes this exact way).
+  const effectiveSubtotalCents = isRental ? cart.subtotalCents * rentalDays : cart.subtotalCents;
+  const grandTotalCents = effectiveSubtotalCents + shippingCents - discountCents;
 
   async function handleApplyCoupon() {
     if (!couponInput.trim()) return;
@@ -138,6 +159,10 @@ export default function CheckoutPage() {
       setError("اختر المدينة والمنطقة");
       return;
     }
+    if (isRental && (!rentalStart || !rentalEnd)) {
+      setError("اختر تاريخ الاستلام والإرجاع");
+      return;
+    }
     setError(null);
     setLoading(true);
     try {
@@ -154,6 +179,8 @@ export default function CheckoutPage() {
         },
         paymentMethod,
         couponCode: appliedCoupon?.code,
+        scheduledStartAt: isRental && rentalStart ? new Date(rentalStart).toISOString() : undefined,
+        scheduledEndAt: isRental && rentalEnd ? new Date(rentalEnd).toISOString() : undefined,
       });
 
       if (result.moamalat && result.moamalatScriptUrl) {
@@ -248,6 +275,36 @@ export default function CheckoutPage() {
                 placeholder="لتصلك تحديثات الطلب"
               />
             </label>
+            {isRental && (
+              <div className="grid grid-cols-2 gap-3">
+                <label className="block">
+                  <span className="block text-sm font-bold text-harbor mb-1.5">تاريخ الاستلام</span>
+                  <input
+                    type="date"
+                    required
+                    min={new Date().toISOString().slice(0, 10)}
+                    value={rentalStart}
+                    onChange={(e) => {
+                      setRentalStart(e.target.value);
+                      if (rentalEnd && rentalEnd <= e.target.value) setRentalEnd("");
+                    }}
+                    className="input"
+                  />
+                </label>
+                <label className="block">
+                  <span className="block text-sm font-bold text-harbor mb-1.5">تاريخ الإرجاع</span>
+                  <input
+                    type="date"
+                    required
+                    disabled={!rentalStart}
+                    min={rentalStart ? addDays(rentalStart, 1) : undefined}
+                    value={rentalEnd}
+                    onChange={(e) => setRentalEnd(e.target.value)}
+                    className="input disabled:opacity-50"
+                  />
+                </label>
+              </div>
+            )}
             {usesVanexPricing ? (
               <div className="grid grid-cols-2 gap-3">
                 <label className="block">
@@ -363,7 +420,7 @@ export default function CheckoutPage() {
   
             <button
               type="submit"
-              disabled={loading || walletPending || (usesVanexPricing && !selectedArea)}
+              disabled={loading || walletPending || (usesVanexPricing && !selectedArea) || (isRental && (!rentalStart || !rentalEnd))}
               className="w-full rounded-full bg-signal py-3.5 font-bold text-canvas shadow-lg shadow-signal/20 hover:bg-signal-dark hover:-translate-y-0.5 transition-all disabled:opacity-60 disabled:translate-y-0"
             >
               {loading || walletPending ? "جارٍ التأكيد..." : `تأكيد الطلب — ${formatLYD(grandTotalCents)}`}
@@ -378,8 +435,9 @@ export default function CheckoutPage() {
               <li key={line.productId} className="flex justify-between text-harbor/90">
                 <span>
                   {line.name} × {line.quantity}
+                  {isRental && rentalDays > 1 ? ` × ${rentalDays} يوم` : ""}
                 </span>
-                <span>{formatLYD(line.priceCents * line.quantity)}</span>
+                <span>{formatLYD(line.priceCents * line.quantity * (isRental ? rentalDays : 1))}</span>
               </li>
             ))}
           </ul>

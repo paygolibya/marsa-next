@@ -9,6 +9,8 @@ type OrderRow = {
   totalCents: number;
   shippingCents: number;
   createdAt: Date;
+  scheduledStartAt: Date | null;
+  scheduledEndAt: Date | null;
   items: { id: string; productId: string; productName: string; unitPriceCents: number; quantity: number; variantLabel: string | null }[];
 };
 
@@ -44,6 +46,8 @@ export async function handleTrackOrder(deps: TrackOrderDeps, req: Request): Prom
     totalCents: order.totalCents,
     shippingCents: order.shippingCents,
     createdAt: order.createdAt,
+    scheduledStartAt: order.scheduledStartAt,
+    scheduledEndAt: order.scheduledEndAt,
     items: order.items.map((i) => ({
       id: i.id,
       productId: i.productId,

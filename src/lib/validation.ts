@@ -92,6 +92,14 @@ export const createOrderSchema = z
     }),
     paymentMethod: z.enum(["cod", "wallet"]),
     couponCode: z.string().optional(),
+    // Rental stores: a rental period (store.type === "rental"); booking
+    // stores: an appointment slot start, with the end recomputed
+    // server-side from Store.bookingSlotMinutes, never trusted from the
+    // client (store.type === "booking"). ISO strings, parsed/validated
+    // against the actual store type in the handler, since a plain zod
+    // shape here can't see which store this request is for.
+    scheduledStartAt: z.string().optional(),
+    scheduledEndAt: z.string().optional(),
   });
 
 export const createCouponSchema = z.object({

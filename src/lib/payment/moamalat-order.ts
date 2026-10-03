@@ -44,9 +44,9 @@ export async function finalizeWalletOrder(orderId: string, outcome: "paid" | "fa
   // already-recorded payment — a courier or SMS/email outage must never
   // make it look like the payment itself failed.
   try {
-    // Digital-goods stores have no physical delivery — see the matching
-    // comment in orders/handler.ts's COD path.
-    if (order.store.type === "digital") {
+    // Digital-goods and rental stores have no courier delivery — see the
+    // matching comment in orders/handler.ts's COD path.
+    if (order.store.type === "digital" || order.store.type === "rental") {
       await prisma.order.update({ where: { id: order.id }, data: { status: "confirmed" } });
       await sendOrderConfirmationEmail({
         id: order.id,

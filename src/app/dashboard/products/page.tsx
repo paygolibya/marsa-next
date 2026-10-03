@@ -108,7 +108,7 @@ export default function DashboardProductsPage() {
                 <input required value={name} onChange={(e) => setName(e.target.value)} className="input" />
               </label>
               <label className="block">
-                <span className="block text-sm font-bold text-harbor mb-1.5">السعر (د.ل)</span>
+                <span className="block text-sm font-bold text-harbor mb-1.5">{store?.type === "rental" ? "السعر اليومي (د.ل)" : "السعر (د.ل)"}</span>
                 <input
                   required
                   type="number"

@@ -144,6 +144,7 @@ export default function ProductDetailPage() {
             )}
             <p className="font-bold text-2xl mt-4" style={{ color: primary }}>
               {formatLYD(effectivePriceCents)}
+              {store?.type === "rental" && <span className="text-base font-normal text-rope"> / يوم</span>}
             </p>
 
             {product.variantOptions?.map((option) => (
