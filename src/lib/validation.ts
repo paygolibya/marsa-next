@@ -67,9 +67,14 @@ export const updateProductVariantSchema = z.object({
 // Keyed by day-of-week as a string ("0" = Sunday ... "6" = Saturday); a
 // missing/null day means closed that day. See src/lib/booking.ts for how
 // this turns into actual appointment slots.
+// Bounds the hour/minute ranges too (not just the digit shape) — an
+// out-of-range value like "25:99" would otherwise pass this schema but
+// then be silently treated as "closed" by src/lib/booking.ts's
+// parseHHMM, saving with a 200 while quietly producing zero slots for
+// that day with no error ever surfaced to the merchant.
 const bookingDaySchema = z.object({
-  open: z.string().regex(/^\d{1,2}:\d{2}$/, "صيغة وقت غير صحيحة"),
-  close: z.string().regex(/^\d{1,2}:\d{2}$/, "صيغة وقت غير صحيحة"),
+  open: z.string().regex(/^([01]?\d|2[0-3]):[0-5]\d$/, "صيغة وقت غير صحيحة"),
+  close: z.string().regex(/^([01]?\d|2[0-3]):[0-5]\d$/, "صيغة وقت غير صحيحة"),
 });
 export const bookingWorkingHoursSchema = z.record(z.string(), bookingDaySchema.nullable());
 

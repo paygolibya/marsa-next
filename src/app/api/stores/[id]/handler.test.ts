@@ -82,3 +82,14 @@ test("rejects a malformed booking-hours time with 400", async () => {
   assert.equal(res.status, 400);
   assert.equal(calls.update, undefined);
 });
+
+test("rejects an out-of-range hour/minute (e.g. 25:00) even though it's digit-shaped", async () => {
+  const { db, calls } = makeFakeDb("store-1");
+  const res = await handleUpdateStore(
+    db,
+    authReq("http://localhost/x", { method: "PATCH", body: JSON.stringify({ bookingWorkingHours: { "1": { open: "09:00", close: "25:00" } } }) }),
+    "store-1"
+  );
+  assert.equal(res.status, 400);
+  assert.equal(calls.update, undefined);
+});

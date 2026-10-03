@@ -61,3 +61,15 @@ test("isSlotOpen rejects a slot on a closed day", () => {
 test("isSlotOpen rejects a non-zero seconds/ms value (a client trying to sneak in an off-grid time)", () => {
   assert.equal(isSlotOpen(new Date(Date.UTC(2026, 10, 2, 9, 0, 30)), HOURS, 60), false);
 });
+
+test("isSlotOpen rejects a slot that has already passed, given an explicit 'now'", () => {
+  const slot = new Date(Date.UTC(2026, 10, 2, 9, 0, 0)); // a Monday 09:00
+  const laterNow = new Date(Date.UTC(2026, 10, 2, 9, 0, 1)); // one second after the slot
+  assert.equal(isSlotOpen(slot, HOURS, 60, laterNow), false);
+});
+
+test("isSlotOpen accepts a slot that's still in the future relative to 'now'", () => {
+  const slot = new Date(Date.UTC(2026, 10, 2, 9, 0, 0));
+  const earlierNow = new Date(Date.UTC(2026, 10, 1, 0, 0, 0));
+  assert.equal(isSlotOpen(slot, HOURS, 60, earlierNow), true);
+});

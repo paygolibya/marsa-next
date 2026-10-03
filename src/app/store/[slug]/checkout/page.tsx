@@ -11,9 +11,14 @@ const courierLabels: Record<string, string> = {
   vanex: "Vanex",
 };
 
+// UTC-safe: new Date("2026-11-05") parses as UTC midnight, so mutating it
+// with the LOCAL setDate()/getDate() pair can land on the wrong calendar
+// day in a browser whose timezone isn't UTC (anything west of Greenwich).
+// setUTCDate()/getUTCDate() keep the whole computation in the same frame
+// the string was parsed in.
 function addDays(dateStr: string, days: number): string {
   const d = new Date(dateStr);
-  d.setDate(d.getDate() + days);
+  d.setUTCDate(d.getUTCDate() + days);
   return d.toISOString().slice(0, 10);
 }
 
@@ -142,7 +147,14 @@ export default function CheckoutPage() {
     setCouponChecking(true);
     setCouponMessage(null);
     try {
-      const result = await api.validateCoupon({ storeSlug: slug, code: couponInput.trim(), subtotalCents: cart.subtotalCents });
+      // For a rental store, cart.subtotalCents is still just the daily
+      // rate × quantity — the real subtotal (what the server will
+      // actually validate the coupon against) also factors in the
+      // selected number of days. Without this, a coupon's minOrderCents
+      // check (or its percent/fixed discount estimate) would be computed
+      // against the wrong number here, even though the order itself is
+      // always created with the correct, server-recomputed total.
+      const result = await api.validateCoupon({ storeSlug: slug, code: couponInput.trim(), subtotalCents: effectiveSubtotalCents });
       if (result.valid) {
         setAppliedCoupon({ code: couponInput.trim(), discountCents: result.discountCents });
         setCouponMessage("✓ تم تطبيق الكوبون");

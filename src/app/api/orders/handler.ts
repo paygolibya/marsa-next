@@ -126,6 +126,16 @@ export async function handleCreateOrder(deps: OrdersDeps, req: Request): Promise
     const store = await db.store.findUnique({ where: { slug: storeSlug }, include: { merchant: true } });
     if (!store) return NextResponse.json({ error: "Store not found" }, { status: 404 });
 
+    // Showcase stores have no checkout at all — catalog + inquiry only
+    // (see POST /api/inquiries). The storefront UI never shows a cart for
+    // one, but that's a UI choice, not a security boundary — a store that
+    // switched to "showcase" after being created as "physical" would
+    // otherwise still silently accept a real paid order through this
+    // route via a stale client or a direct call.
+    if (store.type === "showcase") {
+      return NextResponse.json({ error: "هذا المتجر لا يدعم الشراء المباشر — يُرجى إرسال استفسار" }, { status: 400 });
+    }
+
     // Rental: the buyer picked a date range, price = daily rate (the
     // product's own priceCents) × days × quantity — computed here, never
     // trusted from the client, and folded into unitPriceCents below so
@@ -142,6 +152,14 @@ export async function handleCreateOrder(deps: OrdersDeps, req: Request): Promise
       }
       if (scheduledEndAt <= scheduledStartAt) {
         return NextResponse.json({ error: "تاريخ الإرجاع يجب أن يكون بعد تاريخ الاستلام" }, { status: 400 });
+      }
+      // Compared against the start of today (not the exact current
+      // instant) so a same-day pickup is never wrongly rejected just
+      // because it's already past midnight UTC.
+      const todayStart = new Date();
+      todayStart.setUTCHours(0, 0, 0, 0);
+      if (scheduledStartAt < todayStart) {
+        return NextResponse.json({ error: "تاريخ الاستلام لا يمكن أن يكون في الماضي" }, { status: 400 });
       }
       rentalDays = Math.max(1, Math.ceil((scheduledEndAt.getTime() - scheduledStartAt.getTime()) / 86_400_000));
     }
@@ -321,8 +339,11 @@ export async function handleCreateOrder(deps: OrdersDeps, req: Request): Promise
       // commit — the partial unique index on orders(storeId,
       // scheduledStartAt) WHERE scheduledKind='booking' catches it here
       // as a real Postgres unique-violation (code P2002), the same way
-      // OutOfStockError's `gte` guard catches a stock race.
-      if (typeof err === "object" && err !== null && "code" in err && err.code === "P2002") {
+      // OutOfStockError's `gte` guard catches a stock race. Scoped to
+      // store.type === "booking" specifically (not any P2002) so a
+      // unique-constraint violation from somewhere else in the
+      // transaction is never mislabeled as a booking conflict.
+      if (store.type === "booking" && typeof err === "object" && err !== null && "code" in err && err.code === "P2002") {
         return NextResponse.json({ error: "هذا الموعد محجوز بالفعل، اختر موعدًا آخر" }, { status: 409 });
       }
       throw err;

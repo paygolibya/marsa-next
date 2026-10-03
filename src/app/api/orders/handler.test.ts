@@ -138,6 +138,13 @@ test("returns 404 when the store doesn't exist", async () => {
   assert.equal(res.status, 404);
 });
 
+test("a showcase store rejects order creation outright — no checkout at all, even via a direct call bypassing the UI", async () => {
+  const { deps, calls } = makeFakeDeps({ store: { ...STORE, type: "showcase" } });
+  const res = await handleCreateOrder(deps, req(baseBody()));
+  assert.equal(res.status, 400);
+  assert.equal(calls.orderCreate, undefined);
+});
+
 test("rejects wallet payment when the store has no wallet provider configured", async () => {
   const { deps } = makeFakeDeps({ store: { ...STORE, walletProvider: null } });
   const res = await handleCreateOrder(deps, req(baseBody({ paymentMethod: "wallet" })));
@@ -283,6 +290,29 @@ test("rental order: missing dates are rejected with 400", async () => {
   const res = await handleCreateOrder(deps, req(baseBody()));
   assert.equal(res.status, 400);
   assert.equal(calls.orderCreate, undefined);
+});
+
+test("rental order: a pickup date already in the past is rejected with 400", async () => {
+  const { deps, calls } = makeFakeDeps({ store: { ...STORE, type: "rental" } });
+  const res = await handleCreateOrder(
+    deps,
+    req(baseBody({ scheduledStartAt: "2020-01-01T00:00:00.000Z", scheduledEndAt: "2020-01-03T00:00:00.000Z" }))
+  );
+  assert.equal(res.status, 400);
+  assert.equal(calls.orderCreate, undefined);
+});
+
+test("rental order: a same-day pickup (today) is accepted, not rejected as 'in the past'", async () => {
+  const { deps, calls } = makeFakeDeps({ store: { ...STORE, type: "rental" } });
+  const todayStart = new Date();
+  todayStart.setUTCHours(0, 0, 0, 0);
+  const tomorrow = new Date(todayStart.getTime() + 86_400_000);
+  const res = await handleCreateOrder(
+    deps,
+    req(baseBody({ scheduledStartAt: todayStart.toISOString(), scheduledEndAt: tomorrow.toISOString() }))
+  );
+  assert.equal(res.status, 201);
+  assert.ok(calls.orderCreate);
 });
 
 const BOOKING_STORE = {

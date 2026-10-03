@@ -63,8 +63,12 @@ export function generateAvailableSlots(
 
 // Re-validates a specific slot server-side at order-creation time — never
 // trust that a client-submitted scheduledStartAt actually came from the
-// availability endpoint's own output.
-export function isSlotOpen(slotStart: Date, workingHours: WorkingHours | null | undefined, slotMinutes: number): boolean {
+// availability endpoint's own output. Rejects a past slot the same way
+// generateAvailableSlots already excludes one from the public listing —
+// without this, a crafted/replayed request could book (and get
+// auto-confirmed for) an appointment time that has already passed.
+export function isSlotOpen(slotStart: Date, workingHours: WorkingHours | null | undefined, slotMinutes: number, now: Date = new Date()): boolean {
+  if (slotStart.getTime() <= now.getTime()) return false;
   const weekday = slotStart.getUTCDay();
   const minutesFromMidnight = slotStart.getUTCHours() * 60 + slotStart.getUTCMinutes();
   if (slotStart.getUTCSeconds() !== 0 || slotStart.getUTCMilliseconds() !== 0) return false;
