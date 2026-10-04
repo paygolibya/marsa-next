@@ -88,6 +88,21 @@ test("the collision suffix is digits only — never Latin letters, which break I
   assert.doesNotThrow(() => new URL(`https://${create.data.slug}.rifqa.ly`));
 });
 
+// When the name strips to nothing (e.g. emoji-only), the handler falls
+// back to a random slug — that fallback must be lowercase-alphanumeric
+// only, never nanoid's default alphabet (which includes uppercase and
+// underscores). Underscores aren't legal in a DNS hostname label, and
+// uppercase gets silently lowercased by every browser, so either one
+// would make the resulting {slug}.rifqa.ly subdomain unreachable at the
+// exact slug the store was created with.
+test("falls back to a lowercase-alphanumeric random slug when the name strips to nothing", async () => {
+  const { db, calls } = makeFakeDb();
+  await handleCreateStore(db, req({ name: "🎉🎊" }));
+  const create = calls.create as { data: { slug: string } };
+  assert.match(create.data.slug, /^[a-z0-9]+$/, `expected a lowercase-alphanumeric slug, got: ${create.data.slug}`);
+  assert.doesNotThrow(() => new URL(`https://${create.data.slug}.rifqa.ly`));
+});
+
 test("defaults courier/codEnabled/theme/type when not specified", async () => {
   const { db, calls } = makeFakeDb();
   await handleCreateStore(db, req({ name: "Store" }));

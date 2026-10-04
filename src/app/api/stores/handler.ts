@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
-import { nanoid, customAlphabet } from "nanoid";
+import { customAlphabet } from "nanoid";
 
 // Digits only, specifically for disambiguating a slug collision — nanoid's
 // default alphabet includes Latin letters, which (confirmed directly
@@ -11,6 +11,13 @@ import { nanoid, customAlphabet } from "nanoid";
 // stores whose name collided with another store's got exactly this
 // unreachable-forever subdomain.
 const numericSuffix = customAlphabet("0123456789", 4);
+
+// Lowercase alphanumeric only — nanoid's default alphabet includes
+// uppercase letters and underscores, neither of which survive as a
+// subdomain: underscores aren't legal in a DNS hostname label, and
+// uppercase gets silently lowercased by every browser, making a store
+// permanently unreachable at the exact slug it was created with.
+const fallbackSlug = customAlphabet("abcdefghijklmnopqrstuvwxyz0123456789", 8);
 import { getAuthMerchantId } from "@/lib/auth";
 import { slugify } from "@/lib/slug";
 import { createStoreSchema } from "@/lib/validation";
@@ -63,7 +70,7 @@ export async function handleCreateStore(db: CreateStoreDb, req: Request): Promis
     }
     const { name, theme, courier, codEnabled, walletProvider, templateId, type } = parsed.data;
 
-    let slug = slugify(name) || nanoid(8);
+    let slug = slugify(name) || fallbackSlug();
     const clash = await db.store.findUnique({ where: { slug } });
     if (clash) slug = `${slug}-${numericSuffix()}`;
 
