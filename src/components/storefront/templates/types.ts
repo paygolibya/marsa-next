@@ -1,4 +1,4 @@
-import type { Product, Store, StoreStats, StoreTestimonial } from "@/lib/api";
+import type { Category, Product, Store, StoreStats, StoreTestimonial } from "@/lib/api";
 import type { SectionData } from "@/components/storefront/sections/types";
 
 // Every template gets the exact same real data — only how it's laid out
@@ -14,6 +14,9 @@ export type StorefrontTemplateProps = {
   filtered: Product[];
   query: string;
   setQuery: (q: string) => void;
+  categories: Category[];
+  selectedCategoryId: string | null;
+  setSelectedCategoryId: (id: string | null) => void;
   stats: StoreStats | null;
   testimonials: StoreTestimonial[];
   cartTotalItems: number;

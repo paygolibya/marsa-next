@@ -1,4 +1,4 @@
-import { ProductsSection, TestimonialsSection, NewsletterSection } from "@/components/storefront/sections";
+import { ProductsSection, CategoriesSection, TestimonialsSection, NewsletterSection } from "@/components/storefront/sections";
 import type { SectionRenderProps, SectionType } from "@/components/storefront/sections/types";
 import { StorefrontLogo } from "./StorefrontLogo";
 import { resolveCoverImageHeightClass, resolveLogoSizePx, resolveTextSizeClass, type StorefrontTemplateProps } from "./types";
@@ -10,6 +10,7 @@ import { resolveCoverImageHeightClass, resolveLogoSizePx, resolveTextSizeClass, 
 // it's simply a no-op here, same as before this refactor.
 const SECTION_COMPONENTS: Partial<Record<SectionType, (props: SectionRenderProps) => React.ReactNode>> = {
   products: ProductsSection,
+  categories: CategoriesSection,
   testimonials: TestimonialsSection,
   newsletter: NewsletterSection,
 };
@@ -27,6 +28,9 @@ export default function MarketplaceTemplate({
   filtered,
   query,
   setQuery,
+  categories,
+  selectedCategoryId,
+  setSelectedCategoryId,
   stats,
   testimonials,
   cartTotalItems,
@@ -59,6 +63,9 @@ export default function MarketplaceTemplate({
     filtered,
     query,
     setQuery,
+    categories,
+    selectedCategoryId,
+    setSelectedCategoryId,
     stats,
     testimonials,
     onAddToCart,

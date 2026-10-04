@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { api, type Product, type Store, type StoreStats, type StoreTestimonial } from "@/lib/api";
+import { api, type Category, type Product, type Store, type StoreStats, type StoreTestimonial } from "@/lib/api";
 import { useCart } from "@/lib/use-cart";
 import { CartDrawer } from "@/components/cart-drawer";
 import { SiteFooter } from "@/components/site-footer";
@@ -15,6 +15,8 @@ export default function StorefrontPage() {
 
   const [store, setStore] = useState<Store | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [stats, setStats] = useState<StoreStats | null>(null);
   const [testimonials, setTestimonials] = useState<StoreTestimonial[]>([]);
   const [query, setQuery] = useState("");
@@ -29,9 +31,10 @@ export default function StorefrontPage() {
   useEffect(() => {
     api
       .publicStore(slug)
-      .then(({ store, products, stats, testimonials }) => {
+      .then(({ store, products, categories, stats, testimonials }) => {
         setStore(store);
         setProducts(products);
+        setCategories(categories);
         setStats(stats);
         setTestimonials(testimonials);
       })
@@ -62,7 +65,7 @@ export default function StorefrontPage() {
 
   if (!store) return null;
 
-  const filtered = products.filter((p) => p.name.includes(query));
+  const filtered = products.filter((p) => p.name.includes(query) && (!selectedCategoryId || p.categoryId === selectedCategoryId));
   const footerBranded = store.customization?.footerStyle === "branded";
   const Template = STOREFRONT_TEMPLATES[store.customization?.template?.slug ?? "modern"] ?? ModernTemplate;
 
@@ -75,6 +78,9 @@ export default function StorefrontPage() {
         filtered={filtered}
         query={query}
         setQuery={setQuery}
+        categories={categories}
+        selectedCategoryId={selectedCategoryId}
+        setSelectedCategoryId={setSelectedCategoryId}
         stats={stats}
         testimonials={testimonials}
         cartTotalItems={cart.totalItems}

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useCurrentStore } from "@/lib/use-current-store";
-import { api, ApiError, formatLYD, type Product, type ProductVariant, type ProductVariantOption } from "@/lib/api";
+import { api, ApiError, formatLYD, type Category, type Product, type ProductVariant, type ProductVariantOption } from "@/lib/api";
 import ProductGalleryUpload from "@/components/products/ProductGalleryUpload";
 import ProductVariantsManager from "@/components/products/ProductVariantsManager";
 import { Button, Card, EmptyState, SkeletonCard } from "@/components/ui";
@@ -12,8 +12,10 @@ export default function DashboardProductsPage() {
   const { token } = useAuth();
   const { store } = useCurrentStore();
   const [products, setProducts] = useState<Product[] | null>(null);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [categoryId, setCategoryId] = useState("");
   const [price, setPrice] = useState("");
   const [images, setImages] = useState<string[]>([]);
   const [trackInventory, setTrackInventory] = useState(false);
@@ -36,6 +38,10 @@ export default function DashboardProductsPage() {
   }
 
   useEffect(refresh, [token, store]);
+  useEffect(() => {
+    if (!token || !store) return;
+    api.listCategories(token, store.id).then(setCategories);
+  }, [token, store]);
 
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
@@ -44,7 +50,14 @@ export default function DashboardProductsPage() {
     setSaving(true);
     try {
       const priceCents = Math.round(parseFloat(price) * 100);
-      const created = await api.createProduct(token, { storeId: store.id, name, description: description || null, priceCents, images });
+      const created = await api.createProduct(token, {
+        storeId: store.id,
+        name,
+        description: description || null,
+        categoryId: categoryId || null,
+        priceCents,
+        images,
+      });
       const final = trackInventory
         ? await api.updateProduct(token, created.id, { trackInventory: true, stockQty: Number(stockQty) || 0 })
         : created;
@@ -61,6 +74,7 @@ export default function DashboardProductsPage() {
     setJustCreated(null);
     setName("");
     setDescription("");
+    setCategoryId("");
     setPrice("");
     setImages([]);
     setTrackInventory(false);
@@ -119,6 +133,19 @@ export default function DashboardProductsPage() {
                   placeholder="تفاصيل المنتج، المقاس، الخامة... أي شيء يفيد العميل"
                 />
               </label>
+              {categories.length > 0 && (
+                <label className="block">
+                  <span className="block text-sm font-bold text-harbor mb-1.5">التصنيف (اختياري)</span>
+                  <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} className="input">
+                    <option value="">بدون تصنيف</option>
+                    {categories.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
               <label className="block">
                 <span className="block text-sm font-bold text-harbor mb-1.5">{store?.type === "rental" ? "السعر اليومي (د.ل)" : "السعر (د.ل)"}</span>
                 <input
@@ -189,6 +216,7 @@ export default function DashboardProductsPage() {
                   key={p.id}
                   product={p}
                   token={token}
+                  categories={categories}
                   onDone={() => {
                     setEditingId(null);
                     refresh();
@@ -249,16 +277,19 @@ export default function DashboardProductsPage() {
 function ProductEditRow({
   product,
   token,
+  categories,
   onDone,
   onCancel,
 }: {
   product: Product;
   token: string | null;
+  categories: Category[];
   onDone: () => void;
   onCancel: () => void;
 }) {
   const [name, setName] = useState(product.name);
   const [description, setDescription] = useState(product.description ?? "");
+  const [categoryId, setCategoryId] = useState(product.categoryId ?? "");
   const [price, setPrice] = useState(String(product.priceCents / 100));
   const [images, setImages] = useState<string[]>(product.images ?? []);
   const [trackInventory, setTrackInventory] = useState(product.trackInventory);
@@ -276,6 +307,7 @@ function ProductEditRow({
       await api.updateProduct(token, product.id, {
         name,
         description: description || null,
+        categoryId: categoryId || null,
         priceCents: Math.round(parseFloat(price) * 100),
         images,
         trackInventory,
@@ -298,6 +330,16 @@ function ProductEditRow({
         rows={3}
         placeholder="الوصف (اختياري)"
       />
+      {categories.length > 0 && (
+        <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} className="input">
+          <option value="">بدون تصنيف</option>
+          {categories.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+      )}
       <input
         type="number"
         step="0.01"

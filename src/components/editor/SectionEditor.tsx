@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { HexColorPicker } from "react-colorful";
 import { useAuth } from "@/lib/auth-context";
-import { api, ApiError, type Product, type Store, type StoreStats, type StoreTestimonial } from "@/lib/api";
+import { api, ApiError, type Category, type Product, type Store, type StoreStats, type StoreTestimonial } from "@/lib/api";
 import { STOREFRONT_TEMPLATES } from "@/components/storefront/templates/registry";
 import ModernTemplate from "@/components/storefront/templates/ModernTemplate";
 import type { SectionType } from "@/components/storefront/sections/types";
@@ -82,6 +82,8 @@ export function SectionEditor({ storeId, onSaved }: { storeId: string; onSaved?:
 
   const [store, setStore] = useState<Store | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [stats, setStats] = useState<StoreStats | null>(null);
   const [testimonials, setTestimonials] = useState<StoreTestimonial[]>([]);
 
@@ -160,6 +162,7 @@ export function SectionEditor({ storeId, onSaved }: { storeId: string; onSaved?:
           setSections([]);
         }
         setProducts(publicData.products);
+        setCategories(publicData.categories);
         setStats(publicData.stats);
         setTestimonials(publicData.testimonials);
         setLoaded(true);
@@ -300,7 +303,10 @@ export function SectionEditor({ storeId, onSaved }: { storeId: string; onSaved?:
     };
   }, [store, draft]);
 
-  const filtered = useMemo(() => products.filter((p) => p.name.includes(query)), [products, query]);
+  const filtered = useMemo(
+    () => products.filter((p) => p.name.includes(query) && (!selectedCategoryId || p.categoryId === selectedCategoryId)),
+    [products, query, selectedCategoryId]
+  );
   const selectedSection = sections.find((s) => s.id === selectedId) ?? null;
   const Template = draftStore ? STOREFRONT_TEMPLATES[draftStore.customization?.template?.slug ?? "modern"] ?? ModernTemplate : ModernTemplate;
 
@@ -586,6 +592,9 @@ export function SectionEditor({ storeId, onSaved }: { storeId: string; onSaved?:
               filtered={filtered}
               query={query}
               setQuery={setQuery}
+              categories={categories}
+              selectedCategoryId={selectedCategoryId}
+              setSelectedCategoryId={setSelectedCategoryId}
               stats={stats}
               testimonials={testimonials}
               cartTotalItems={0}

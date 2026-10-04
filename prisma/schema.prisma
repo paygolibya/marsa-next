@@ -376,6 +376,7 @@ model Store {
   newsletterSubscribers NewsletterSubscriber[]
   sections       StoreSection[]
   inquiries      Inquiry[]
+  categories     Category[]
 
   @@map("stores")
 }
@@ -431,6 +432,26 @@ model NewsletterSubscriber {
   @@map("newsletter_subscribers")
 }
 
+// A merchant's flat list of product categories (not nested/hierarchical —
+// deliberately simple, matching the small-catalog use case this platform
+// targets). slug is used for the storefront filter's query param, unique
+// per store (not globally, unlike Store.slug).
+model Category {
+  id        String   @id @default(cuid())
+  storeId   String   @map("store_id")
+  name      String
+  slug      String
+  position  Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  store    Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  products Product[]
+
+  @@unique([storeId, slug])
+  @@index([storeId])
+  @@map("categories")
+}
+
 model Product {
   id         String   @id @default(cuid())
   storeId    String   @map("store_id")
@@ -471,6 +492,13 @@ model Product {
   // editable option definitions used to generate/regenerate them.
   variantOptions Json? @map("variant_options")
 
+  // Single category per product (not many-to-many) — deliberately simple,
+  // matching how small merchants actually organize a catalog (a flat list
+  // of categories, one per product), not a tagging system. Nullable:
+  // uncategorized is a valid, common state, not an error.
+  categoryId String?   @map("category_id")
+  category   Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
   store      Store            @relation(fields: [storeId], references: [id])
   orderItems OrderItem[]
   reviews    ProductReview[]
@@ -481,6 +509,7 @@ model Product {
   // every merchant-facing product list filters by storeId, so without this
   // it's a full table scan once the platform has real row counts.
   @@index([storeId])
+  @@index([categoryId])
   @@map("products")
 }
 

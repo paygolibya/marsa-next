@@ -29,6 +29,7 @@ async function main() {
       const legacyEnabled: Record<SectionType, boolean> = {
         stats: c.showSocialProof,
         products: true,
+        categories: false,
         testimonials: c.showTestimonials,
         newsletter: c.showNewsletter,
       };

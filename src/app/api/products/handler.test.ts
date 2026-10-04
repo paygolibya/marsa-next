@@ -19,10 +19,11 @@ function noTokenReq(body: unknown) {
 
 const validBody = { storeId: "store-1", name: "Widget", priceCents: 5000, images: ["https://example.com/a.jpg"] };
 
-function makeFakeDb(ownedStoreId?: string) {
+function makeFakeDb(ownedStoreId?: string, opts: { existingCategoryId?: string } = {}) {
   const calls: { create?: unknown } = {};
   const db: CreateProductDb = {
     store: { findFirst: async (args) => (ownedStoreId && args.where.id === ownedStoreId ? { id: ownedStoreId } : null) },
+    category: { findFirst: async (args) => (opts.existingCategoryId && args.where.id === opts.existingCategoryId ? { id: opts.existingCategoryId } : null) },
     product: {
       create: async (args) => {
         calls.create = args;
@@ -89,6 +90,20 @@ test("persists an optional description, or null when omitted", async () => {
 test("rejects a description over the length cap with 400", async () => {
   const { db, calls } = makeFakeDb("store-1");
   const res = await handleCreateProduct(db, req({ ...validBody, description: "a".repeat(5001) }));
+  assert.equal(res.status, 400);
+  assert.equal(calls.create, undefined);
+});
+
+test("assigns a category that belongs to this store", async () => {
+  const { db, calls } = makeFakeDb("store-1", { existingCategoryId: "category-1" });
+  const res = await handleCreateProduct(db, req({ ...validBody, categoryId: "category-1" }));
+  assert.equal(res.status, 201);
+  assert.equal((calls.create as { data: { categoryId: string | null } }).data.categoryId, "category-1");
+});
+
+test("rejects a categoryId that doesn't belong to this store with 400", async () => {
+  const { db, calls } = makeFakeDb("store-1", { existingCategoryId: "some-other-category" });
+  const res = await handleCreateProduct(db, req({ ...validBody, categoryId: "category-1" }));
   assert.equal(res.status, 400);
   assert.equal(calls.create, undefined);
 });

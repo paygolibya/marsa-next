@@ -1,4 +1,4 @@
-import { StatsSection, ProductsSection, TestimonialsSection, NewsletterSection } from "@/components/storefront/sections";
+import { StatsSection, ProductsSection, CategoriesSection, TestimonialsSection, NewsletterSection } from "@/components/storefront/sections";
 import type { SectionRenderProps, SectionType } from "@/components/storefront/sections/types";
 import { StorefrontHeaderRow } from "./StorefrontHeaderRow";
 import {
@@ -12,6 +12,7 @@ import {
 const SECTION_COMPONENTS: Record<SectionType, (props: SectionRenderProps) => React.ReactNode> = {
   stats: StatsSection,
   products: ProductsSection,
+  categories: CategoriesSection,
   testimonials: TestimonialsSection,
   newsletter: NewsletterSection,
 };
@@ -27,6 +28,9 @@ export default function BoldTemplate({
   filtered,
   query,
   setQuery,
+  categories,
+  selectedCategoryId,
+  setSelectedCategoryId,
   stats,
   testimonials,
   cartTotalItems,
@@ -58,6 +62,9 @@ export default function BoldTemplate({
     filtered,
     query,
     setQuery,
+    categories,
+    selectedCategoryId,
+    setSelectedCategoryId,
     stats,
     testimonials,
     onAddToCart,

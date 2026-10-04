@@ -15,7 +15,7 @@ function noTokenReq(url: string, init: RequestInit = {}) {
   return new Request(url, init);
 }
 
-function makeFakeDb(opts: { product?: { id: string; storeId: string }; ownedStoreId?: string }) {
+function makeFakeDb(opts: { product?: { id: string; storeId: string }; ownedStoreId?: string; existingCategoryId?: string }) {
   const calls: Record<string, unknown> = {};
   const db: ProductByIdDb = {
     product: {
@@ -27,6 +27,9 @@ function makeFakeDb(opts: { product?: { id: string; storeId: string }; ownedStor
     },
     store: {
       findFirst: async (args) => (opts.ownedStoreId && args.where.id === opts.ownedStoreId ? { id: opts.ownedStoreId } : null),
+    },
+    category: {
+      findFirst: async (args) => (opts.existingCategoryId && args.where.id === opts.existingCategoryId ? { id: opts.existingCategoryId } : null),
     },
   };
   return { db, calls };
@@ -63,6 +66,20 @@ test("PATCH leaves imageUrl untouched when images isn't part of the request", as
   await handleUpdateProduct(db, authReq("http://localhost/x", { method: "PATCH", body: JSON.stringify({ name: "Renamed" }) }), "product-1");
   const update = calls.update as { data: Record<string, unknown> };
   assert.ok(!("imageUrl" in update.data));
+});
+
+test("PATCH rejects a categoryId that doesn't belong to this product's store with 400", async () => {
+  const { db, calls } = makeFakeDb({ product: { id: "product-1", storeId: "store-1" }, ownedStoreId: "store-1", existingCategoryId: "some-other-category" });
+  const res = await handleUpdateProduct(db, authReq("http://localhost/x", { method: "PATCH", body: JSON.stringify({ categoryId: "category-1" }) }), "product-1");
+  assert.equal(res.status, 400);
+  assert.equal(calls.update, undefined);
+});
+
+test("PATCH accepts a categoryId that belongs to this product's store", async () => {
+  const { db, calls } = makeFakeDb({ product: { id: "product-1", storeId: "store-1" }, ownedStoreId: "store-1", existingCategoryId: "category-1" });
+  const res = await handleUpdateProduct(db, authReq("http://localhost/x", { method: "PATCH", body: JSON.stringify({ categoryId: "category-1" }) }), "product-1");
+  assert.equal(res.status, 200);
+  assert.equal((calls.update as { data: { categoryId: string } }).data.categoryId, "category-1");
 });
 
 test("DELETE rejects an unauthenticated request with 401", async () => {

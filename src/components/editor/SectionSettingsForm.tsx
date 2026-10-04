@@ -2,6 +2,7 @@ import {
   safeParseSettings,
   statsSettingsSchema,
   productsSettingsSchema,
+  categoriesSettingsSchema,
   testimonialsSettingsSchema,
   newsletterSettingsSchema,
 } from "@/components/storefront/sections/schemas";
@@ -36,6 +37,16 @@ export function SectionSettingsForm({
       <label className="block">
         <span className="block text-sm font-bold text-harbor mb-1.5">عنوان القسم (اختياري)</span>
         <input value={s.title ?? ""} onChange={(e) => onChange({ ...s, title: e.target.value || undefined })} className="input" placeholder="مثال: تسوّق الآن" />
+      </label>
+    );
+  }
+
+  if (type === "categories") {
+    const s = safeParseSettings(categoriesSettingsSchema, settings);
+    return (
+      <label className="block">
+        <span className="block text-sm font-bold text-harbor mb-1.5">عنوان القسم (اختياري)</span>
+        <input value={s.title ?? ""} onChange={(e) => onChange({ ...s, title: e.target.value || undefined })} className="input" placeholder="مثال: تسوّق حسب التصنيف" />
       </label>
     );
   }

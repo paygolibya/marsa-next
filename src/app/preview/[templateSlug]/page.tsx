@@ -61,6 +61,7 @@ export default function TemplatePreviewPage() {
         storeId: "preview-store",
         name: p.name,
         description: null,
+        categoryId: null,
         priceCents: p.priceCents,
         imageUrl: null,
         images: [],
@@ -157,6 +158,9 @@ export default function TemplatePreviewPage() {
         filtered={filtered}
         query={query}
         setQuery={setQuery}
+        categories={[]}
+        selectedCategoryId={null}
+        setSelectedCategoryId={() => {}}
         stats={MOCK_STATS}
         testimonials={MOCK_TESTIMONIALS}
         cartTotalItems={cartTotalItems}

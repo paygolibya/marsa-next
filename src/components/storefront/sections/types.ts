@@ -1,11 +1,12 @@
-import type { Product, Store, StoreStats, StoreTestimonial } from "@/lib/api";
+import type { Category, Product, Store, StoreStats, StoreTestimonial } from "@/lib/api";
 
-export const SECTION_TYPES = ["stats", "products", "testimonials", "newsletter"] as const;
+export const SECTION_TYPES = ["stats", "products", "categories", "testimonials", "newsletter"] as const;
 export type SectionType = (typeof SECTION_TYPES)[number];
 
 export const SECTION_TYPE_LABELS: Record<SectionType, string> = {
   stats: "شارات الثقة",
   products: "المنتجات",
+  categories: "تصفية حسب التصنيف",
   testimonials: "آراء العملاء",
   newsletter: "النشرة البريدية",
 };
@@ -49,6 +50,9 @@ export type SectionRenderProps = {
   filtered: Product[];
   query: string;
   setQuery: (q: string) => void;
+  categories: Category[];
+  selectedCategoryId: string | null;
+  setSelectedCategoryId: (id: string | null) => void;
   stats: StoreStats | null;
   testimonials: StoreTestimonial[];
   onAddToCart: (product: Product) => void;

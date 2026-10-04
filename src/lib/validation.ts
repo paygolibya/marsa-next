@@ -40,6 +40,7 @@ export const createProductSchema = z.object({
   description: productDescriptionSchema,
   priceCents: z.number().int().positive("السعر يجب أن يكون أكبر من صفر"),
   images: productImagesSchema,
+  categoryId: z.string().optional().nullable(),
 });
 
 export const updateProductSchema = z.object({
@@ -51,6 +52,7 @@ export const updateProductSchema = z.object({
   trackInventory: z.boolean().optional(),
   stockQty: z.number().int().min(0).optional(),
   lowStockThreshold: z.number().int().min(0).optional(),
+  categoryId: z.string().optional().nullable(),
 });
 
 // Capped at 2 option types (e.g. "الحجم" + "اللون") — enough for the
@@ -150,6 +152,16 @@ export const updateCouponSchema = z.object({
   active: z.boolean().optional(),
   maxUsage: z.number().int().positive().optional().nullable(),
   expiresAt: z.string().datetime().optional().nullable(),
+});
+
+export const createCategorySchema = z.object({
+  storeId: z.string().min(1),
+  name: z.string().min(1, "اسم التصنيف مطلوب").max(60),
+});
+
+export const updateCategorySchema = z.object({
+  name: z.string().min(1, "اسم التصنيف مطلوب").max(60).optional(),
+  position: z.number().int().min(0).optional(),
 });
 
 export const createReviewSchema = z.object({

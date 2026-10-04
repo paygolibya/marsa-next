@@ -7,9 +7,18 @@ type ProductRow = { id: string; storeId: string; name: string; description: stri
 
 export type CreateProductDb = {
   store: { findFirst: (args: { where: { id: string; merchantId: string } }) => Promise<{ id: string } | null> };
+  category: { findFirst: (args: { where: { id: string; storeId: string } }) => Promise<{ id: string } | null> };
   product: {
     create: (args: {
-      data: { storeId: string; name: string; description: string | null; priceCents: number; images: string[]; imageUrl: string | null };
+      data: {
+        storeId: string;
+        name: string;
+        description: string | null;
+        priceCents: number;
+        images: string[];
+        imageUrl: string | null;
+        categoryId: string | null;
+      };
     }) => Promise<ProductRow>;
   };
 };
@@ -25,16 +34,29 @@ export async function handleCreateProduct(db: CreateProductDb, req: Request): Pr
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "بيانات غير صالحة" }, { status: 400 });
     }
-    const { storeId, name, description, priceCents, images } = parsed.data;
+    const { storeId, name, description, priceCents, images, categoryId } = parsed.data;
 
     const store = await db.store.findFirst({ where: { id: storeId, merchantId } });
     if (!store) return NextResponse.json({ error: "You do not own this store" }, { status: 403 });
+
+    if (categoryId) {
+      const category = await db.category.findFirst({ where: { id: categoryId, storeId } });
+      if (!category) return NextResponse.json({ error: "التصنيف غير موجود" }, { status: 400 });
+    }
 
     // imageUrl is always images[0] — the two are never set independently,
     // so every existing single-image call site (storefront cards, cart,
     // order emails) keeps working without knowing galleries exist.
     const product = await db.product.create({
-      data: { storeId, name, description: description || null, priceCents, images: images ?? [], imageUrl: images?.[0] ?? null },
+      data: {
+        storeId,
+        name,
+        description: description || null,
+        priceCents,
+        images: images ?? [],
+        imageUrl: images?.[0] ?? null,
+        categoryId: categoryId || null,
+      },
     });
 
     // A freshly created product has no variants yet — returned explicitly

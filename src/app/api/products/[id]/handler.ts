@@ -11,6 +11,7 @@ export type ProductByIdDb = {
     update: (args: { where: { id: string }; data: Record<string, unknown>; include?: { variants: true } }) => Promise<unknown>;
   };
   store: { findFirst: (args: { where: { id: string; merchantId: string } }) => Promise<{ id: string } | null> };
+  category: { findFirst: (args: { where: { id: string; storeId: string } }) => Promise<{ id: string } | null> };
 };
 
 async function assertOwnsProduct(db: ProductByIdDb, id: string, merchantId: string) {
@@ -26,7 +27,8 @@ export async function handleUpdateProduct(db: ProductByIdDb, req: Request, id: s
   if (!merchantId) return NextResponse.json({ error: "Missing or invalid token" }, { status: 401 });
 
   try {
-    if (!(await assertOwnsProduct(db, id, merchantId))) {
+    const existing = await assertOwnsProduct(db, id, merchantId);
+    if (!existing) {
       return NextResponse.json({ error: "Not found or not yours" }, { status: 403 });
     }
 
@@ -34,6 +36,11 @@ export async function handleUpdateProduct(db: ProductByIdDb, req: Request, id: s
     const parsed = updateProductSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "بيانات غير صالحة" }, { status: 400 });
+    }
+
+    if (parsed.data.categoryId) {
+      const category = await db.category.findFirst({ where: { id: parsed.data.categoryId, storeId: existing.storeId } });
+      if (!category) return NextResponse.json({ error: "التصنيف غير موجود" }, { status: 400 });
     }
 
     const { images, ...rest } = parsed.data;

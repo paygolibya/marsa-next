@@ -20,6 +20,7 @@ function getNavItems(storeType: string | undefined) {
   return [
     { href: "/dashboard", label: "نظرة عامة", icon: "📊" },
     { href: "/dashboard/products", label: "المنتجات", icon: "📦" },
+    { href: "/dashboard/categories", label: "التصنيفات", icon: "🗂️" },
     isShowcase
       ? { href: "/dashboard/inquiries", label: "الاستفسارات", icon: "💬" }
       : { href: "/dashboard/orders", label: "الطلبات", icon: "🧾" },

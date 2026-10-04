@@ -30,12 +30,15 @@ function baseStore(overrides: Partial<{ customization: any; sections: any[] }> =
   };
 }
 
-function makeFakeDb(opts: { store?: ReturnType<typeof baseStore> | null; products?: any[] }) {
+function makeFakeDb(opts: { store?: ReturnType<typeof baseStore> | null; products?: any[]; categories?: any[] }) {
   const calls: Record<string, unknown> = {};
   const db: PublicStoreDb = {
     store: { findUnique: async () => opts.store ?? null },
     product: {
       findMany: async () => opts.products ?? [],
+    },
+    category: {
+      findMany: async () => opts.categories ?? [],
     },
     order: {
       count: async () => {
@@ -117,4 +120,13 @@ test("returns the store's real active products", async () => {
   const body = await res.json();
   assert.equal(body.products.length, 1);
   assert.equal(body.products[0].name, "Widget");
+});
+
+test("returns the store's categories alongside products", async () => {
+  const categories = [{ id: "c1", name: "أحذية", slug: "shoes" }];
+  const { db } = makeFakeDb({ store: baseStore(), categories });
+  const res = await handleGetPublicStore(db, "my-store");
+  const body = await res.json();
+  assert.equal(body.categories.length, 1);
+  assert.equal(body.categories[0].slug, "shoes");
 });

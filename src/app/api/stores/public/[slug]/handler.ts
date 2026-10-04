@@ -30,7 +30,8 @@ type StoreRow = {
   [key: string]: unknown;
 };
 
-type ProductRow = { id: string; name: string; description: string | null; priceCents: number };
+type ProductRow = { id: string; name: string; description: string | null; priceCents: number; categoryId: string | null };
+type CategoryRow = { id: string; name: string; slug: string };
 
 export type PublicStoreDb = {
   store: {
@@ -50,9 +51,13 @@ export type PublicStoreDb = {
         imageUrl: true;
         images: true;
         variantOptions: true;
+        categoryId: true;
         variants: { where: { active: true }; select: { id: true; options: true; priceCents: true; stockQty: true } };
       };
     }) => Promise<ProductRow[]>;
+  };
+  category: {
+    findMany: (args: { where: { storeId: string }; orderBy: { position: "asc" } }) => Promise<CategoryRow[]>;
   };
   order: { count: (args: { where: { storeId: string; status: "delivered" } }) => Promise<number> };
   productReview: {
@@ -92,19 +97,23 @@ export async function handleGetPublicStore(db: PublicStoreDb, slug: string): Pro
     const statsEnabled = sections.find((s) => s.type === "stats")?.enabled ?? true;
     const testimonialsEnabled = sections.find((s) => s.type === "testimonials")?.enabled ?? false;
 
-    const products = await db.product.findMany({
-      where: { storeId: store.id, active: true },
-      select: {
-        id: true,
-        name: true,
-        description: true,
-        priceCents: true,
-        imageUrl: true,
-        images: true,
-        variantOptions: true,
-        variants: { where: { active: true }, select: { id: true, options: true, priceCents: true, stockQty: true } },
-      },
-    });
+    const [products, categories] = await Promise.all([
+      db.product.findMany({
+        where: { storeId: store.id, active: true },
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          priceCents: true,
+          imageUrl: true,
+          images: true,
+          variantOptions: true,
+          categoryId: true,
+          variants: { where: { active: true }, select: { id: true, options: true, priceCents: true, stockQty: true } },
+        },
+      }),
+      db.category.findMany({ where: { storeId: store.id }, orderBy: { position: "asc" } }),
+    ]);
 
     const { merchant, sections: _rawSections, ...publicStore } = store;
     const dpayAvailable = getCheckoutPaymentMethods(getSubscriptionState(merchant)).dpay;
@@ -138,7 +147,7 @@ export async function handleGetPublicStore(db: PublicStoreDb, slug: string): Pro
       testimonials = reviews.map((r) => ({ buyerName: r.buyerName, rating: r.rating, reviewText: r.reviewText, productName: r.product.name }));
     }
 
-    return NextResponse.json({ store: { ...publicStore, dpayAvailable, sections }, products, stats, testimonials });
+    return NextResponse.json({ store: { ...publicStore, dpayAvailable, sections }, products, categories, stats, testimonials });
   } catch (err) {
     console.error(err);
     Sentry.captureException(err);

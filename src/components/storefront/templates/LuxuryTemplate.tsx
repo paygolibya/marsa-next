@@ -1,11 +1,12 @@
 import Image from "next/image";
-import { StatsSection, ProductsSection, TestimonialsSection, NewsletterSection } from "@/components/storefront/sections";
+import { StatsSection, ProductsSection, CategoriesSection, TestimonialsSection, NewsletterSection } from "@/components/storefront/sections";
 import type { SectionRenderProps, SectionType } from "@/components/storefront/sections/types";
 import { resolveCoverImageHeightClass, resolveLogoSizePx, type StorefrontTemplateProps } from "./types";
 
 const SECTION_COMPONENTS: Record<SectionType, (props: SectionRenderProps) => React.ReactNode> = {
   stats: StatsSection,
   products: ProductsSection,
+  categories: CategoriesSection,
   testimonials: TestimonialsSection,
   newsletter: NewsletterSection,
 };
@@ -23,6 +24,9 @@ export default function LuxuryTemplate({
   filtered,
   query,
   setQuery,
+  categories,
+  selectedCategoryId,
+  setSelectedCategoryId,
   stats,
   testimonials,
   cartTotalItems,
@@ -53,6 +57,9 @@ export default function LuxuryTemplate({
     filtered,
     query,
     setQuery,
+    categories,
+    selectedCategoryId,
+    setSelectedCategoryId,
     stats,
     testimonials,
     onAddToCart,
