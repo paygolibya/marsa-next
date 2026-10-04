@@ -435,6 +435,12 @@ model Product {
   id         String   @id @default(cuid())
   storeId    String   @map("store_id")
   name       String
+  // Free-text product details, separate from `name` — added because
+  // merchants had nowhere else to put real marketing copy and were
+  // stuffing entire paragraphs into `name` instead (confirmed live: a
+  // product whose "name" was several sentences long), which broke every
+  // layout built assuming a short title (card grids, the PDP heading).
+  description String? @db.Text
   priceCents Int      @map("price_cents")
   // imageUrl is kept as images[0] — always written together, never a
   // second source of truth — so every existing call site that only knows

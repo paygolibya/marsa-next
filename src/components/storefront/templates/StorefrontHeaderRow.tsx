@@ -39,13 +39,29 @@ export function StorefrontHeaderRow({
   paddingClassName?: string;
   logoGapClassName?: string;
 }) {
+  // The cart button is positioned absolute (so cartOnRight can place it on
+  // either side independent of the logo/name group), which means it's out
+  // of normal flex flow and can't squeeze the identity block the way a
+  // real sibling would. Without reserving its footprint here, a long
+  // store name has nothing stopping it from growing straight under the
+  // button — confirmed live (and re-confirmed with real bounding-box
+  // measurements against the actual broken page before writing this fix):
+  // in this RTL layout the logo/name group is right-anchored and grows
+  // LEFTWARD, so when the cart sits at left-6 (cartOnRight=false) the
+  // reservation has to eat into the row's LEFT padding, not its right —
+  // getting this backwards silently leaves the bug in place since the
+  // padding would land on the side nothing was ever overlapping. ~8rem
+  // comfortably covers either template's cart button (pill + badge) at
+  // this row's font sizes.
+  const cartReserveClassName = headerCentered ? "" : cartOnRight ? "pr-32" : "pl-32";
+
   return (
     <div
-      className={`relative min-h-14 mx-auto max-w-6xl px-6 ${paddingClassName} flex items-center gap-4 ${
+      className={`relative min-h-14 mx-auto max-w-6xl px-6 ${paddingClassName} flex items-center gap-4 ${cartReserveClassName} ${
         headerCentered ? "flex-col justify-center text-center" : ""
       }`}
     >
-      <div className={`flex items-center ${logoGapClassName} ${headerCentered ? "flex-col" : ""}`}>
+      <div className={`flex items-center ${logoGapClassName} min-w-0 ${headerCentered ? "flex-col" : ""}`}>
         {showLogo &&
           logo &&
           (headerCentered ? (

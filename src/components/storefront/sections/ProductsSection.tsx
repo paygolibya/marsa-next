@@ -65,7 +65,7 @@ export function ProductsSection({
                   <Link href={`/store/${slug}/product/${product.id}`} className="font-extrabold text-harbor text-lg hover:underline" style={{ color: colors.text }}>
                     {product.name}
                   </Link>
-                  <p className="font-extrabold text-xl mt-2" style={{ color: colors.accent }}>
+                  <p className="font-extrabold text-lg mt-2" style={{ color: colors.accent }}>
                     {formatLYD(product.priceCents)}{store.type === "rental" && " / يوم"}
                   </p>
                   {isShowcase ? (
@@ -137,7 +137,7 @@ export function ProductsSection({
                   <Link href={`/store/${slug}/product/${product.id}`} className="font-display text-lg font-bold hover:underline">
                     {product.name}
                   </Link>
-                  <p className="mt-1 font-bold tracking-wide" style={{ color: colors.accent }}>
+                  <p className="mt-1 text-sm font-bold tracking-wide" style={{ color: colors.accent }}>
                     {formatLYD(product.priceCents)}{store.type === "rental" && " / يوم"}
                   </p>
                   {isShowcase ? (
@@ -261,7 +261,7 @@ export function ProductsSection({
                 <Link href={`/store/${slug}/product/${product.id}`} className="font-bold text-harbor hover:underline" style={{ color: colors.text }}>
                   {product.name}
                 </Link>
-                <p className="font-bold mt-1" style={{ color: colors.primary }}>
+                <p className="font-bold text-sm mt-1" style={{ color: colors.primary }}>
                   {formatLYD(product.priceCents)}{store.type === "rental" && " / يوم"}
                 </p>
                 {isShowcase ? (

@@ -112,6 +112,7 @@ export type Product = {
   id: string;
   storeId: string;
   name: string;
+  description: string | null;
   priceCents: number;
   imageUrl: string | null;
   images: string[];
@@ -282,7 +283,7 @@ export const api = {
     }
   },
 
-  createProduct: (token: string, body: { storeId: string; name: string; priceCents: number; images?: string[] }) =>
+  createProduct: (token: string, body: { storeId: string; name: string; description?: string | null; priceCents: number; images?: string[] }) =>
     request<Product>("/api/products", {
       method: "POST",
       headers: authHeaders(token),
@@ -336,6 +337,7 @@ export const api = {
     id: string,
     body: Partial<{
       name: string;
+      description: string | null;
       priceCents: number;
       images: string[];
       active: boolean;

@@ -15,8 +15,8 @@ function render(customizationOverrides: Parameters<typeof makeTestStore>[0]) {
 test("headerStyle=centered stacks the logo group in a column; standard keeps it a row", () => {
   const centered = render({ headerStyle: "centered" });
   const standard = render({ headerStyle: "standard" });
-  assert.match(centered, /flex items-center gap-2 flex-col/);
-  assert.doesNotMatch(standard, /flex items-center gap-2 flex-col/);
+  assert.match(centered, /flex items-center gap-2 min-w-0 flex-col/);
+  assert.doesNotMatch(standard, /flex items-center gap-2 min-w-0 flex-col/);
 });
 
 // Regression test for "the merchant should choose the place of the cart...

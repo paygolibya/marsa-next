@@ -30,15 +30,21 @@ export const createStoreSchema = z.object({
 // independently.
 const productImagesSchema = z.array(z.string().url()).max(8).optional();
 
+// Capped well above what any real product description needs — a guard
+// against someone pasting an entire page of text in, not a realistic limit.
+const productDescriptionSchema = z.string().max(5000, "الوصف طويل جدًا").optional().nullable();
+
 export const createProductSchema = z.object({
   storeId: z.string().min(1),
   name: z.string().min(1, "اسم المنتج مطلوب"),
+  description: productDescriptionSchema,
   priceCents: z.number().int().positive("السعر يجب أن يكون أكبر من صفر"),
   images: productImagesSchema,
 });
 
 export const updateProductSchema = z.object({
   name: z.string().min(1, "اسم المنتج مطلوب").optional(),
+  description: productDescriptionSchema,
   priceCents: z.number().int().positive("السعر يجب أن يكون أكبر من صفر").optional(),
   images: productImagesSchema,
   active: z.boolean().optional(),

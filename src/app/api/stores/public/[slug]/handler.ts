@@ -30,7 +30,7 @@ type StoreRow = {
   [key: string]: unknown;
 };
 
-type ProductRow = { id: string; name: string; priceCents: number };
+type ProductRow = { id: string; name: string; description: string | null; priceCents: number };
 
 export type PublicStoreDb = {
   store: {
@@ -45,6 +45,7 @@ export type PublicStoreDb = {
       select: {
         id: true;
         name: true;
+        description: true;
         priceCents: true;
         imageUrl: true;
         images: true;
@@ -96,6 +97,7 @@ export async function handleGetPublicStore(db: PublicStoreDb, slug: string): Pro
       select: {
         id: true,
         name: true,
+        description: true,
         priceCents: true,
         imageUrl: true,
         images: true,

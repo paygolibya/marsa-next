@@ -20,10 +20,10 @@ test("showLogo=false omits the logo image entirely", () => {
 test("textSize controls both the heading class and the tagline body class", () => {
   const large = render({ textSize: "lg", tagline: "hello" });
   const small = render({ textSize: "sm", tagline: "hello" });
-  assert.match(large, /text-2xl/); // heading
+  assert.match(large, /text-xl/); // heading
   assert.match(large, /text-base/); // body/tagline
-  assert.match(small, /text-lg/);
-  assert.match(small, /text-xs/);
+  assert.match(small, /text-base/); // heading (sm)
+  assert.match(small, /text-xs/); // body/tagline
 });
 
 test("the stats line respects the 'stats' section's own enabled toggle", () => {

@@ -53,10 +53,18 @@ export function resolveLogoSizePx(logoSize: string | undefined): number {
 // Shared 3-tier "sm/md/lg" scale reused by text size, cover-image height,
 // and hero padding — one place to keep the actual pixel/class values so
 // they can't drift apart between templates.
+// heading here is specifically the storefront header's store-name text
+// (Modern/Bold/Marketplace) — shifted one notch smaller than it used to
+// be by default; a long Arabic store name at the old sizes was the main
+// contributor to it overlapping the cart button on narrow phones (now
+// also fixed structurally — see StorefrontHeaderRow's cartReserveClassName
+// — but a smaller default name leaves more breathing room either way).
+// Already merchant-editable via customization.textSize (دقة النص) —
+// nothing new needed to make this settable, it already is.
 export const TEXT_SIZE_CLASS: Record<string, { heading: string; body: string }> = {
-  sm: { heading: "text-lg", body: "text-xs" },
-  md: { heading: "text-xl", body: "text-sm" },
-  lg: { heading: "text-2xl", body: "text-base" },
+  sm: { heading: "text-base", body: "text-xs" },
+  md: { heading: "text-lg", body: "text-sm" },
+  lg: { heading: "text-xl", body: "text-base" },
 };
 export function resolveTextSizeClass(textSize: string | undefined) {
   return TEXT_SIZE_CLASS[textSize ?? "md"] ?? TEXT_SIZE_CLASS.md;

@@ -60,6 +60,7 @@ export default function TemplatePreviewPage() {
         id: p.id,
         storeId: "preview-store",
         name: p.name,
+        description: null,
         priceCents: p.priceCents,
         imageUrl: null,
         images: [],

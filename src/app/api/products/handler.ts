@@ -3,13 +3,13 @@ import * as Sentry from "@sentry/nextjs";
 import { getAuthMerchantId } from "@/lib/auth";
 import { createProductSchema } from "@/lib/validation";
 
-type ProductRow = { id: string; storeId: string; name: string; priceCents: number; images: string[]; imageUrl: string | null };
+type ProductRow = { id: string; storeId: string; name: string; description: string | null; priceCents: number; images: string[]; imageUrl: string | null };
 
 export type CreateProductDb = {
   store: { findFirst: (args: { where: { id: string; merchantId: string } }) => Promise<{ id: string } | null> };
   product: {
     create: (args: {
-      data: { storeId: string; name: string; priceCents: number; images: string[]; imageUrl: string | null };
+      data: { storeId: string; name: string; description: string | null; priceCents: number; images: string[]; imageUrl: string | null };
     }) => Promise<ProductRow>;
   };
 };
@@ -25,7 +25,7 @@ export async function handleCreateProduct(db: CreateProductDb, req: Request): Pr
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "بيانات غير صالحة" }, { status: 400 });
     }
-    const { storeId, name, priceCents, images } = parsed.data;
+    const { storeId, name, description, priceCents, images } = parsed.data;
 
     const store = await db.store.findFirst({ where: { id: storeId, merchantId } });
     if (!store) return NextResponse.json({ error: "You do not own this store" }, { status: 403 });
@@ -34,7 +34,7 @@ export async function handleCreateProduct(db: CreateProductDb, req: Request): Pr
     // so every existing single-image call site (storefront cards, cart,
     // order emails) keeps working without knowing galleries exist.
     const product = await db.product.create({
-      data: { storeId, name, priceCents, images: images ?? [], imageUrl: images?.[0] ?? null },
+      data: { storeId, name, description: description || null, priceCents, images: images ?? [], imageUrl: images?.[0] ?? null },
     });
 
     // A freshly created product has no variants yet — returned explicitly

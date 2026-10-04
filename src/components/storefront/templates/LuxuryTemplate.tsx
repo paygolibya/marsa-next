@@ -94,7 +94,7 @@ export default function LuxuryTemplate({
             />
           )}
           {showStoreName && (
-            <h1 className="font-display text-3xl font-extrabold tracking-wide" style={{ color: gold }}>
+            <h1 className="font-display text-2xl font-extrabold tracking-wide" style={{ color: gold }}>
               {store.name}
             </h1>
           )}

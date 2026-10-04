@@ -93,9 +93,9 @@ export default function ModernTemplate({
           cartOnRight={cartOnRight}
           identityExtra={
             (showStoreName || store.customization?.tagline) && (
-              <div>
-                {showStoreName && <h1 className={`font-display font-extrabold text-white ${textSize.heading}`}>{store.name}</h1>}
-                {store.customization?.tagline && <p className={`text-white/80 ${textSize.body}`}>{store.customization.tagline}</p>}
+              <div className="min-w-0">
+                {showStoreName && <h1 className={`font-display font-extrabold text-white truncate ${textSize.heading}`}>{store.name}</h1>}
+                {store.customization?.tagline && <p className={`text-white/80 truncate ${textSize.body}`}>{store.customization.tagline}</p>}
               </div>
             )
           }

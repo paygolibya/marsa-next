@@ -144,10 +144,12 @@ export default function ProductDetailPage() {
                 {"☆".repeat(5 - Math.round(average))} ({reviews.length} تقييم)
               </p>
             )}
-            <p className="font-bold text-2xl mt-4" style={{ color: primary }}>
+            <p className="font-bold text-xl mt-4" style={{ color: primary }}>
               {formatLYD(effectivePriceCents)}
               {store?.type === "rental" && <span className="text-base font-normal text-rope"> / يوم</span>}
             </p>
+
+            {product.description && <p className="text-sm text-rope mt-4 whitespace-pre-line leading-relaxed">{product.description}</p>}
 
             {product.variantOptions?.map((option) => (
               <div key={option.name} className="mt-5">

@@ -75,3 +75,20 @@ test("returns the new product with an explicit empty variants array", async () =
   const body = await res.json();
   assert.deepEqual(body.variants, []);
 });
+
+test("persists an optional description, or null when omitted", async () => {
+  const { db, calls } = makeFakeDb("store-1");
+  await handleCreateProduct(db, req({ ...validBody, description: "تفاصيل المنتج" }));
+  assert.equal((calls.create as { data: { description: string | null } }).data.description, "تفاصيل المنتج");
+
+  const { db: db2, calls: calls2 } = makeFakeDb("store-1");
+  await handleCreateProduct(db2, req(validBody));
+  assert.equal((calls2.create as { data: { description: string | null } }).data.description, null);
+});
+
+test("rejects a description over the length cap with 400", async () => {
+  const { db, calls } = makeFakeDb("store-1");
+  const res = await handleCreateProduct(db, req({ ...validBody, description: "a".repeat(5001) }));
+  assert.equal(res.status, 400);
+  assert.equal(calls.create, undefined);
+});

@@ -13,6 +13,7 @@ export default function DashboardProductsPage() {
   const { store } = useCurrentStore();
   const [products, setProducts] = useState<Product[] | null>(null);
   const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
   const [images, setImages] = useState<string[]>([]);
   const [trackInventory, setTrackInventory] = useState(false);
@@ -43,7 +44,7 @@ export default function DashboardProductsPage() {
     setSaving(true);
     try {
       const priceCents = Math.round(parseFloat(price) * 100);
-      const created = await api.createProduct(token, { storeId: store.id, name, priceCents, images });
+      const created = await api.createProduct(token, { storeId: store.id, name, description: description || null, priceCents, images });
       const final = trackInventory
         ? await api.updateProduct(token, created.id, { trackInventory: true, stockQty: Number(stockQty) || 0 })
         : created;
@@ -59,6 +60,7 @@ export default function DashboardProductsPage() {
   function finishAdding() {
     setJustCreated(null);
     setName("");
+    setDescription("");
     setPrice("");
     setImages([]);
     setTrackInventory(false);
@@ -105,7 +107,17 @@ export default function DashboardProductsPage() {
             <form onSubmit={handleAdd} className="space-y-4">
               <label className="block">
                 <span className="block text-sm font-bold text-harbor mb-1.5">اسم المنتج</span>
-                <input required value={name} onChange={(e) => setName(e.target.value)} className="input" />
+                <input required value={name} onChange={(e) => setName(e.target.value)} className="input" placeholder="اسم قصير وواضح" />
+              </label>
+              <label className="block">
+                <span className="block text-sm font-bold text-harbor mb-1.5">الوصف (اختياري)</span>
+                <textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  className="input"
+                  rows={3}
+                  placeholder="تفاصيل المنتج، المقاس، الخامة... أي شيء يفيد العميل"
+                />
               </label>
               <label className="block">
                 <span className="block text-sm font-bold text-harbor mb-1.5">{store?.type === "rental" ? "السعر اليومي (د.ل)" : "السعر (د.ل)"}</span>
@@ -246,6 +258,7 @@ function ProductEditRow({
   onCancel: () => void;
 }) {
   const [name, setName] = useState(product.name);
+  const [description, setDescription] = useState(product.description ?? "");
   const [price, setPrice] = useState(String(product.priceCents / 100));
   const [images, setImages] = useState<string[]>(product.images ?? []);
   const [trackInventory, setTrackInventory] = useState(product.trackInventory);
@@ -262,6 +275,7 @@ function ProductEditRow({
     try {
       await api.updateProduct(token, product.id, {
         name,
+        description: description || null,
         priceCents: Math.round(parseFloat(price) * 100),
         images,
         trackInventory,
@@ -277,6 +291,13 @@ function ProductEditRow({
   return (
     <Card className="border-brass/40 p-4 space-y-3">
       <input value={name} onChange={(e) => setName(e.target.value)} className="input" placeholder="اسم المنتج" />
+      <textarea
+        value={description}
+        onChange={(e) => setDescription(e.target.value)}
+        className="input"
+        rows={3}
+        placeholder="الوصف (اختياري)"
+      />
       <input
         type="number"
         step="0.01"

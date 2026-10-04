@@ -96,7 +96,7 @@ export default function BoldTemplate({
           cartOnRight={cartOnRight}
           identityExtra={
             showStoreName && (
-              <span className={`font-display font-extrabold text-harbor ${textSize.heading}`} style={{ color: colors.text }}>
+              <span className={`block min-w-0 truncate font-display font-extrabold text-harbor ${textSize.heading}`} style={{ color: colors.text }}>
                 {store.name}
               </span>
             )
