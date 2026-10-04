@@ -45,8 +45,8 @@ test("a long store name truncates instead of overlapping the cart button", () =>
   // live broken page) — so a cart on the left needs the LEFT padding
   // reserved, and vice versa. Getting this backwards leaves the bug in
   // place (the reservation lands on the side nothing overlaps).
-  assert.match(left, /pl-32/, "cart on the left reserves left padding, since the name grows leftward into it");
-  assert.match(right, /pr-32/);
+  assert.match(left, /pl-40/, "cart on the left reserves left padding, since the name grows leftward into it");
+  assert.match(right, /pr-40/);
   assert.match(left, /truncate/, "the store name itself must be able to ellipsis");
 });
 

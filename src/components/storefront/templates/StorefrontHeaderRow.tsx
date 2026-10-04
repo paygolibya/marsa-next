@@ -52,8 +52,11 @@ export function StorefrontHeaderRow({
   // getting this backwards silently leaves the bug in place since the
   // padding would land on the side nothing was ever overlapping. ~8rem
   // comfortably covers either template's cart button (pill + badge) at
-  // this row's font sizes.
-  const cartReserveClassName = headerCentered ? "" : cartOnRight ? "pr-32" : "pl-32";
+  // this row's font sizes. Measured against the real deployed button
+  // (left-6 offset + ~118px width = ~142px total reach) — pl/pr-32 (128px)
+  // was tried first and came up 14px short, still overlapping; 40 (160px)
+  // leaves real margin instead of being exactly on the edge of correct.
+  const cartReserveClassName = headerCentered ? "" : cartOnRight ? "pr-40" : "pl-40";
 
   return (
     <div
