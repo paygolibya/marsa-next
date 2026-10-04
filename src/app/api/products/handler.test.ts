@@ -107,3 +107,36 @@ test("rejects a categoryId that doesn't belong to this store with 400", async ()
   assert.equal(res.status, 400);
   assert.equal(calls.create, undefined);
 });
+
+test("persists optional SEO meta fields and cost price, or null when omitted", async () => {
+  const { db, calls } = makeFakeDb("store-1");
+  await handleCreateProduct(
+    db,
+    req({ ...validBody, metaTitle: "عنوان SEO", metaDescription: "وصف SEO", costPriceCents: 3000 })
+  );
+  const create1 = calls.create as { data: { metaTitle: string | null; metaDescription: string | null; costPriceCents: number | null } };
+  assert.equal(create1.data.metaTitle, "عنوان SEO");
+  assert.equal(create1.data.metaDescription, "وصف SEO");
+  assert.equal(create1.data.costPriceCents, 3000);
+
+  const { db: db2, calls: calls2 } = makeFakeDb("store-1");
+  await handleCreateProduct(db2, req(validBody));
+  const create2 = calls2.create as { data: { metaTitle: string | null; metaDescription: string | null; costPriceCents: number | null } };
+  assert.equal(create2.data.metaTitle, null);
+  assert.equal(create2.data.metaDescription, null);
+  assert.equal(create2.data.costPriceCents, null);
+});
+
+test("rejects a metaTitle over the length cap with 400", async () => {
+  const { db, calls } = makeFakeDb("store-1");
+  const res = await handleCreateProduct(db, req({ ...validBody, metaTitle: "a".repeat(71) }));
+  assert.equal(res.status, 400);
+  assert.equal(calls.create, undefined);
+});
+
+test("rejects a negative costPriceCents with 400", async () => {
+  const { db, calls } = makeFakeDb("store-1");
+  const res = await handleCreateProduct(db, req({ ...validBody, costPriceCents: -1 }));
+  assert.equal(res.status, 400);
+  assert.equal(calls.create, undefined);
+});

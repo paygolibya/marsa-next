@@ -72,6 +72,9 @@ export default function TemplatePreviewPage() {
         trackInventory: false,
         stockQty: 0,
         lowStockThreshold: 0,
+        metaTitle: null,
+        metaDescription: null,
+        costPriceCents: null,
       })),
     []
   );

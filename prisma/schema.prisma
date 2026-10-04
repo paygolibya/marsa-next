@@ -499,6 +499,16 @@ model Product {
   categoryId String?   @map("category_id")
   category   Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
 
+  // SEO overrides for the product detail page's <title>/meta description —
+  // null means the PDP falls back to the product name / description, same
+  // as before these existed.
+  metaTitle       String? @map("meta_title")
+  metaDescription String? @map("meta_description")
+  // What the merchant actually paid, purely for their own margin math —
+  // never exposed on the storefront or to buyers, only on the merchant's
+  // own product form/list.
+  costPriceCents  Int?    @map("cost_price_cents")
+
   store      Store            @relation(fields: [storeId], references: [id])
   orderItems OrderItem[]
   reviews    ProductReview[]

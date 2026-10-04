@@ -18,6 +18,9 @@ export type CreateProductDb = {
         images: string[];
         imageUrl: string | null;
         categoryId: string | null;
+        metaTitle: string | null;
+        metaDescription: string | null;
+        costPriceCents: number | null;
       };
     }) => Promise<ProductRow>;
   };
@@ -34,7 +37,7 @@ export async function handleCreateProduct(db: CreateProductDb, req: Request): Pr
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "بيانات غير صالحة" }, { status: 400 });
     }
-    const { storeId, name, description, priceCents, images, categoryId } = parsed.data;
+    const { storeId, name, description, priceCents, images, categoryId, metaTitle, metaDescription, costPriceCents } = parsed.data;
 
     const store = await db.store.findFirst({ where: { id: storeId, merchantId } });
     if (!store) return NextResponse.json({ error: "You do not own this store" }, { status: 403 });
@@ -56,6 +59,9 @@ export async function handleCreateProduct(db: CreateProductDb, req: Request): Pr
         images: images ?? [],
         imageUrl: images?.[0] ?? null,
         categoryId: categoryId || null,
+        metaTitle: metaTitle || null,
+        metaDescription: metaDescription || null,
+        costPriceCents: costPriceCents ?? null,
       },
     });
 

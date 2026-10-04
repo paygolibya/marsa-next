@@ -20,6 +20,9 @@ export default function DashboardProductsPage() {
   const [images, setImages] = useState<string[]>([]);
   const [trackInventory, setTrackInventory] = useState(false);
   const [stockQty, setStockQty] = useState("");
+  const [metaTitle, setMetaTitle] = useState("");
+  const [metaDescription, setMetaDescription] = useState("");
+  const [costPrice, setCostPrice] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -57,6 +60,9 @@ export default function DashboardProductsPage() {
         categoryId: categoryId || null,
         priceCents,
         images,
+        metaTitle: metaTitle || null,
+        metaDescription: metaDescription || null,
+        costPriceCents: costPrice ? Math.round(parseFloat(costPrice) * 100) : null,
       });
       const final = trackInventory
         ? await api.updateProduct(token, created.id, { trackInventory: true, stockQty: Number(stockQty) || 0 })
@@ -79,6 +85,9 @@ export default function DashboardProductsPage() {
     setImages([]);
     setTrackInventory(false);
     setStockQty("");
+    setMetaTitle("");
+    setMetaDescription("");
+    setCostPrice("");
     // Variants added in the inline step above only ever updated local
     // justCreated state, never the main products list — confirmed live:
     // the list kept showing "0 variants" after finishing until something
@@ -183,6 +192,24 @@ export default function DashboardProductsPage() {
                   />
                 </label>
               )}
+
+              <details className="rounded-xl border border-harbor/15 bg-white px-4 py-3">
+                <summary className="font-bold text-harbor text-sm cursor-pointer">تحسين محركات البحث والتكلفة (اختياري)</summary>
+                <div className="mt-3 space-y-3">
+                  <label className="block">
+                    <span className="block text-xs text-rope mb-1">عنوان الصفحة لمحركات البحث</span>
+                    <input value={metaTitle} onChange={(e) => setMetaTitle(e.target.value)} className="input" maxLength={70} placeholder="يُستخدم عنوان المنتج تلقائيًا إن تُرك خاليًا" />
+                  </label>
+                  <label className="block">
+                    <span className="block text-xs text-rope mb-1">الوصف التعريفي لمحركات البحث</span>
+                    <textarea value={metaDescription} onChange={(e) => setMetaDescription(e.target.value)} className="input" rows={2} maxLength={160} placeholder="يظهر في نتائج البحث على جوجل" />
+                  </label>
+                  <label className="block">
+                    <span className="block text-xs text-rope mb-1">سعر التكلفة (د.ل) — لا يظهر للعملاء</span>
+                    <input type="number" step="0.01" min="0" value={costPrice} onChange={(e) => setCostPrice(e.target.value)} className="input" dir="ltr" />
+                  </label>
+                </div>
+              </details>
 
               <p className="text-xs text-rope">يمكنك إضافة متغيرات (مقاسات، ألوان...) في الخطوة التالية بعد الإضافة.</p>
 
@@ -295,6 +322,9 @@ function ProductEditRow({
   const [trackInventory, setTrackInventory] = useState(product.trackInventory);
   const [stockQty, setStockQty] = useState(String(product.stockQty));
   const [lowStockThreshold, setLowStockThreshold] = useState(String(product.lowStockThreshold));
+  const [metaTitle, setMetaTitle] = useState(product.metaTitle ?? "");
+  const [metaDescription, setMetaDescription] = useState(product.metaDescription ?? "");
+  const [costPrice, setCostPrice] = useState(product.costPriceCents != null ? String(product.costPriceCents / 100) : "");
   const [saving, setSaving] = useState(false);
 
   const [variantOptions, setVariantOptions] = useState<ProductVariantOption[] | null>(product.variantOptions);
@@ -313,6 +343,9 @@ function ProductEditRow({
         trackInventory,
         stockQty: Number(stockQty) || 0,
         lowStockThreshold: Number(lowStockThreshold) || 0,
+        metaTitle: metaTitle || null,
+        metaDescription: metaDescription || null,
+        costPriceCents: costPrice ? Math.round(parseFloat(costPrice) * 100) : null,
       });
       onDone();
     } finally {
@@ -378,6 +411,24 @@ function ProductEditRow({
           </label>
         </div>
       )}
+
+      <details className="rounded-lg border border-harbor/15 px-3 py-2">
+        <summary className="text-sm font-bold text-harbor cursor-pointer">تحسين محركات البحث والتكلفة (اختياري)</summary>
+        <div className="mt-3 space-y-3">
+          <label className="block">
+            <span className="block text-xs text-rope mb-1">عنوان الصفحة لمحركات البحث</span>
+            <input value={metaTitle} onChange={(e) => setMetaTitle(e.target.value)} className="input" maxLength={70} placeholder="يُستخدم عنوان المنتج تلقائيًا إن تُرك خاليًا" />
+          </label>
+          <label className="block">
+            <span className="block text-xs text-rope mb-1">الوصف التعريفي لمحركات البحث</span>
+            <textarea value={metaDescription} onChange={(e) => setMetaDescription(e.target.value)} className="input" rows={2} maxLength={160} placeholder="يظهر في نتائج البحث على جوجل" />
+          </label>
+          <label className="block">
+            <span className="block text-xs text-rope mb-1">سعر التكلفة (د.ل) — لا يظهر للعملاء</span>
+            <input type="number" step="0.01" min="0" value={costPrice} onChange={(e) => setCostPrice(e.target.value)} className="input" dir="ltr" />
+          </label>
+        </div>
+      </details>
 
       <ProductVariantsManager
         productId={product.id}

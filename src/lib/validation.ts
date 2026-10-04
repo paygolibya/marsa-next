@@ -34,6 +34,13 @@ const productImagesSchema = z.array(z.string().url()).max(8).optional();
 // against someone pasting an entire page of text in, not a realistic limit.
 const productDescriptionSchema = z.string().max(5000, "الوصف طويل جدًا").optional().nullable();
 
+// Capped at typical search-engine display limits — anything longer is
+// truncated by Google anyway, so a higher limit would just store text
+// that never actually shows up.
+const metaTitleSchema = z.string().max(70, "العنوان الوصفي طويل جدًا").optional().nullable();
+const metaDescriptionSchema = z.string().max(160, "الوصف التعريفي طويل جدًا").optional().nullable();
+const costPriceCentsSchema = z.number().int().min(0, "سعر التكلفة يجب أن يكون صفرًا أو أكبر").optional().nullable();
+
 export const createProductSchema = z.object({
   storeId: z.string().min(1),
   name: z.string().min(1, "اسم المنتج مطلوب"),
@@ -41,6 +48,9 @@ export const createProductSchema = z.object({
   priceCents: z.number().int().positive("السعر يجب أن يكون أكبر من صفر"),
   images: productImagesSchema,
   categoryId: z.string().optional().nullable(),
+  metaTitle: metaTitleSchema,
+  metaDescription: metaDescriptionSchema,
+  costPriceCents: costPriceCentsSchema,
 });
 
 export const updateProductSchema = z.object({
@@ -53,6 +63,9 @@ export const updateProductSchema = z.object({
   stockQty: z.number().int().min(0).optional(),
   lowStockThreshold: z.number().int().min(0).optional(),
   categoryId: z.string().optional().nullable(),
+  metaTitle: metaTitleSchema,
+  metaDescription: metaDescriptionSchema,
+  costPriceCents: costPriceCentsSchema,
 });
 
 // Capped at 2 option types (e.g. "الحجم" + "اللون") — enough for the

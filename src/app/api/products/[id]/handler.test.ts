@@ -82,6 +82,30 @@ test("PATCH accepts a categoryId that belongs to this product's store", async ()
   assert.equal((calls.update as { data: { categoryId: string } }).data.categoryId, "category-1");
 });
 
+test("PATCH passes metaTitle/metaDescription/costPriceCents straight through when present", async () => {
+  const { db, calls } = makeFakeDb({ product: { id: "product-1", storeId: "store-1" }, ownedStoreId: "store-1" });
+  await handleUpdateProduct(
+    db,
+    authReq("http://localhost/x", { method: "PATCH", body: JSON.stringify({ metaTitle: "عنوان SEO", metaDescription: "وصف SEO", costPriceCents: 2000 }) }),
+    "product-1"
+  );
+  const update = calls.update as { data: { metaTitle: string; metaDescription: string; costPriceCents: number } };
+  assert.equal(update.data.metaTitle, "عنوان SEO");
+  assert.equal(update.data.metaDescription, "وصف SEO");
+  assert.equal(update.data.costPriceCents, 2000);
+});
+
+test("PATCH rejects a metaDescription over the length cap with 400", async () => {
+  const { db, calls } = makeFakeDb({ product: { id: "product-1", storeId: "store-1" }, ownedStoreId: "store-1" });
+  const res = await handleUpdateProduct(
+    db,
+    authReq("http://localhost/x", { method: "PATCH", body: JSON.stringify({ metaDescription: "a".repeat(161) }) }),
+    "product-1"
+  );
+  assert.equal(res.status, 400);
+  assert.equal(calls.update, undefined);
+});
+
 test("DELETE rejects an unauthenticated request with 401", async () => {
   const { db } = makeFakeDb({});
   const res = await handleDeleteProduct(db, noTokenReq("http://localhost/x", { method: "DELETE" }), "product-1");

@@ -126,6 +126,9 @@ export type Product = {
   trackInventory: boolean;
   stockQty: number;
   lowStockThreshold: number;
+  metaTitle: string | null;
+  metaDescription: string | null;
+  costPriceCents: number | null;
 };
 export type OrderItem = {
   id: string;
@@ -288,7 +291,17 @@ export const api = {
 
   createProduct: (
     token: string,
-    body: { storeId: string; name: string; description?: string | null; priceCents: number; images?: string[]; categoryId?: string | null }
+    body: {
+      storeId: string;
+      name: string;
+      description?: string | null;
+      priceCents: number;
+      images?: string[];
+      categoryId?: string | null;
+      metaTitle?: string | null;
+      metaDescription?: string | null;
+      costPriceCents?: number | null;
+    }
   ) =>
     request<Product>("/api/products", {
       method: "POST",
@@ -351,6 +364,9 @@ export const api = {
       stockQty: number;
       lowStockThreshold: number;
       categoryId: string | null;
+      metaTitle: string | null;
+      metaDescription: string | null;
+      costPriceCents: number | null;
     }>
   ) =>
     request<Product>(`/api/products/${id}`, {
