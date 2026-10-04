@@ -1,4 +1,4 @@
-import { StatsSection, ProductsSection, CategoriesSection, TestimonialsSection, NewsletterSection } from "@/components/storefront/sections";
+import { StatsSection, ProductsSection, CategoriesSection, BundlesSection, TestimonialsSection, NewsletterSection } from "@/components/storefront/sections";
 import type { SectionRenderProps, SectionType } from "@/components/storefront/sections/types";
 import { StorefrontHeaderRow } from "./StorefrontHeaderRow";
 import { resolveCoverImageHeightClass, resolveLogoSizePx, resolveTextSizeClass, type StorefrontTemplateProps } from "./types";
@@ -7,6 +7,7 @@ const SECTION_COMPONENTS: Record<SectionType, (props: SectionRenderProps) => Rea
   stats: StatsSection,
   products: ProductsSection,
   categories: CategoriesSection,
+  bundles: BundlesSection,
   testimonials: TestimonialsSection,
   newsletter: NewsletterSection,
 };
@@ -26,11 +27,13 @@ export default function ModernTemplate({
   categories,
   selectedCategoryId,
   setSelectedCategoryId,
+  bundles,
   stats,
   testimonials,
   cartTotalItems,
   onOpenCart,
   onAddToCart,
+  onAddBundleToCart,
   newsletterEmail,
   setNewsletterEmail,
   newsletterState,
@@ -59,9 +62,11 @@ export default function ModernTemplate({
     categories,
     selectedCategoryId,
     setSelectedCategoryId,
+    bundles,
     stats,
     testimonials,
     onAddToCart,
+    onAddBundleToCart,
     newsletterEmail,
     setNewsletterEmail,
     newsletterState,

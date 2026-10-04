@@ -1,4 +1,4 @@
-import { ProductsSection, CategoriesSection, TestimonialsSection, NewsletterSection } from "@/components/storefront/sections";
+import { ProductsSection, CategoriesSection, BundlesSection, TestimonialsSection, NewsletterSection } from "@/components/storefront/sections";
 import type { SectionRenderProps, SectionType } from "@/components/storefront/sections/types";
 import { StorefrontLogo } from "./StorefrontLogo";
 import { resolveCoverImageHeightClass, resolveLogoSizePx, resolveTextSizeClass, type StorefrontTemplateProps } from "./types";
@@ -11,6 +11,7 @@ import { resolveCoverImageHeightClass, resolveLogoSizePx, resolveTextSizeClass, 
 const SECTION_COMPONENTS: Partial<Record<SectionType, (props: SectionRenderProps) => React.ReactNode>> = {
   products: ProductsSection,
   categories: CategoriesSection,
+  bundles: BundlesSection,
   testimonials: TestimonialsSection,
   newsletter: NewsletterSection,
 };
@@ -31,11 +32,13 @@ export default function MarketplaceTemplate({
   categories,
   selectedCategoryId,
   setSelectedCategoryId,
+  bundles,
   stats,
   testimonials,
   cartTotalItems,
   onOpenCart,
   onAddToCart,
+  onAddBundleToCart,
   newsletterEmail,
   setNewsletterEmail,
   newsletterState,
@@ -66,9 +69,11 @@ export default function MarketplaceTemplate({
     categories,
     selectedCategoryId,
     setSelectedCategoryId,
+    bundles,
     stats,
     testimonials,
     onAddToCart,
+    onAddBundleToCart,
     newsletterEmail,
     setNewsletterEmail,
     newsletterState,

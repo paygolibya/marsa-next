@@ -32,6 +32,16 @@ type StoreRow = {
 
 type ProductRow = { id: string; name: string; description: string | null; priceCents: number; categoryId: string | null };
 type CategoryRow = { id: string; name: string; slug: string };
+type BundleRow = {
+  id: string;
+  storeId: string;
+  name: string;
+  priceCents: number;
+  imageUrl: string | null;
+  active: boolean;
+  createdAt: Date;
+  items: { id: string; productId: string; quantity: number; product: { name: string; priceCents: number; imageUrl: string | null } }[];
+};
 
 export type PublicStoreDb = {
   store: {
@@ -58,6 +68,12 @@ export type PublicStoreDb = {
   };
   category: {
     findMany: (args: { where: { storeId: string }; orderBy: { position: "asc" } }) => Promise<CategoryRow[]>;
+  };
+  bundle: {
+    findMany: (args: {
+      where: { storeId: string; active: true };
+      include: { items: { include: { product: { select: { name: true; priceCents: true; imageUrl: true } } } } };
+    }) => Promise<BundleRow[]>;
   };
   order: { count: (args: { where: { storeId: string; status: "delivered" } }) => Promise<number> };
   productReview: {
@@ -97,7 +113,7 @@ export async function handleGetPublicStore(db: PublicStoreDb, slug: string): Pro
     const statsEnabled = sections.find((s) => s.type === "stats")?.enabled ?? true;
     const testimonialsEnabled = sections.find((s) => s.type === "testimonials")?.enabled ?? false;
 
-    const [products, categories] = await Promise.all([
+    const [products, categories, bundles] = await Promise.all([
       db.product.findMany({
         where: { storeId: store.id, active: true },
         select: {
@@ -113,6 +129,10 @@ export async function handleGetPublicStore(db: PublicStoreDb, slug: string): Pro
         },
       }),
       db.category.findMany({ where: { storeId: store.id }, orderBy: { position: "asc" } }),
+      db.bundle.findMany({
+        where: { storeId: store.id, active: true },
+        include: { items: { include: { product: { select: { name: true, priceCents: true, imageUrl: true } } } } },
+      }),
     ]);
 
     const { merchant, sections: _rawSections, ...publicStore } = store;
@@ -147,7 +167,7 @@ export async function handleGetPublicStore(db: PublicStoreDb, slug: string): Pro
       testimonials = reviews.map((r) => ({ buyerName: r.buyerName, rating: r.rating, reviewText: r.reviewText, productName: r.product.name }));
     }
 
-    return NextResponse.json({ store: { ...publicStore, dpayAvailable, sections }, products, categories, stats, testimonials });
+    return NextResponse.json({ store: { ...publicStore, dpayAvailable, sections }, products, categories, bundles, stats, testimonials });
   } catch (err) {
     console.error(err);
     Sentry.captureException(err);

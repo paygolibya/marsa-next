@@ -164,11 +164,13 @@ export default function TemplatePreviewPage() {
         categories={[]}
         selectedCategoryId={null}
         setSelectedCategoryId={() => {}}
+        bundles={[]}
         stats={MOCK_STATS}
         testimonials={MOCK_TESTIMONIALS}
         cartTotalItems={cartTotalItems}
         onOpenCart={() => {}}
         onAddToCart={() => setCartTotalItems((n) => n + 1)}
+        onAddBundleToCart={() => setCartTotalItems((n) => n + 1)}
         newsletterEmail={newsletterEmail}
         setNewsletterEmail={setNewsletterEmail}
         newsletterState={newsletterState}

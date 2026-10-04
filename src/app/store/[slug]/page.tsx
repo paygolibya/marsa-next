@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { api, type Category, type Product, type Store, type StoreStats, type StoreTestimonial } from "@/lib/api";
+import { api, type Bundle, type Category, type Product, type Store, type StoreStats, type StoreTestimonial } from "@/lib/api";
 import { useCart } from "@/lib/use-cart";
 import { CartDrawer } from "@/components/cart-drawer";
 import { SiteFooter } from "@/components/site-footer";
@@ -17,6 +17,7 @@ export default function StorefrontPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  const [bundles, setBundles] = useState<Bundle[]>([]);
   const [stats, setStats] = useState<StoreStats | null>(null);
   const [testimonials, setTestimonials] = useState<StoreTestimonial[]>([]);
   const [query, setQuery] = useState("");
@@ -31,10 +32,11 @@ export default function StorefrontPage() {
   useEffect(() => {
     api
       .publicStore(slug)
-      .then(({ store, products, categories, stats, testimonials }) => {
+      .then(({ store, products, categories, bundles, stats, testimonials }) => {
         setStore(store);
         setProducts(products);
         setCategories(categories);
+        setBundles(bundles);
         setStats(stats);
         setTestimonials(testimonials);
       })
@@ -81,12 +83,17 @@ export default function StorefrontPage() {
         categories={categories}
         selectedCategoryId={selectedCategoryId}
         setSelectedCategoryId={setSelectedCategoryId}
+        bundles={bundles}
         stats={stats}
         testimonials={testimonials}
         cartTotalItems={cart.totalItems}
         onOpenCart={() => setCartOpen(true)}
         onAddToCart={(product) => {
           cart.add(product);
+          setCartOpen(true);
+        }}
+        onAddBundleToCart={(bundle) => {
+          cart.addBundle(bundle);
           setCartOpen(true);
         }}
         newsletterEmail={newsletterEmail}

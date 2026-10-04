@@ -3,7 +3,7 @@ import * as Sentry from "@sentry/nextjs";
 import { createReviewSchema } from "@/lib/validation";
 
 type ReviewRow = { id: string; productId: string; buyerName: string; rating: number; reviewText: string | null; createdAt: Date };
-type BuyerOrder = { items: { productId: string }[] };
+type BuyerOrder = { items: { productId: string | null }[] };
 
 export type ProductReviewsDb = {
   productReview: {

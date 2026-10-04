@@ -203,7 +203,9 @@ export default function CheckoutPage() {
     try {
       const result = await api.createOrder({
         storeSlug: slug,
-        items: cart.lines.map((l) => ({ productId: l.productId, quantity: l.quantity, variantId: l.variantId ?? undefined })),
+        items: cart.lines.map((l) =>
+          l.bundleId ? { bundleId: l.bundleId, quantity: l.quantity } : { productId: l.productId!, quantity: l.quantity, variantId: l.variantId ?? undefined }
+        ),
         buyer: {
           name,
           phone,
@@ -514,7 +516,7 @@ export default function CheckoutPage() {
           <h2 className="font-display font-bold text-harbor mb-4">ملخص الطلب</h2>
           <ul className="space-y-3 text-sm">
             {cart.lines.map((line) => (
-              <li key={line.productId} className="flex justify-between text-harbor/90">
+              <li key={line.productId ?? line.bundleId} className="flex justify-between text-harbor/90">
                 <span>
                   {line.name} × {line.quantity}
                   {isRental && rentalDays > 1 ? ` × ${rentalDays} يوم` : ""}

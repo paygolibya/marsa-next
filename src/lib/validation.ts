@@ -114,11 +114,16 @@ export const createOrderSchema = z
     storeSlug: z.string().min(1),
     items: z
       .array(
-        z.object({
-          productId: z.string().min(1),
-          quantity: z.number().int().positive(),
-          variantId: z.string().optional(),
-        })
+        z
+          .object({
+            productId: z.string().optional(),
+            bundleId: z.string().optional(),
+            quantity: z.number().int().positive(),
+            variantId: z.string().optional(),
+          })
+          .refine((v) => Boolean(v.productId) !== Boolean(v.bundleId), {
+            message: "كل عنصر في السلة يجب أن يكون منتجًا أو باقة",
+          })
       )
       .min(1, "السلة فارغة"),
     buyer: z.object({
@@ -149,6 +154,26 @@ export const createInquirySchema = z.object({
   buyerName: z.string().min(1, "الاسم مطلوب"),
   buyerPhone: z.string().min(6, "رقم هاتف غير صالح"),
   message: z.string().min(1, "الرسالة مطلوبة").max(1000),
+});
+
+const bundleItemsSchema = z
+  .array(z.object({ productId: z.string().min(1), quantity: z.number().int().positive() }))
+  .min(1, "أضف منتجًا واحدًا على الأقل");
+
+export const createBundleSchema = z.object({
+  storeId: z.string().min(1),
+  name: z.string().min(1, "اسم الباقة مطلوب").max(100),
+  priceCents: z.number().int().positive("السعر يجب أن يكون أكبر من صفر"),
+  imageUrl: z.string().url().optional().nullable(),
+  items: bundleItemsSchema,
+});
+
+export const updateBundleSchema = z.object({
+  name: z.string().min(1, "اسم الباقة مطلوب").max(100).optional(),
+  priceCents: z.number().int().positive("السعر يجب أن يكون أكبر من صفر").optional(),
+  imageUrl: z.string().url().optional().nullable(),
+  active: z.boolean().optional(),
+  items: bundleItemsSchema.optional(),
 });
 
 export const createCouponSchema = z.object({

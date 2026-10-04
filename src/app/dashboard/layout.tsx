@@ -24,6 +24,10 @@ function getNavItems(storeType: string | undefined) {
     isShowcase
       ? { href: "/dashboard/inquiries", label: "الاستفسارات", icon: "💬" }
       : { href: "/dashboard/orders", label: "الطلبات", icon: "🧾" },
+    // Bundles are a checkout-cart feature — showcase stores have no cart
+    // at all (catalog + inquiry only), so there's nothing for them to do
+    // with a bundle's fixed-price "add to cart" action.
+    ...(isShowcase ? [] : [{ href: "/dashboard/bundles", label: "الباقات", icon: "🎁" }]),
     { href: "/dashboard/design", label: "تصميم المتجر", icon: "🎨" },
     { href: "/dashboard/payouts", label: "المستحقات المالية", icon: "💰" },
     { href: "/dashboard/coupons", label: "كوبونات الخصم", icon: "🏷️" },

@@ -30,7 +30,7 @@ function baseStore(overrides: Partial<{ customization: any; sections: any[] }> =
   };
 }
 
-function makeFakeDb(opts: { store?: ReturnType<typeof baseStore> | null; products?: any[]; categories?: any[] }) {
+function makeFakeDb(opts: { store?: ReturnType<typeof baseStore> | null; products?: any[]; categories?: any[]; bundles?: any[] }) {
   const calls: Record<string, unknown> = {};
   const db: PublicStoreDb = {
     store: { findUnique: async () => opts.store ?? null },
@@ -39,6 +39,9 @@ function makeFakeDb(opts: { store?: ReturnType<typeof baseStore> | null; product
     },
     category: {
       findMany: async () => opts.categories ?? [],
+    },
+    bundle: {
+      findMany: async () => opts.bundles ?? [],
     },
     order: {
       count: async () => {
@@ -129,4 +132,25 @@ test("returns the store's categories alongside products", async () => {
   const body = await res.json();
   assert.equal(body.categories.length, 1);
   assert.equal(body.categories[0].slug, "shoes");
+});
+
+test("returns the store's active bundles with their component products", async () => {
+  const bundles = [
+    {
+      id: "b1",
+      storeId: "store-1",
+      name: "باقة العيد",
+      priceCents: 8000,
+      imageUrl: null,
+      active: true,
+      createdAt: new Date(),
+      items: [{ id: "i1", productId: "p1", quantity: 2, product: { name: "Widget", priceCents: 5000, imageUrl: null } }],
+    },
+  ];
+  const { db } = makeFakeDb({ store: baseStore(), bundles });
+  const res = await handleGetPublicStore(db, "my-store");
+  const body = await res.json();
+  assert.equal(body.bundles.length, 1);
+  assert.equal(body.bundles[0].name, "باقة العيد");
+  assert.equal(body.bundles[0].items[0].product.name, "Widget");
 });

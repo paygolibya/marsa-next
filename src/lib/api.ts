@@ -110,6 +110,18 @@ export type ProductVariant = {
 };
 export type Category = { id: string; name: string; slug: string; position: number };
 
+export type BundleItem = { id: string; productId: string; quantity: number; product: { name: string; priceCents: number; imageUrl: string | null } };
+export type Bundle = {
+  id: string;
+  storeId: string;
+  name: string;
+  priceCents: number;
+  imageUrl: string | null;
+  active: boolean;
+  createdAt: string;
+  items: BundleItem[];
+};
+
 export type Product = {
   id: string;
   storeId: string;
@@ -132,11 +144,12 @@ export type Product = {
 };
 export type OrderItem = {
   id: string;
-  productId: string;
+  productId: string | null;
   productName: string;
   unitPriceCents: number;
   quantity: number;
   variantLabel?: string | null;
+  bundleId?: string | null;
 };
 export type Order = {
   id: string;
@@ -262,7 +275,7 @@ export const api = {
     request<Store[]>("/api/stores/mine", { headers: authHeaders(token) }),
 
   publicStore: (slug: string) =>
-    request<{ store: Store; products: Product[]; categories: Category[]; stats: StoreStats | null; testimonials: StoreTestimonial[] }>(
+    request<{ store: Store; products: Product[]; categories: Category[]; bundles: Bundle[]; stats: StoreStats | null; testimonials: StoreTestimonial[] }>(
       `/api/stores/public/${slug}`
     ),
 
@@ -432,7 +445,7 @@ export const api = {
 
   createOrder: (body: {
     storeSlug: string;
-    items: { productId: string; quantity: number; variantId?: string }[];
+    items: { productId?: string; bundleId?: string; quantity: number; variantId?: string }[];
     buyer: { name: string; phone: string; email?: string; city: string; address: string; vanexAreaId?: string };
     paymentMethod: "cod" | "wallet";
     couponCode?: string;
@@ -533,6 +546,21 @@ export const api = {
 
   deleteCategory: (token: string, id: string) =>
     request<{ ok: boolean }>(`/api/categories/${id}`, { method: "DELETE", headers: authHeaders(token) }),
+
+  createBundle: (token: string, body: { storeId: string; name: string; priceCents: number; imageUrl?: string | null; items: { productId: string; quantity: number }[] }) =>
+    request<Bundle>("/api/bundles", { method: "POST", headers: authHeaders(token), body: JSON.stringify(body) }),
+
+  listBundles: (token: string, storeId: string) =>
+    request<Bundle[]>(`/api/bundles?storeId=${storeId}`, { headers: authHeaders(token) }),
+
+  updateBundle: (
+    token: string,
+    id: string,
+    body: Partial<{ name: string; priceCents: number; imageUrl: string | null; active: boolean; items: { productId: string; quantity: number }[] }>
+  ) => request<Bundle>(`/api/bundles/${id}`, { method: "PATCH", headers: authHeaders(token), body: JSON.stringify(body) }),
+
+  deleteBundle: (token: string, id: string) =>
+    request<{ ok: boolean }>(`/api/bundles/${id}`, { method: "DELETE", headers: authHeaders(token) }),
 
   trackOrder: (orderId: string, phone: string) =>
     request<{

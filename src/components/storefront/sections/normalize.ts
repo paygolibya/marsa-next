@@ -33,6 +33,7 @@ export function normalizeToSections(storedSections: StoredSection[], legacy: Leg
     stats: legacy.showSocialProof,
     products: true, // no legacy toggle for this one — always shown
     categories: false, // new section type — opt-in via the editor, no legacy "always on" expectation
+    bundles: false, // same — opt-in via the editor
     testimonials: legacy.showTestimonials,
     newsletter: legacy.showNewsletter,
   };

@@ -30,7 +30,7 @@ export function CartDrawer({
   storeSlug: string;
   lines: CartLine[];
   subtotalCents: number;
-  setQuantity: (productId: string, quantity: number, variantId?: string | null) => void;
+  setQuantity: (productId: string | null, quantity: number, variantId?: string | null, bundleId?: string | null) => void;
   theme?: CartDrawerTheme;
 }) {
   const primary = theme?.primaryColor || undefined;
@@ -64,15 +64,18 @@ export function CartDrawer({
         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
           {lines.length === 0 && <p className="text-rope text-sm py-10 text-center">سلتك فارغة حاليًا.</p>}
           {lines.map((line) => (
-            <div key={`${line.productId}:${line.variantId ?? ""}`} className="flex items-center justify-between gap-3 border-b border-harbor/10 pb-4">
+            <div key={`${line.productId ?? line.bundleId}:${line.variantId ?? ""}`} className="flex items-center justify-between gap-3 border-b border-harbor/10 pb-4">
               <div className="flex-1">
-                <p className="font-bold text-harbor text-sm">{line.name}</p>
+                <p className="font-bold text-harbor text-sm">
+                  {line.name}
+                  {line.bundleId && <span className="mr-1.5 rounded-full bg-harbor/10 px-2 py-0.5 text-[11px] font-bold text-harbor">باقة</span>}
+                </p>
                 {line.variantLabel && <p className="text-xs text-rope">{line.variantLabel}</p>}
                 <p className="text-rope text-sm">{formatLYD(line.priceCents)}</p>
               </div>
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => setQuantity(line.productId, line.quantity - 1, line.variantId)}
+                  onClick={() => setQuantity(line.productId, line.quantity - 1, line.variantId, line.bundleId)}
                   style={accent ? { borderColor: `${accent}80`, color: accent } : undefined}
                   className={`h-7 w-7 rounded-full border ${accent ? "hover:bg-black/5" : "border-harbor/20 text-harbor hover:bg-harbor/5"}`}
                   aria-label="إنقاص الكمية"
@@ -81,7 +84,7 @@ export function CartDrawer({
                 </button>
                 <span className="w-5 text-center text-sm text-harbor">{line.quantity}</span>
                 <button
-                  onClick={() => setQuantity(line.productId, line.quantity + 1, line.variantId)}
+                  onClick={() => setQuantity(line.productId, line.quantity + 1, line.variantId, line.bundleId)}
                   style={accent ? { borderColor: `${accent}80`, color: accent } : undefined}
                   className={`h-7 w-7 rounded-full border ${accent ? "hover:bg-black/5" : "border-harbor/20 text-harbor hover:bg-harbor/5"}`}
                   aria-label="زيادة الكمية"

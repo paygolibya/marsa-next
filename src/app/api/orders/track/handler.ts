@@ -11,7 +11,7 @@ type OrderRow = {
   createdAt: Date;
   scheduledStartAt: Date | null;
   scheduledEndAt: Date | null;
-  items: { id: string; productId: string; productName: string; unitPriceCents: number; quantity: number; variantLabel: string | null }[];
+  items: { id: string; productId: string | null; productName: string; unitPriceCents: number; quantity: number; variantLabel: string | null; bundleId: string | null }[];
 };
 
 export type TrackOrderDeps = {
@@ -55,6 +55,7 @@ export async function handleTrackOrder(deps: TrackOrderDeps, req: Request): Prom
       unitPriceCents: i.unitPriceCents,
       quantity: i.quantity,
       variantLabel: i.variantLabel,
+      bundleId: i.bundleId,
     })),
   });
 }

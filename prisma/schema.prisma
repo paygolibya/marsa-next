@@ -377,6 +377,7 @@ model Store {
   sections       StoreSection[]
   inquiries      Inquiry[]
   categories     Category[]
+  bundles        Bundle[]
 
   @@map("stores")
 }
@@ -509,11 +510,12 @@ model Product {
   // own product form/list.
   costPriceCents  Int?    @map("cost_price_cents")
 
-  store      Store            @relation(fields: [storeId], references: [id])
-  orderItems OrderItem[]
-  reviews    ProductReview[]
-  variants   ProductVariant[]
-  inquiries  Inquiry[]
+  store       Store            @relation(fields: [storeId], references: [id])
+  orderItems  OrderItem[]
+  reviews     ProductReview[]
+  variants    ProductVariant[]
+  inquiries   Inquiry[]
+  bundleItems BundleItem[]
 
   // Postgres doesn't auto-index foreign-key scalar columns (unlike MySQL) —
   // every merchant-facing product list filters by storeId, so without this
@@ -811,7 +813,12 @@ model VanexArea {
 model OrderItem {
   id             String  @id @default(cuid())
   orderId        String  @map("order_id")
-  productId      String  @map("product_id")
+  // Nullable: a bundle line (see bundleId below) has no single product of
+  // its own — it's recorded as one row with productId null, rather than
+  // exploded into one row per component, so order totals never depend on
+  // splitting a bundle's fixed price across its parts (which would risk
+  // rounding drift from the amount actually charged).
+  productId      String? @map("product_id")
   productName    String  @map("product_name")
   unitPriceCents Int     @map("unit_price_cents")
   quantity       Int
@@ -822,10 +829,54 @@ model OrderItem {
   variantId    String? @map("variant_id")
   variantLabel String? @map("variant_label")
 
+  // Set instead of productId when this row is a bundle purchase.
+  // bundleName is denormalized like variantLabel above. bundleItemsSnapshot
+  // is a display-only [{productName, quantity}] record of what the bundle
+  // contained at purchase time — stock decrement for the components happens
+  // separately (see /api/orders handler), never derived from this snapshot.
+  bundleId            String? @map("bundle_id")
+  bundleName          String? @map("bundle_name")
+  bundleItemsSnapshot Json?   @map("bundle_items_snapshot")
+
   order   Order           @relation(fields: [orderId], references: [id])
-  product Product         @relation(fields: [productId], references: [id])
+  product Product?        @relation(fields: [productId], references: [id], onDelete: SetNull)
   variant ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  bundle  Bundle?         @relation(fields: [bundleId], references: [id], onDelete: SetNull)
 
   @@index([orderId])
   @@map("order_items")
+}
+
+model Bundle {
+  id         String  @id @default(cuid())
+  storeId    String  @map("store_id")
+  name       String
+  // Fixed combined price for the whole set — never the sum of the
+  // components' own priceCents, which is the entire point of a bundle.
+  priceCents Int     @map("price_cents")
+  imageUrl   String? @map("image_url")
+  active     Boolean @default(true)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  items      BundleItem[]
+  orderItems OrderItem[]
+  store      Store        @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@index([storeId])
+  @@map("bundles")
+}
+
+model BundleItem {
+  id        String @id @default(cuid())
+  bundleId  String @map("bundle_id")
+  productId String @map("product_id")
+  // How many units of this product one unit of the bundle contains.
+  quantity  Int    @default(1)
+
+  bundle  Bundle  @relation(fields: [bundleId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([bundleId])
+  @@index([productId])
+  @@map("bundle_items")
 }

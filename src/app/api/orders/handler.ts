@@ -17,6 +17,28 @@ class InvalidCouponError extends Error {}
 
 type Product = { id: string; name: string; priceCents: number; stockQty: number; trackInventory: boolean };
 type Variant = { id: string; stockQty: number; priceCents: number | null; options: Record<string, string> };
+type BundleComponent = { productId: string; quantity: number; product: { name: string; stockQty: number; trackInventory: boolean } };
+type Bundle = { id: string; name: string; priceCents: number; items: BundleComponent[] };
+
+// What becomes one OrderItem row. A bundle line is recorded as a single
+// row (productId null, bundleId set) rather than exploded into one row
+// per component — splitting a bundle's fixed price across its parts would
+// risk rounding drift from the amount actually charged. Stock for the
+// components is tracked separately via StockDecrement below.
+type ResolvedItem = {
+  productId: string | null;
+  productName: string;
+  unitPriceCents: number;
+  quantity: number;
+  variantId: string | null;
+  variantLabel: string | null;
+  bundleId: string | null;
+  bundleName: string | null;
+  bundleItemsSnapshot: { productName: string; quantity: number }[] | null;
+};
+type StockDecrement =
+  | { kind: "product"; productId: string; quantity: number; trackInventory: boolean; name: string }
+  | { kind: "variant"; variantId: string; quantity: number; name: string };
 type Coupon = {
   id: string;
   code: string;
@@ -47,6 +69,7 @@ type CountResult = { count: number };
 export type OrdersTx = {
   product: { findFirst: (args: Any) => Promise<Product | null>; updateMany: (args: Any) => Promise<CountResult> };
   productVariant: { findFirst: (args: Any) => Promise<Variant | null>; updateMany: (args: Any) => Promise<CountResult> };
+  bundle: { findFirst: (args: Any) => Promise<Bundle | null> };
   coupon: { findUnique: (args: Any) => Promise<Coupon | null>; updateMany: (args: Any) => Promise<CountResult> };
   order: { create: (args: Any) => Promise<OrderRow> };
 };
@@ -210,8 +233,45 @@ export async function handleCreateOrder(deps: OrdersDeps, req: Request): Promise
     try {
       order = await db.$transaction(
         async (tx: OrdersTx): Promise<OrderRow> => {
-          const resolvedItems: { product: Product; quantity: number; variant: Variant | null; unitPriceCents: number; variantLabel: string | null }[] = [];
-          for (const { productId, quantity, variantId } of items) {
+          const resolvedItems: ResolvedItem[] = [];
+          const stockDecrements: StockDecrement[] = [];
+
+          for (const { productId, bundleId, quantity, variantId } of items) {
+            if (bundleId) {
+              const bundle = await tx.bundle.findFirst({
+                where: { id: bundleId, storeId: store.id, active: true },
+                include: { items: { include: { product: true } } },
+              });
+              if (!bundle) throw new ProductNotFoundError(`Bundle ${bundleId} not found in this store`);
+
+              for (const component of bundle.items) {
+                const neededQty = component.quantity * quantity;
+                if (component.product.trackInventory && component.product.stockQty < neededQty) {
+                  throw new OutOfStockError(component.product.name);
+                }
+                stockDecrements.push({
+                  kind: "product",
+                  productId: component.productId,
+                  quantity: neededQty,
+                  trackInventory: component.product.trackInventory,
+                  name: component.product.name,
+                });
+              }
+
+              resolvedItems.push({
+                productId: null,
+                productName: bundle.name,
+                unitPriceCents: bundle.priceCents * rentalDays,
+                quantity,
+                variantId: null,
+                variantLabel: null,
+                bundleId: bundle.id,
+                bundleName: bundle.name,
+                bundleItemsSnapshot: bundle.items.map((c) => ({ productName: c.product.name, quantity: c.quantity })),
+              });
+              continue;
+            }
+
             const product = await tx.product.findFirst({ where: { id: productId, storeId: store.id, active: true } });
             if (!product) throw new ProductNotFoundError(`Product ${productId} not found in this store`);
 
@@ -225,12 +285,21 @@ export async function handleCreateOrder(deps: OrdersDeps, req: Request): Promise
             }
 
             resolvedItems.push({
-              product,
-              quantity,
-              variant,
+              productId: product.id,
+              productName: product.name,
               unitPriceCents: (variant?.priceCents ?? product.priceCents) * rentalDays,
+              quantity,
+              variantId: variant?.id ?? null,
               variantLabel: variant ? Object.entries(variant.options).map(([k, v]) => `${k}: ${v}`).join("، ") : null,
+              bundleId: null,
+              bundleName: null,
+              bundleItemsSnapshot: null,
             });
+            stockDecrements.push(
+              variant
+                ? { kind: "variant", variantId: variant.id, quantity, name: product.name }
+                : { kind: "product", productId: product.id, quantity, trackInventory: product.trackInventory, name: product.name }
+            );
           }
 
           const productSubtotalCents = resolvedItems.reduce((sum, { unitPriceCents, quantity }) => sum + unitPriceCents * quantity, 0);
@@ -284,16 +353,7 @@ export async function handleCreateOrder(deps: OrdersDeps, req: Request): Promise
               scheduledStartAt,
               scheduledEndAt,
               scheduledKind,
-              items: {
-                create: resolvedItems.map(({ product, quantity, variant, unitPriceCents, variantLabel }) => ({
-                  productId: product.id,
-                  productName: product.name,
-                  unitPriceCents,
-                  quantity,
-                  variantId: variant?.id ?? null,
-                  variantLabel,
-                })),
-              },
+              items: { create: resolvedItems },
             },
           });
 
@@ -307,23 +367,23 @@ export async function handleCreateOrder(deps: OrdersDeps, req: Request): Promise
           // one of two racing orders can ever win the last unit; the
           // other gets count 0 and a real 409, instead of both succeeding
           // and overselling.
-          for (const { product, quantity, variant } of resolvedItems) {
-            if (variant) {
+          for (const d of stockDecrements) {
+            if (d.kind === "variant") {
               const decremented = await tx.productVariant.updateMany({
-                where: { id: variant.id, stockQty: { gte: quantity } },
-                data: { stockQty: { decrement: quantity } },
+                where: { id: d.variantId, stockQty: { gte: d.quantity } },
+                data: { stockQty: { decrement: d.quantity } },
               });
-              if (decremented.count === 0) throw new OutOfStockError(product.name);
-              await tx.productVariant.updateMany({ where: { id: variant.id, stockQty: { lte: 0 } }, data: { active: false } });
+              if (decremented.count === 0) throw new OutOfStockError(d.name);
+              await tx.productVariant.updateMany({ where: { id: d.variantId, stockQty: { lte: 0 } }, data: { active: false } });
               continue;
             }
-            if (!product.trackInventory) continue;
+            if (!d.trackInventory) continue;
             const decremented = await tx.product.updateMany({
-              where: { id: product.id, stockQty: { gte: quantity } },
-              data: { stockQty: { decrement: quantity } },
+              where: { id: d.productId, stockQty: { gte: d.quantity } },
+              data: { stockQty: { decrement: d.quantity } },
             });
-            if (decremented.count === 0) throw new OutOfStockError(product.name);
-            await tx.product.updateMany({ where: { id: product.id, stockQty: { lte: 0 } }, data: { active: false } });
+            if (decremented.count === 0) throw new OutOfStockError(d.name);
+            await tx.product.updateMany({ where: { id: d.productId, stockQty: { lte: 0 } }, data: { active: false } });
           }
 
           return created;

@@ -1,4 +1,4 @@
-import type { Category, Product, Store, StoreStats, StoreTestimonial } from "@/lib/api";
+import type { Bundle, Category, Product, Store, StoreStats, StoreTestimonial } from "@/lib/api";
 import type { SectionData } from "@/components/storefront/sections/types";
 
 // Every template gets the exact same real data — only how it's laid out
@@ -17,11 +17,13 @@ export type StorefrontTemplateProps = {
   categories: Category[];
   selectedCategoryId: string | null;
   setSelectedCategoryId: (id: string | null) => void;
+  bundles: Bundle[];
   stats: StoreStats | null;
   testimonials: StoreTestimonial[];
   cartTotalItems: number;
   onOpenCart: () => void;
   onAddToCart: (product: Product) => void;
+  onAddBundleToCart: (bundle: Bundle) => void;
   newsletterEmail: string;
   setNewsletterEmail: (v: string) => void;
   newsletterState: "idle" | "loading" | "done" | "error";

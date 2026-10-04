@@ -5,6 +5,7 @@ const SECTION_TYPE_HINTS: Record<SectionType, string> = {
   stats: "عدد الطلبات المُسلَّمة ومتوسط التقييم — أرقام حقيقية من متجرك",
   products: "شبكة منتجاتك — القسم الأساسي",
   categories: "أزرار تصفية حسب تصنيفات منتجاتك",
+  bundles: "باقات منتجات بسعر ثابت",
   testimonials: "من تقييمات حقيقية 4★ فأكثر",
   newsletter: "نموذج جمع بريد الزوار",
 };

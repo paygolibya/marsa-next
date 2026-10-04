@@ -31,6 +31,16 @@ const STORE: {
 
 const PRODUCT = { id: "p1", name: "Test Product", priceCents: 5000, stockQty: 10, trackInventory: true };
 
+const BUNDLE = {
+  id: "bundle-1",
+  name: "Test Bundle",
+  priceCents: 8000,
+  items: [
+    { productId: "comp-1", quantity: 2, product: { name: "Component A", stockQty: 10, trackInventory: true } },
+    { productId: "comp-2", quantity: 1, product: { name: "Component B", stockQty: 10, trackInventory: true } },
+  ],
+};
+
 function req(body: unknown) {
   return new Request("http://localhost/api/orders", { method: "POST", body: JSON.stringify(body) });
 }
@@ -49,6 +59,7 @@ function makeFakeDeps(
   opts: {
     store?: typeof STORE | null;
     product?: typeof PRODUCT | null;
+    bundle?: typeof BUNDLE | null;
     coupon?: Record<string, unknown> | null;
     // Simulates losing a concurrent race at the atomic decrement/increment
     // step (real Postgres would return count: 0 here when another
@@ -59,6 +70,7 @@ function makeFakeDeps(
 ) {
   const store = opts.store !== undefined ? opts.store : STORE;
   const product = opts.product !== undefined ? opts.product : PRODUCT;
+  const bundle = opts.bundle !== undefined ? opts.bundle : null;
   const calls: { orderCreate?: Any; orderUpdate?: Any; productUpdateMany?: Any[]; couponUpdateMany?: Any; shipment?: Any; email?: Any; sms?: Any } = {
     productUpdateMany: [],
   };
@@ -83,6 +95,7 @@ function makeFakeDeps(
           },
         },
         productVariant: { findFirst: async () => null, updateMany: async () => ({ count: 1 }) },
+        bundle: { findFirst: async () => bundle },
         coupon: {
           findUnique: async () => opts.coupon ?? null,
           updateMany: async (args: Any) => {
@@ -410,4 +423,60 @@ test("a valid coupon discounts the total server-side and its usage count is incr
   assert.equal(calls.couponUpdateMany.where.id, "coupon-1");
   assert.equal(calls.couponUpdateMany.where.usageCount, undefined); // maxUsage null here — no cap to race against, no guard needed
   assert.deepEqual(calls.couponUpdateMany.data.usageCount, { increment: 1 });
+});
+
+test("returns 400 when a bundle doesn't exist in this store", async () => {
+  const { deps } = makeFakeDeps({ bundle: null });
+  const res = await handleCreateOrder(deps, req(baseBody({ items: [{ bundleId: "bundle-1", quantity: 1 }] })));
+  assert.equal(res.status, 400);
+});
+
+test("a bundle order: one OrderItem row at the bundle's own fixed price (productId null, bundleId set), never the sum of component prices", async () => {
+  const { deps, calls } = makeFakeDeps({ bundle: BUNDLE });
+  const res = await handleCreateOrder(deps, req(baseBody({ items: [{ bundleId: "bundle-1", quantity: 2 }] })));
+  const body = await res.json();
+  assert.equal(res.status, 201);
+  assert.equal(body.totalCents, 8000 * 2); // bundle price × quantity, not component prices
+  const created = calls.orderCreate.data.items.create[0];
+  assert.equal(created.productId, null);
+  assert.equal(created.bundleId, "bundle-1");
+  assert.equal(created.bundleName, "Test Bundle");
+  assert.equal(created.unitPriceCents, 8000);
+  assert.equal(created.quantity, 2);
+  assert.deepEqual(created.bundleItemsSnapshot, [
+    { productName: "Component A", quantity: 2 },
+    { productName: "Component B", quantity: 1 },
+  ]);
+});
+
+test("a bundle order: decrements stock for every component, scaled by (component quantity × bundles bought)", async () => {
+  const { deps, calls } = makeFakeDeps({ bundle: BUNDLE });
+  await handleCreateOrder(deps, req(baseBody({ items: [{ bundleId: "bundle-1", quantity: 2 }] })));
+  const decrementCalls = calls.productUpdateMany!.filter((c: Any) => "decrement" in (c.data.stockQty ?? {}));
+  assert.equal(decrementCalls.length, 2);
+  assert.equal(decrementCalls[0].where.id, "comp-1");
+  assert.equal(decrementCalls[0].data.stockQty.decrement, 4); // 2 per bundle × 2 bundles
+  assert.equal(decrementCalls[1].where.id, "comp-2");
+  assert.equal(decrementCalls[1].data.stockQty.decrement, 2); // 1 per bundle × 2 bundles
+});
+
+test("a bundle order: insufficient stock on one component returns 409 without creating the order", async () => {
+  const { deps, calls } = makeFakeDeps({
+    bundle: { ...BUNDLE, items: [{ productId: "comp-1", quantity: 5, product: { name: "Component A", stockQty: 3, trackInventory: true } }] },
+  });
+  const res = await handleCreateOrder(deps, req(baseBody({ items: [{ bundleId: "bundle-1", quantity: 1 }] })));
+  assert.equal(res.status, 409);
+  assert.equal(calls.orderCreate, undefined);
+});
+
+test("a bundle order mixed with a plain product line: both resolve into their own OrderItem rows and total correctly", async () => {
+  const { deps, calls } = makeFakeDeps({ bundle: BUNDLE, product: PRODUCT });
+  const res = await handleCreateOrder(
+    deps,
+    req(baseBody({ items: [{ bundleId: "bundle-1", quantity: 1 }, { productId: "p1", quantity: 1 }] }))
+  );
+  const body = await res.json();
+  assert.equal(res.status, 201);
+  assert.equal(body.totalCents, 8000 + 5000);
+  assert.equal(calls.orderCreate.data.items.create.length, 2);
 });

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { HexColorPicker } from "react-colorful";
 import { useAuth } from "@/lib/auth-context";
-import { api, ApiError, type Category, type Product, type Store, type StoreStats, type StoreTestimonial } from "@/lib/api";
+import { api, ApiError, type Bundle, type Category, type Product, type Store, type StoreStats, type StoreTestimonial } from "@/lib/api";
 import { STOREFRONT_TEMPLATES } from "@/components/storefront/templates/registry";
 import ModernTemplate from "@/components/storefront/templates/ModernTemplate";
 import type { SectionType } from "@/components/storefront/sections/types";
@@ -84,6 +84,7 @@ export function SectionEditor({ storeId, onSaved }: { storeId: string; onSaved?:
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  const [bundles, setBundles] = useState<Bundle[]>([]);
   const [stats, setStats] = useState<StoreStats | null>(null);
   const [testimonials, setTestimonials] = useState<StoreTestimonial[]>([]);
 
@@ -163,6 +164,7 @@ export function SectionEditor({ storeId, onSaved }: { storeId: string; onSaved?:
         }
         setProducts(publicData.products);
         setCategories(publicData.categories);
+        setBundles(publicData.bundles);
         setStats(publicData.stats);
         setTestimonials(publicData.testimonials);
         setLoaded(true);
@@ -595,11 +597,13 @@ export function SectionEditor({ storeId, onSaved }: { storeId: string; onSaved?:
               categories={categories}
               selectedCategoryId={selectedCategoryId}
               setSelectedCategoryId={setSelectedCategoryId}
+              bundles={bundles}
               stats={stats}
               testimonials={testimonials}
               cartTotalItems={0}
               onOpenCart={() => show("معاينة فقط — لا يمكن فتح السلة هنا", "info")}
               onAddToCart={() => show("معاينة فقط — لا يمكن الإضافة للسلة هنا", "info")}
+              onAddBundleToCart={() => show("معاينة فقط — لا يمكن الإضافة للسلة هنا", "info")}
               newsletterEmail={newsletterEmail}
               setNewsletterEmail={setNewsletterEmail}
               newsletterState={newsletterState}
