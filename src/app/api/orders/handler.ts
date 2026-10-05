@@ -108,6 +108,14 @@ export type OrdersDb = {
       city: { name: string; vanexId: number };
     } | null>;
   };
+  vanexCity: {
+    findUnique: (args: { where: { id: string } }) => Promise<{
+      id: string;
+      name: string;
+      priceCents: number;
+      vanexId: number;
+    } | null>;
+  };
   order: { update: (args: Any) => Promise<unknown> };
   // Untyped: Prisma's real $transaction is overloaded (array-of-promises
   // form vs. callback form), and TS tries to match a single declared
@@ -223,13 +231,22 @@ export async function handleCreateOrder(deps: OrdersDeps, req: Request): Promise
 
     let shippingCents = 0;
     let buyerCity = buyer.city;
-    let vanexShipping: { cityId: number; subCityId: number } | undefined;
+    let vanexShipping: { cityId: number; subCityId?: number } | undefined;
     if (buyer.vanexAreaId) {
       const area = await db.vanexArea.findUnique({ where: { id: buyer.vanexAreaId }, include: { city: true } });
       if (!area) return NextResponse.json({ error: "المنطقة المختارة غير صالحة" }, { status: 400 });
       shippingCents = area.priceCents;
       buyerCity = `${area.city.name} - ${area.name}`;
       vanexShipping = { cityId: area.city.vanexId, subCityId: area.vanexId };
+    } else if (buyer.vanexCityId) {
+      // No specific area picked — price at the city's own flat Vanex rate
+      // rather than defaulting to free shipping, and still hand the real
+      // Vanex integration a city id so a real shipment gets created.
+      const city = await db.vanexCity.findUnique({ where: { id: buyer.vanexCityId } });
+      if (!city) return NextResponse.json({ error: "المدينة المختارة غير صالحة" }, { status: 400 });
+      shippingCents = city.priceCents;
+      buyerCity = city.name;
+      vanexShipping = { cityId: city.vanexId };
     }
 
     let order: OrderRow;

@@ -145,7 +145,10 @@ export default function CheckoutPage() {
 
   const selectedCity = vanexCities.find((c) => c.id === vanexCityId);
   const selectedArea = selectedCity?.areas.find((a) => a.id === vanexAreaId);
-  const shippingCents = usesVanexPricing ? selectedArea?.priceCents ?? 0 : 0;
+  // Area gives the precise rate when picked; otherwise fall back to the
+  // city's own flat Vanex rate rather than defaulting to free shipping —
+  // a buyer whose exact district isn't in Vanex's list can still check out.
+  const shippingCents = usesVanexPricing ? (selectedArea?.priceCents ?? selectedCity?.priceCents ?? 0) : 0;
   const discountCents = appliedCoupon?.discountCents ?? 0;
   // cart.subtotalCents is quantity × the product's own priceCents, which
   // for a rental store IS the daily rate — multiply by the selected
@@ -197,8 +200,8 @@ export default function CheckoutPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (cart.lines.length === 0) return;
-    if (usesVanexPricing && !selectedArea) {
-      setError(t("checkout.selectCityArea"));
+    if (usesVanexPricing && !selectedCity) {
+      setError(t("checkout.selectCity"));
       return;
     }
     if (isRental && (!rentalStart || !rentalEnd)) {
@@ -221,9 +224,10 @@ export default function CheckoutPage() {
           name,
           phone,
           email: email || undefined,
-          city: selectedArea ? `${selectedCity?.name} - ${selectedArea.name}` : city,
+          city: selectedArea ? `${selectedCity?.name} - ${selectedArea.name}` : selectedCity ? selectedCity.name : city,
           address,
           vanexAreaId: selectedArea?.id,
+          vanexCityId: selectedCity?.id,
         },
         paymentMethod,
         couponCode: appliedCoupon?.code,
@@ -417,9 +421,8 @@ export default function CheckoutPage() {
                   </select>
                 </label>
                 <label className="block">
-                  <span className="block text-sm font-bold text-harbor mb-1.5">{t("checkout.area")}</span>
+                  <span className="block text-sm font-bold text-harbor mb-1.5">{t("checkout.areaOptional")}</span>
                   <select
-                    required
                     disabled={!selectedCity}
                     value={vanexAreaId}
                     onChange={(e) => setVanexAreaId(e.target.value)}
@@ -513,7 +516,7 @@ export default function CheckoutPage() {
               disabled={
                 loading ||
                 walletPending ||
-                (usesVanexPricing && !selectedArea) ||
+                (usesVanexPricing && !selectedCity) ||
                 (isRental && (!rentalStart || !rentalEnd)) ||
                 (isBooking && !selectedSlot)
               }
@@ -564,7 +567,7 @@ export default function CheckoutPage() {
           {usesVanexPricing && (
             <div className="flex justify-between text-sm mt-3 pt-3 border-t border-harbor/10 text-harbor/90">
               <span>{t("checkout.shipping")}</span>
-              <span>{selectedArea ? formatLYD(shippingCents, language) : t("common.dash")}</span>
+              <span>{selectedCity ? formatLYD(shippingCents, language) : t("common.dash")}</span>
             </div>
           )}
           {discountCents > 0 && (

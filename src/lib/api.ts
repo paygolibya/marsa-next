@@ -493,7 +493,7 @@ export const api = {
   createOrder: (body: {
     storeSlug: string;
     items: { productId?: string; bundleId?: string; quantity: number; variantId?: string }[];
-    buyer: { name: string; phone: string; email?: string; city: string; address: string; vanexAreaId?: string };
+    buyer: { name: string; phone: string; email?: string; city: string; address: string; vanexAreaId?: string; vanexCityId?: string };
     paymentMethod: "cod" | "wallet";
     couponCode?: string;
     referralCode?: string;

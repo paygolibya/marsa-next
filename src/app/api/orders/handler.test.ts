@@ -62,6 +62,8 @@ function makeFakeDeps(
     bundle?: typeof BUNDLE | null;
     coupon?: Record<string, unknown> | null;
     affiliate?: { id: string; commissionPercent: number } | null;
+    vanexArea?: { id: string; name: string; priceCents: number; vanexId: number; city: { name: string; vanexId: number } } | null;
+    vanexCity?: { id: string; name: string; priceCents: number; vanexId: number } | null;
     // Simulates losing a concurrent race at the atomic decrement/increment
     // step (real Postgres would return count: 0 here when another
     // transaction already consumed the stock/coupon use first).
@@ -73,6 +75,8 @@ function makeFakeDeps(
   const product = opts.product !== undefined ? opts.product : PRODUCT;
   const bundle = opts.bundle !== undefined ? opts.bundle : null;
   const affiliate = opts.affiliate !== undefined ? opts.affiliate : null;
+  const vanexArea = opts.vanexArea !== undefined ? opts.vanexArea : null;
+  const vanexCity = opts.vanexCity !== undefined ? opts.vanexCity : null;
   const calls: {
     orderCreate?: Any;
     orderUpdate?: Any;
@@ -90,7 +94,8 @@ function makeFakeDeps(
 
   const db: OrdersDb = {
     store: { findUnique: async () => store },
-    vanexArea: { findUnique: async () => null },
+    vanexArea: { findUnique: async () => vanexArea },
+    vanexCity: { findUnique: async () => vanexCity },
     order: {
       update: async (args) => {
         calls.orderUpdate = args;
@@ -224,6 +229,37 @@ test("COD order: total is computed server-side (price × quantity + shipping), n
   assert.equal(body.totalCents, 10000); // 5000 * 2, no shipping (no vanexAreaId), no discount
   assert.equal(calls.orderCreate.data.productSubtotalCents, 10000);
   assert.equal(calls.orderCreate.data.totalCents, 10000);
+});
+
+test("vanexAreaId: prices shipping at the area's own rate and passes {cityId, subCityId} to the courier", async () => {
+  const { deps, calls } = makeFakeDeps({
+    vanexArea: { id: "area-1", name: "Andalus", priceCents: 1500, vanexId: 42, city: { name: "Tripoli", vanexId: 7 } },
+  });
+  const res = await handleCreateOrder(deps, req(baseBody({ buyer: { ...baseBody().buyer, vanexAreaId: "area-1" } })));
+  assert.equal(res.status, 201);
+  const body = await res.json();
+  assert.equal(body.totalCents, 11500); // 5000 * 2 + 1500 shipping
+  assert.deepEqual(calls.shipment.order.vanex, { cityId: 7, subCityId: 42 });
+  assert.equal(calls.shipment.order.buyer.city, "Tripoli - Andalus");
+});
+
+test("vanexCityId (no area): prices shipping at the city's own flat rate and passes {cityId} (no subCityId) to the courier", async () => {
+  const { deps, calls } = makeFakeDeps({
+    vanexCity: { id: "city-1", name: "Tripoli", priceCents: 1000, vanexId: 7 },
+  });
+  const res = await handleCreateOrder(deps, req(baseBody({ buyer: { ...baseBody().buyer, vanexCityId: "city-1" } })));
+  assert.equal(res.status, 201);
+  const body = await res.json();
+  assert.equal(body.totalCents, 11000); // 5000 * 2 + 1000 shipping
+  assert.deepEqual(calls.shipment.order.vanex, { cityId: 7 });
+  assert.equal(calls.shipment.order.buyer.city, "Tripoli");
+});
+
+test("rejects an invalid vanexCityId with 400", async () => {
+  const { deps, calls } = makeFakeDeps({ vanexCity: null });
+  const res = await handleCreateOrder(deps, req(baseBody({ buyer: { ...baseBody().buyer, vanexCityId: "bad-city" } })));
+  assert.equal(res.status, 400);
+  assert.equal(calls.orderCreate, undefined);
 });
 
 test("COD order: stock is decremented atomically (guarded by gte quantity), and hits zero flips active to false", async () => {

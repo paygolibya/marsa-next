@@ -158,6 +158,10 @@ export const createOrderSchema = z
       city: z.string().min(1, "المدينة مطلوبة"),
       address: z.string().min(1, "العنوان مطلوب"),
       vanexAreaId: z.string().min(1).optional(),
+      // City-level fallback: used only when the buyer picked a city but no
+      // specific area, so shipping still prices at the city's own flat
+      // Vanex rate instead of defaulting to free shipping.
+      vanexCityId: z.string().min(1).optional(),
     }),
     paymentMethod: z.enum(["cod", "wallet"]),
     couponCode: z.string().optional(),
