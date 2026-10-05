@@ -16,7 +16,11 @@ test("a buyer can browse the storefront, add a product to the cart, and complete
   // The product is visible on the storefront's own page — the actual
   // storefront rendering pipeline (template selection, product card,
   // pricing) working end to end, not just the API returning data.
-  await expect(page.getByText("E2E Test Product")).toBeVisible({ timeout: 15000 });
+  // Generous timeout, same reasoning as the checkout navigation below: this
+  // is the first hit to /store/[slug] AND its own public-store API route,
+  // both compiling on demand in Next dev mode — confirmed live taking
+  // ~19s combined as the app grew, already past a 15s budget.
+  await expect(page.getByText("E2E Test Product")).toBeVisible({ timeout: 30000 });
   await expect(page.getByText("100,00 د.ل")).toBeVisible();
 
   // Add to cart — real client-side state (useCart), not a server round trip.
@@ -62,8 +66,11 @@ test("a buyer can browse the storefront, add a product to the cart, and complete
 
   // Lands on the real confirmation page with a real order id — the whole
   // chain (form -> API -> DB write -> redirect with real query params)
-  // actually worked.
-  await expect(page).toHaveURL(/\/confirmation/, { timeout: 15000 });
+  // actually worked. Generous timeout: order creation itself is a real
+  // DB transaction plus a real Vanex dispatch call, confirmed live taking
+  // several seconds on its own, before /confirmation even starts its own
+  // cold compile in Next dev mode.
+  await expect(page).toHaveURL(/\/confirmation/, { timeout: 30000 });
   // getByText would also match Next.js's own accessibility route-announcer
   // div (which echoes the new page's heading after a client-side
   // navigation) — getByRole("heading") targets only the real page content.

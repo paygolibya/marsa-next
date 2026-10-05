@@ -16,7 +16,7 @@ export default defineConfig({
   // hit, and a single checkout-flow test can be the first hit for several
   // routes in a row (storefront, checkout, confirmation) — the default 30s
   // budget gets exhausted by cumulative cold compiles, not slow assertions.
-  timeout: 60_000,
+  timeout: 90_000,
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
