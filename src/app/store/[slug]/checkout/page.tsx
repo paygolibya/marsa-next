@@ -7,6 +7,7 @@ import Link from "next/link";
 import { api, ApiError, formatLYD, type Store, type VanexCity } from "@/lib/api";
 import { useCart } from "@/lib/use-cart";
 import { getReferralCode } from "@/lib/referral";
+import { trackEvent } from "@/lib/track-event";
 
 const courierLabels: Record<string, string> = {
   vanex: "Vanex",
@@ -125,6 +126,11 @@ export default function CheckoutPage() {
       setPaymentMethod(store.codEnabled ? "cod" : walletAvailable ? "wallet" : "cod");
     });
   }, [slug]);
+
+  // "Started checkout" — landing on this page, not the form submit below
+  // (that's the order_completed moment instead, fired on the confirmation
+  // page once the order actually exists).
+  useEffect(() => trackEvent(slug, "checkout_started", `/store/${slug}/checkout`), [slug]);
 
   useEffect(() => {
     if (!usesVanexPricing) return;

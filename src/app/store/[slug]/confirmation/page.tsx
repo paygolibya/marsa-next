@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useSearchParams, useParams } from "next/navigation";
 import Link from "next/link";
 import { api, formatLYD, type Store } from "@/lib/api";
+import { trackEvent } from "@/lib/track-event";
 
 const courierLabels: Record<string, string> = {
   vanex: "Vanex",
@@ -27,6 +28,15 @@ function ConfirmationPageContent() {
   }, [params.slug]);
 
   const orderId = search.get("orderId");
+
+  // Only when a real order actually exists here (not the "no order to
+  // show" fallback below) — this is the order_completed funnel moment,
+  // reached only after a successful order creation.
+  useEffect(() => {
+    if (orderId) trackEvent(params.slug, "order_completed", `/store/${params.slug}/confirmation`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [params.slug, orderId]);
+
   const totalCents = Number(search.get("totalCents") ?? 0);
   const shippingCents = Number(search.get("shippingCents") ?? 0);
   const trackingId = search.get("trackingId");

@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { api, type Bundle, type Category, type Product, type Store, type StoreStats, type StoreTestimonial } from "@/lib/api";
 import { useCart } from "@/lib/use-cart";
 import { captureReferralCode } from "@/lib/referral";
+import { trackEvent } from "@/lib/track-event";
 import { CartDrawer } from "@/components/cart-drawer";
 import { SiteFooter } from "@/components/site-footer";
 import { STOREFRONT_TEMPLATES } from "@/components/storefront/templates/registry";
@@ -33,6 +34,7 @@ export default function StorefrontPage() {
   const cart = useCart(slug);
 
   useEffect(() => captureReferralCode(slug), [slug]);
+  useEffect(() => trackEvent(slug, "pageview", `/store/${slug}`), [slug]);
 
   useEffect(() => {
     api

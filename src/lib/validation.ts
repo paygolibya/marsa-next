@@ -245,6 +245,15 @@ export const updateAffiliateSchema = z.object({
   active: z.boolean().optional(),
 });
 
+export const ANALYTICS_EVENT_TYPES = ["pageview", "add_to_cart", "checkout_started", "order_completed"] as const;
+export const createAnalyticsEventSchema = z.object({
+  storeSlug: z.string().min(1),
+  type: z.enum(ANALYTICS_EVENT_TYPES),
+  path: z.string().min(1).max(500),
+  referrer: z.string().max(500).optional(),
+  sessionId: z.string().min(1).max(100),
+});
+
 export const createCouponSchema = z.object({
   storeId: z.string().min(1),
   code: z.string().min(1, "رمز الكوبون مطلوب").transform((v) => v.trim().toUpperCase()),

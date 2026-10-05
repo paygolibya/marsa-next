@@ -7,6 +7,7 @@ import Link from "next/link";
 import { api, ApiError, formatLYD, type Product, type ProductReview, type Store } from "@/lib/api";
 import { useCart } from "@/lib/use-cart";
 import { captureReferralCode } from "@/lib/referral";
+import { trackEvent } from "@/lib/track-event";
 import { CartDrawer } from "@/components/cart-drawer";
 import { SiteFooter } from "@/components/site-footer";
 import { InquiryModal } from "@/components/storefront/InquiryModal";
@@ -31,6 +32,7 @@ export default function ProductDetailPage() {
   const cart = useCart(slug);
 
   useEffect(() => captureReferralCode(slug), [slug]);
+  useEffect(() => trackEvent(slug, "pageview", `/store/${slug}/product/${productId}`), [slug, productId]);
 
   useEffect(() => {
     api

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { Product, Bundle } from "@/lib/api";
+import { trackEvent } from "@/lib/track-event";
 
 // variantId identifies the line alongside productId — two different
 // variants of the same product (e.g. "Red/M" and "Blue/L") are genuinely
@@ -86,6 +87,10 @@ export function useCart(storeSlug: string) {
         localStorage.setItem(storageKey(storeSlug), JSON.stringify(next));
         return next;
       });
+      // Fired here (not at each call site) so every add-to-cart
+      // interaction across the whole app — storefront grid, PDP, a cart
+      // drawer's upsell suggestion — is tracked with this one change.
+      trackEvent(storeSlug, "add_to_cart", window.location.pathname);
     },
     [storeSlug]
   );
@@ -111,6 +116,7 @@ export function useCart(storeSlug: string) {
         localStorage.setItem(storageKey(storeSlug), JSON.stringify(next));
         return next;
       });
+      trackEvent(storeSlug, "add_to_cart", window.location.pathname);
     },
     [storeSlug]
   );

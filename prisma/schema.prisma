@@ -384,6 +384,7 @@ model Store {
   navMenuItems   NavMenuItem[]
   redirects      Redirect[]
   affiliates     Affiliate[]
+  analyticsEvents AnalyticsEvent[]
 
   @@map("stores")
 }
@@ -1062,4 +1063,47 @@ model AffiliatePayout {
 
   @@index([affiliateId])
   @@map("affiliate_payouts")
+}
+
+// First-party, store-scoped event tracking — a real pageview/funnel
+// pipeline, not the order-derived revenue stats in
+// src/app/api/analytics/by-store (which stays exactly as-is; this is a
+// sibling data source, not a replacement). Deliberately holds no IP/PII —
+// rate-limiting abuse on the public ingestion endpoint uses the separate
+// AnalyticsEventAttempt table below instead, so this table (what a
+// merchant actually sees aggregated in their dashboard) never carries
+// anything identifying a real visitor.
+model AnalyticsEvent {
+  id        String   @id @default(cuid())
+  storeId   String   @map("store_id")
+  // 'pageview' | 'add_to_cart' | 'checkout_started' | 'order_completed'
+  type      String
+  path      String
+  referrer  String?
+  // 'mobile' | 'desktop' | 'tablet' — parsed server-side from the
+  // request's own User-Agent header, never trusted from the client body.
+  device    String
+  sessionId String   @map("session_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@index([storeId, createdAt])
+  @@index([storeId, type, createdAt])
+  @@map("analytics_events")
+}
+
+// Same shape and purpose as LoginAttempt above, mirrored for the new
+// public POST /api/analytics/event endpoint — DB-backed (not in-memory)
+// because this runs on serverless, where counters must survive across
+// invocations/cold starts. A higher threshold than login's (tuned for
+// pageview-volume browsing, not brute-force login attempts) is applied in
+// the handler, not the schema.
+model AnalyticsEventAttempt {
+  id        String   @id @default(cuid())
+  ip        String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([ip, createdAt])
+  @@map("analytics_event_attempts")
 }

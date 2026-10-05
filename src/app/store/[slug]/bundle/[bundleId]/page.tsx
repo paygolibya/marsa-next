@@ -7,6 +7,7 @@ import Link from "next/link";
 import { api, formatLYD, type Bundle, type Product, type Store } from "@/lib/api";
 import { useCart } from "@/lib/use-cart";
 import { captureReferralCode } from "@/lib/referral";
+import { trackEvent } from "@/lib/track-event";
 import { CartDrawer } from "@/components/cart-drawer";
 import { SiteFooter } from "@/components/site-footer";
 
@@ -25,6 +26,7 @@ export default function BundleDetailPage() {
   const cart = useCart(slug);
 
   useEffect(() => captureReferralCode(slug), [slug]);
+  useEffect(() => trackEvent(slug, "pageview", `/store/${slug}/bundle/${bundleId}`), [slug, bundleId]);
 
   useEffect(() => {
     api

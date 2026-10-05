@@ -695,6 +695,14 @@ export const api = {
       topProducts: { name: string; quantity: number; revenueCents: number }[];
     }>(`/api/analytics/by-store/${storeId}?days=${days}`, { headers: authHeaders(token) }),
 
+  analyticsEvents: (token: string, storeId: string, days = 30) =>
+    request<{
+      funnel: { pageview: number; add_to_cart: number; checkout_started: number; order_completed: number };
+      deviceBreakdown: { device: string; count: number }[];
+      topReferrers: { referrer: string; count: number }[];
+      visitsOverTime: { date: string; pageviews: number }[];
+    }>(`/api/analytics/events-by-store/${storeId}?days=${days}`, { headers: authHeaders(token) }),
+
   adminPayouts: (token: string, status?: string) =>
     request<{ stats: PlatformStats; payouts: Payout[] }>(`/api/admin/payouts/ready${status ? `?status=${status}` : ""}`, {
       headers: authHeaders(token),

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mergeDailyBuckets, pickTopProducts, clampAnalyticsDays, type DbDailyRow, type DbProductRow } from "./analytics";
+import { mergeDailyBuckets, pickTopProducts, clampAnalyticsDays, buildFunnelCounts, mergeDailyPageviews, type DbProductRow, type DbFunnelRow, type DbPageviewRow } from "./analytics";
 
 const NOW = new Date("2026-01-10T12:00:00.000Z");
 
@@ -58,4 +58,28 @@ test("pickTopProducts is capped at 5 even with more distinct products", () => {
   const topProducts = pickTopProducts(rows);
   assert.equal(topProducts.length, 5);
   assert.equal(topProducts[0].name, "Product 7"); // highest revenueCents
+});
+
+test("buildFunnelCounts always returns all 4 stages, defaulting missing ones to 0", () => {
+  const rows: DbFunnelRow[] = [{ type: "pageview", count: 100 }, { type: "add_to_cart", count: 20 }];
+  assert.deepEqual(buildFunnelCounts(rows), { pageview: 100, add_to_cart: 20, checkout_started: 0, order_completed: 0 });
+});
+
+test("buildFunnelCounts ignores an unrecognized type rather than crashing", () => {
+  const rows: DbFunnelRow[] = [{ type: "some_future_type", count: 5 }];
+  assert.deepEqual(buildFunnelCounts(rows), { pageview: 0, add_to_cart: 0, checkout_started: 0, order_completed: 0 });
+});
+
+test("mergeDailyPageviews always has exactly `days` buckets, oldest first, even with no DB rows", () => {
+  const visits = mergeDailyPageviews([], 7, NOW);
+  assert.equal(visits.length, 7);
+  assert.equal(visits[0].date, "2026-01-04");
+  assert.equal(visits[6].date, "2026-01-10");
+  assert.ok(visits.every((d) => d.pageviews === 0));
+});
+
+test("mergeDailyPageviews lands a DB row's pageviews in the bucket matching its date", () => {
+  const rows: DbPageviewRow[] = [{ date: "2026-01-08", pageviews: 42 }];
+  const visits = mergeDailyPageviews(rows, 7, NOW);
+  assert.equal(visits.find((d) => d.date === "2026-01-08")!.pageviews, 42);
 });
