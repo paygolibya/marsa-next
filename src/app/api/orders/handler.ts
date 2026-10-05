@@ -72,6 +72,7 @@ export type OrdersTx = {
   bundle: { findFirst: (args: Any) => Promise<Bundle | null> };
   coupon: { findUnique: (args: Any) => Promise<Coupon | null>; updateMany: (args: Any) => Promise<CountResult> };
   order: { create: (args: Any) => Promise<OrderRow> };
+  customer: { upsert: (args: Any) => Promise<unknown> };
 };
 
 export type OrdersDb = {
@@ -385,6 +386,32 @@ export async function handleCreateOrder(deps: OrdersDeps, req: Request): Promise
             if (decremented.count === 0) throw new OutOfStockError(d.name);
             await tx.product.updateMany({ where: { id: d.productId, stockQty: { lte: 0 } }, data: { active: false } });
           }
+
+          // The merchant's buyer list — upserted in this same transaction
+          // so orderCount/totalSpentCents can never drift from what was
+          // actually ordered. name/email/city are kept fresh to the most
+          // recent order rather than frozen at this buyer's first purchase.
+          await tx.customer.upsert({
+            where: { storeId_phone: { storeId: store.id, phone: buyer.phone } },
+            create: {
+              storeId: store.id,
+              phone: buyer.phone,
+              name: buyer.name,
+              email: buyer.email || null,
+              city: buyerCity,
+              orderCount: 1,
+              totalSpentCents: totalCents,
+              lastOrderAt: new Date(),
+            },
+            update: {
+              name: buyer.name,
+              email: buyer.email || null,
+              city: buyerCity,
+              orderCount: { increment: 1 },
+              totalSpentCents: { increment: totalCents },
+              lastOrderAt: new Date(),
+            },
+          });
 
           return created;
         },

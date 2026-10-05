@@ -31,6 +31,10 @@ function getNavItems(storeType: string | undefined) {
     // Same reasoning as bundles above — upsells only ever surface in the
     // cart drawer, which a showcase store never opens.
     ...(isShowcase ? [] : [{ href: "/dashboard/upsells", label: "الاقتراحات الإضافية", icon: "➕" }]),
+    // Customers are derived entirely from real Orders — a showcase store
+    // never has any (catalog + inquiry only), so the list would always be
+    // empty there.
+    ...(isShowcase ? [] : [{ href: "/dashboard/customers", label: "العملاء", icon: "👥" }]),
     { href: "/dashboard/design", label: "تصميم المتجر", icon: "🎨" },
     { href: "/dashboard/payouts", label: "المستحقات المالية", icon: "💰" },
     { href: "/dashboard/coupons", label: "كوبونات الخصم", icon: "🏷️" },

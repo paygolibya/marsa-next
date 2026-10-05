@@ -379,6 +379,7 @@ model Store {
   categories     Category[]
   bundles        Bundle[]
   upsells        Upsell[]
+  customers      Customer[]
 
   @@map("stores")
 }
@@ -907,4 +908,29 @@ model Upsell {
   @@index([storeId])
   @@index([triggerProductId])
   @@map("upsells")
+}
+
+// A merchant's buyer list, derived entirely from real Order history — not
+// a separate "add a customer" entity. One row per (storeId, phone),
+// upserted inside the exact same transaction that creates an Order (see
+// /api/orders), so orderCount/totalSpentCents can never drift from what
+// was actually ordered. name/email/city are kept fresh to the buyer's
+// most recent order, not frozen at first purchase.
+model Customer {
+  id              String   @id @default(cuid())
+  storeId         String   @map("store_id")
+  phone           String
+  name            String
+  email           String?
+  city            String?
+  orderCount      Int      @default(0) @map("order_count")
+  totalSpentCents Int      @default(0) @map("total_spent_cents")
+  lastOrderAt     DateTime @map("last_order_at")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@unique([storeId, phone])
+  @@index([storeId])
+  @@map("customers")
 }

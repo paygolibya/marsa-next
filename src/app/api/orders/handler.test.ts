@@ -71,7 +71,7 @@ function makeFakeDeps(
   const store = opts.store !== undefined ? opts.store : STORE;
   const product = opts.product !== undefined ? opts.product : PRODUCT;
   const bundle = opts.bundle !== undefined ? opts.bundle : null;
-  const calls: { orderCreate?: Any; orderUpdate?: Any; productUpdateMany?: Any[]; couponUpdateMany?: Any; shipment?: Any; email?: Any; sms?: Any } = {
+  const calls: { orderCreate?: Any; orderUpdate?: Any; productUpdateMany?: Any[]; couponUpdateMany?: Any; customerUpsert?: Any; shipment?: Any; email?: Any; sms?: Any } = {
     productUpdateMany: [],
   };
   let createdOrderId = "order-1";
@@ -113,6 +113,12 @@ function makeFakeDeps(
               totalCents: args.data.totalCents,
               discountCents: args.data.discountCents,
             };
+          },
+        },
+        customer: {
+          upsert: async (args: Any) => {
+            calls.customerUpsert = args;
+            return {};
           },
         },
       };
@@ -479,4 +485,15 @@ test("a bundle order mixed with a plain product line: both resolve into their ow
   assert.equal(res.status, 201);
   assert.equal(body.totalCents, 8000 + 5000);
   assert.equal(calls.orderCreate.data.items.create.length, 2);
+});
+
+test("upserts a Customer row keyed on (storeId, phone) with this order's own buyer/total — never a client-sent total", async () => {
+  const { deps, calls } = makeFakeDeps();
+  await handleCreateOrder(deps, req(baseBody({ items: [{ productId: "p1", quantity: 2 }] })));
+  const upsert = calls.customerUpsert as { where: { storeId_phone: { storeId: string; phone: string } }; create: Any; update: Any };
+  assert.deepEqual(upsert.where.storeId_phone, { storeId: "store-1", phone: "0911111111" });
+  assert.equal(upsert.create.totalSpentCents, 10000);
+  assert.equal(upsert.create.orderCount, 1);
+  assert.deepEqual(upsert.update.totalSpentCents, { increment: 10000 });
+  assert.deepEqual(upsert.update.orderCount, { increment: 1 });
 });

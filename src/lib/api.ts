@@ -112,6 +112,17 @@ export type Category = { id: string; name: string; slug: string; position: numbe
 
 export type Upsell = { id: string; storeId: string; triggerProductId: string; offeredProductId: string; active: boolean; triggerProduct: { name: string }; offeredProduct: { name: string } };
 
+export type Customer = {
+  id: string;
+  phone: string;
+  name: string;
+  email: string | null;
+  city: string | null;
+  orderCount: number;
+  totalSpentCents: number;
+  lastOrderAt: string;
+};
+
 export type BundleItem = { id: string; productId: string; quantity: number; product: { name: string; priceCents: number; imageUrl: string | null } };
 export type Bundle = {
   id: string;
@@ -581,6 +592,9 @@ export const api = {
 
   deleteUpsell: (token: string, id: string) =>
     request<{ ok: boolean }>(`/api/upsells/${id}`, { method: "DELETE", headers: authHeaders(token) }),
+
+  listCustomers: (token: string, storeId: string) =>
+    request<Customer[]>(`/api/customers?storeId=${storeId}`, { headers: authHeaders(token) }),
 
   trackOrder: (orderId: string, phone: string) =>
     request<{
