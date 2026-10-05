@@ -35,6 +35,9 @@ function getNavItems(storeType: string | undefined) {
     // never has any (catalog + inquiry only), so the list would always be
     // empty there.
     ...(isShowcase ? [] : [{ href: "/dashboard/customers", label: "العملاء", icon: "👥" }]),
+    // Affiliate commissions are earned on real Orders — a showcase store
+    // never has any, same reasoning as customers/bundles/upsells above.
+    ...(isShowcase ? [] : [{ href: "/dashboard/affiliates", label: "برنامج الإحالة", icon: "🔗" }]),
     { href: "/dashboard/design", label: "تصميم المتجر", icon: "🎨" },
     // Pages/menu/redirects apply to every store type, including showcase —
     // a catalog-only store still benefits from an "About us" page and a

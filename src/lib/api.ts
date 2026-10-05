@@ -127,6 +127,19 @@ export type Page = { id: string; storeId: string; slug: string; title: string; c
 export type NavMenuItem = { id: string; storeId: string; label: string; url: string; position: number };
 export type Redirect = { id: string; storeId: string; fromPath: string; toPath: string };
 
+export type Affiliate = {
+  id: string;
+  storeId: string;
+  name: string;
+  phone: string;
+  code: string;
+  commissionPercent: number;
+  active: boolean;
+  createdAt: string;
+  pendingCents: number;
+};
+export type AffiliatePayout = { id: string; affiliateId: string; amountCents: number; status: string; createdAt: string };
+
 export type BundleItem = { id: string; productId: string; quantity: number; product: { name: string; priceCents: number; imageUrl: string | null } };
 export type Bundle = {
   id: string;
@@ -476,6 +489,7 @@ export const api = {
     buyer: { name: string; phone: string; email?: string; city: string; address: string; vanexAreaId?: string };
     paymentMethod: "cod" | "wallet";
     couponCode?: string;
+    referralCode?: string;
     scheduledStartAt?: string;
     scheduledEndAt?: string;
   }) =>
@@ -639,6 +653,21 @@ export const api = {
 
   deleteRedirect: (token: string, id: string) =>
     request<{ ok: boolean }>(`/api/redirects/${id}`, { method: "DELETE", headers: authHeaders(token) }),
+
+  createAffiliate: (token: string, body: { storeId: string; name: string; phone: string; commissionPercent?: number }) =>
+    request<Affiliate>("/api/affiliates", { method: "POST", headers: authHeaders(token), body: JSON.stringify(body) }),
+
+  listAffiliates: (token: string, storeId: string) =>
+    request<Affiliate[]>(`/api/affiliates?storeId=${storeId}`, { headers: authHeaders(token) }),
+
+  updateAffiliate: (token: string, id: string, body: Partial<{ name: string; phone: string; commissionPercent: number; active: boolean }>) =>
+    request<Affiliate>(`/api/affiliates/${id}`, { method: "PATCH", headers: authHeaders(token), body: JSON.stringify(body) }),
+
+  deleteAffiliate: (token: string, id: string) =>
+    request<{ ok: boolean }>(`/api/affiliates/${id}`, { method: "DELETE", headers: authHeaders(token) }),
+
+  payoutAffiliate: (token: string, id: string) =>
+    request<AffiliatePayout>(`/api/affiliates/${id}/payout`, { method: "POST", headers: authHeaders(token) }),
 
   trackOrder: (orderId: string, phone: string) =>
     request<{

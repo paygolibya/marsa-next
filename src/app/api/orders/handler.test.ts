@@ -61,6 +61,7 @@ function makeFakeDeps(
     product?: typeof PRODUCT | null;
     bundle?: typeof BUNDLE | null;
     coupon?: Record<string, unknown> | null;
+    affiliate?: { id: string; commissionPercent: number } | null;
     // Simulates losing a concurrent race at the atomic decrement/increment
     // step (real Postgres would return count: 0 here when another
     // transaction already consumed the stock/coupon use first).
@@ -71,7 +72,18 @@ function makeFakeDeps(
   const store = opts.store !== undefined ? opts.store : STORE;
   const product = opts.product !== undefined ? opts.product : PRODUCT;
   const bundle = opts.bundle !== undefined ? opts.bundle : null;
-  const calls: { orderCreate?: Any; orderUpdate?: Any; productUpdateMany?: Any[]; couponUpdateMany?: Any; customerUpsert?: Any; shipment?: Any; email?: Any; sms?: Any } = {
+  const affiliate = opts.affiliate !== undefined ? opts.affiliate : null;
+  const calls: {
+    orderCreate?: Any;
+    orderUpdate?: Any;
+    productUpdateMany?: Any[];
+    couponUpdateMany?: Any;
+    customerUpsert?: Any;
+    affiliateCommissionCreate?: Any;
+    shipment?: Any;
+    email?: Any;
+    sms?: Any;
+  } = {
     productUpdateMany: [],
   };
   let createdOrderId = "order-1";
@@ -118,6 +130,15 @@ function makeFakeDeps(
         customer: {
           upsert: async (args: Any) => {
             calls.customerUpsert = args;
+            return {};
+          },
+        },
+        affiliate: {
+          findFirst: async () => affiliate,
+        },
+        affiliateCommission: {
+          create: async (args: Any) => {
+            calls.affiliateCommissionCreate = args;
             return {};
           },
         },
@@ -496,4 +517,31 @@ test("upserts a Customer row keyed on (storeId, phone) with this order's own buy
   assert.equal(upsert.create.orderCount, 1);
   assert.deepEqual(upsert.update.totalSpentCents, { increment: 10000 });
   assert.deepEqual(upsert.update.orderCount, { increment: 1 });
+});
+
+test("a valid, active referral code creates an AffiliateCommission for this order's own total, and denormalizes the normalized code onto the order", async () => {
+  const { deps, calls } = makeFakeDeps({ affiliate: { id: "affiliate-1", commissionPercent: 10 } });
+  const res = await handleCreateOrder(deps, req(baseBody({ items: [{ productId: "p1", quantity: 2 }], referralCode: "abc123" })));
+  assert.equal(res.status, 201);
+  assert.equal(calls.orderCreate.data.affiliateCode, "ABC123");
+  const create = calls.affiliateCommissionCreate as { data: { affiliateId: string; orderId: string; commissionCents: number } };
+  assert.equal(create.data.affiliateId, "affiliate-1");
+  assert.equal(create.data.orderId, "order-1");
+  assert.equal(create.data.commissionCents, 1000); // 10% of 10000
+});
+
+test("an unrecognized or inactive referral code is silently ignored — never fails checkout, never creates a commission", async () => {
+  const { deps, calls } = makeFakeDeps({ affiliate: null });
+  const res = await handleCreateOrder(deps, req(baseBody({ items: [{ productId: "p1", quantity: 2 }], referralCode: "NOPE" })));
+  assert.equal(res.status, 201);
+  assert.equal(calls.orderCreate.data.affiliateCode, null);
+  assert.equal(calls.affiliateCommissionCreate, undefined);
+});
+
+test("no referralCode at all means no affiliate lookup side effects", async () => {
+  const { deps, calls } = makeFakeDeps();
+  const res = await handleCreateOrder(deps, req(baseBody({ items: [{ productId: "p1", quantity: 2 }] })));
+  assert.equal(res.status, 201);
+  assert.equal(calls.orderCreate.data.affiliateCode, null);
+  assert.equal(calls.affiliateCommissionCreate, undefined);
 });

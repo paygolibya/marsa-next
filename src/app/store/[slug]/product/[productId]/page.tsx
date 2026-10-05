@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { api, ApiError, formatLYD, type Product, type ProductReview, type Store } from "@/lib/api";
 import { useCart } from "@/lib/use-cart";
+import { captureReferralCode } from "@/lib/referral";
 import { CartDrawer } from "@/components/cart-drawer";
 import { SiteFooter } from "@/components/site-footer";
 import { InquiryModal } from "@/components/storefront/InquiryModal";
@@ -28,6 +29,8 @@ export default function ProductDetailPage() {
   const [inquiryOpen, setInquiryOpen] = useState(false);
 
   const cart = useCart(slug);
+
+  useEffect(() => captureReferralCode(slug), [slug]);
 
   useEffect(() => {
     api

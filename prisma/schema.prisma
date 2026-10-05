@@ -383,6 +383,7 @@ model Store {
   pages          Page[]
   navMenuItems   NavMenuItem[]
   redirects      Redirect[]
+  affiliates     Affiliate[]
 
   @@map("stores")
 }
@@ -590,6 +591,12 @@ model Order {
   productSubtotalCents Int   @default(0) @map("product_subtotal_cents")
   discountCents     Int      @default(0) @map("discount_cents")
   couponCode        String?  @map("coupon_code")
+  // The ?ref=CODE an affiliate's shared link carried, denormalized here
+  // purely for display/audit on the order itself — the actual commission
+  // record (and the authoritative "was this buyer referred" fact) is the
+  // AffiliateCommission row below, looked up by affiliateCode+storeId at
+  // order-creation time, same denormalization pattern as couponCode above.
+  affiliateCode     String?  @map("affiliate_code")
   totalCents        Int      @map("total_cents")
   shippingCents     Int      @default(0) @map("shipping_cents")
   courierStatus     String?  @map("courier_status") // raw courier-reported status, e.g. accepted/delivered/failed_delivery/returned
@@ -659,10 +666,11 @@ model Order {
   refundedAt   DateTime? @map("refunded_at")
   refundReason String?   @map("refund_reason")
 
-  store      Store           @relation(fields: [storeId], references: [id])
-  items      OrderItem[]
-  reviews    ProductReview[]
-  commission Commission?
+  store                Store                 @relation(fields: [storeId], references: [id])
+  items                OrderItem[]
+  reviews              ProductReview[]
+  commission           Commission?
+  affiliateCommission  AffiliateCommission?
 
   // Compound index covers both "all orders for this store" (by-store,
   // track) and "this store's orders since <date>" (analytics) — the two
@@ -987,4 +995,71 @@ model Redirect {
   @@unique([storeId, fromPath])
   @@index([storeId])
   @@map("redirects")
+}
+
+// A merchant's own affiliate/referral program — deliberately a separate
+// model tree from Commission/Payout above, not a reuse of them: those are
+// platform→merchant and keyed 1:1 off Order (Commission.orderId @unique),
+// but an order needs to support BOTH a platform commission AND an
+// affiliate commission at once, so the same orderId can't be the unique
+// key for two different relations.
+model Affiliate {
+  id                String  @id @default(cuid())
+  storeId           String  @map("store_id")
+  name              String
+  phone             String
+  // Shared via ?ref=CODE on the storefront; random, not merchant-chosen,
+  // same collision-free reasoning as every other generated slug/code in
+  // this app.
+  code              String
+  commissionPercent Int     @default(10) @map("commission_percent")
+  active            Boolean @default(true)
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  store       Store                 @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  commissions AffiliateCommission[]
+  payouts     AffiliatePayout[]
+
+  @@unique([storeId, code])
+  @@index([storeId])
+  @@map("affiliates")
+}
+
+model AffiliateCommission {
+  id              String    @id @default(cuid())
+  affiliateId     String    @map("affiliate_id")
+  orderId         String    @unique @map("order_id")
+  commissionCents Int       @map("commission_cents")
+  payoutId        String?   @map("payout_id")
+  status          String    @default("pending") @map("status") // 'pending' | 'paid'
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  affiliate Affiliate        @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+  order     Order            @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  payout    AffiliatePayout? @relation(fields: [payoutId], references: [id])
+
+  @@index([affiliateId])
+  @@index([payoutId])
+  @@map("affiliate_commissions")
+}
+
+// V1: a merchant marks this transferred themselves once they've actually
+// paid the affiliate (bank transfer, cash, whatever) — mirrors how
+// Payout/Commission above started before the weekly cron batching
+// existed. No automated batching yet; a reasonable later addition once
+// real usage exists.
+model AffiliatePayout {
+  id            String    @id @default(cuid())
+  affiliateId   String    @map("affiliate_id")
+  amountCents   Int       @map("amount_cents")
+  status        String    @default("ready_for_transfer") @map("status") // 'ready_for_transfer' | 'transferred'
+  transferredAt DateTime? @map("transferred_at")
+  note          String?
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  affiliate   Affiliate              @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+  commissions AffiliateCommission[]
+
+  @@index([affiliateId])
+  @@map("affiliate_payouts")
 }

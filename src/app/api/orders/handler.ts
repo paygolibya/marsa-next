@@ -73,6 +73,8 @@ export type OrdersTx = {
   coupon: { findUnique: (args: Any) => Promise<Coupon | null>; updateMany: (args: Any) => Promise<CountResult> };
   order: { create: (args: Any) => Promise<OrderRow> };
   customer: { upsert: (args: Any) => Promise<unknown> };
+  affiliate: { findFirst: (args: Any) => Promise<{ id: string; commissionPercent: number } | null> };
+  affiliateCommission: { create: (args: Any) => Promise<unknown> };
 };
 
 export type OrdersDb = {
@@ -145,7 +147,7 @@ export async function handleCreateOrder(deps: OrdersDeps, req: Request): Promise
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "بيانات غير صالحة" }, { status: 400 });
     }
-    const { storeSlug, items, buyer, paymentMethod, couponCode } = parsed.data;
+    const { storeSlug, items, buyer, paymentMethod, couponCode, referralCode } = parsed.data;
 
     const store = await db.store.findUnique({ where: { slug: storeSlug }, include: { merchant: true } });
     if (!store) return NextResponse.json({ error: "Store not found" }, { status: 404 });
@@ -334,6 +336,27 @@ export async function handleCreateOrder(deps: OrdersDeps, req: Request): Promise
 
           const totalCents = productSubtotalCents - discountCents + shippingCents;
 
+          // An affiliate's ?ref=CODE — an unrecognized or inactive code is
+          // silently ignored (never a reason to fail checkout; it's a
+          // marketing attribution signal, not part of the order's own
+          // validity), matching the comment on referralCode in
+          // createOrderSchema. appliedAffiliateCode mirrors
+          // appliedCouponCode above: only the code that actually matched
+          // gets denormalized onto the order, never raw client input.
+          let affiliateId: string | null = null;
+          let appliedAffiliateCode: string | null = null;
+          let affiliateCommissionCents = 0;
+          if (referralCode) {
+            const affiliate = await tx.affiliate.findFirst({
+              where: { storeId: store.id, code: referralCode.trim().toUpperCase(), active: true },
+            });
+            if (affiliate) {
+              affiliateId = affiliate.id;
+              appliedAffiliateCode = referralCode.trim().toUpperCase();
+              affiliateCommissionCents = Math.round((totalCents * affiliate.commissionPercent) / 100);
+            }
+          }
+
           const created = await tx.order.create({
             data: {
               storeId: store.id,
@@ -348,6 +371,7 @@ export async function handleCreateOrder(deps: OrdersDeps, req: Request): Promise
               productSubtotalCents,
               discountCents,
               couponCode: appliedCouponCode,
+              affiliateCode: appliedAffiliateCode,
               totalCents,
               shippingCents,
               vanexAreaId: buyer.vanexAreaId || null,
@@ -357,6 +381,12 @@ export async function handleCreateOrder(deps: OrdersDeps, req: Request): Promise
               items: { create: resolvedItems },
             },
           });
+
+          if (affiliateId) {
+            await tx.affiliateCommission.create({
+              data: { affiliateId, orderId: created.id, commissionCents: affiliateCommissionCents },
+            });
+          }
 
           // Same race as the coupon guard above, for physical stock: the
           // stock-sufficiency check on resolvedItems above ran against a

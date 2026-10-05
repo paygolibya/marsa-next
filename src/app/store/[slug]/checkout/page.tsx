@@ -6,6 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { api, ApiError, formatLYD, type Store, type VanexCity } from "@/lib/api";
 import { useCart } from "@/lib/use-cart";
+import { getReferralCode } from "@/lib/referral";
 
 const courierLabels: Record<string, string> = {
   vanex: "Vanex",
@@ -216,6 +217,7 @@ export default function CheckoutPage() {
         },
         paymentMethod,
         couponCode: appliedCoupon?.code,
+        referralCode: getReferralCode(slug) ?? undefined,
         scheduledStartAt: isRental && rentalStart ? new Date(rentalStart).toISOString() : isBooking ? selectedSlot : undefined,
         scheduledEndAt: isRental && rentalEnd ? new Date(rentalEnd).toISOString() : undefined,
       });

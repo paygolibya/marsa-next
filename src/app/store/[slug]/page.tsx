@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { api, type Bundle, type Category, type Product, type Store, type StoreStats, type StoreTestimonial } from "@/lib/api";
 import { useCart } from "@/lib/use-cart";
+import { captureReferralCode } from "@/lib/referral";
 import { CartDrawer } from "@/components/cart-drawer";
 import { SiteFooter } from "@/components/site-footer";
 import { STOREFRONT_TEMPLATES } from "@/components/storefront/templates/registry";
@@ -30,6 +31,8 @@ export default function StorefrontPage() {
   const [newsletterState, setNewsletterState] = useState<"idle" | "loading" | "done" | "error">("idle");
 
   const cart = useCart(slug);
+
+  useEffect(() => captureReferralCode(slug), [slug]);
 
   useEffect(() => {
     api

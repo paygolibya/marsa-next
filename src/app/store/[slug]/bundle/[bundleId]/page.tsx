@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { api, formatLYD, type Bundle, type Product, type Store } from "@/lib/api";
 import { useCart } from "@/lib/use-cart";
+import { captureReferralCode } from "@/lib/referral";
 import { CartDrawer } from "@/components/cart-drawer";
 import { SiteFooter } from "@/components/site-footer";
 
@@ -22,6 +23,8 @@ export default function BundleDetailPage() {
   const [cartOpen, setCartOpen] = useState(false);
 
   const cart = useCart(slug);
+
+  useEffect(() => captureReferralCode(slug), [slug]);
 
   useEffect(() => {
     api

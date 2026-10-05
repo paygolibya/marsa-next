@@ -136,6 +136,12 @@ export const createOrderSchema = z
     }),
     paymentMethod: z.enum(["cod", "wallet"]),
     couponCode: z.string().optional(),
+    // An affiliate's ?ref=CODE, carried from wherever the buyer first
+    // landed through to checkout — see src/lib/referral.ts. An
+    // unrecognized/inactive code is silently ignored at order-creation,
+    // never a reason to fail the order (it's a marketing attribution
+    // signal, not part of the checkout's own validity).
+    referralCode: z.string().optional(),
     // Rental stores: a rental period (store.type === "rental"); booking
     // stores: an appointment slot start, with the end recomputed
     // server-side from Store.bookingSlotMinutes, never trusted from the
@@ -223,6 +229,20 @@ export const createRedirectSchema = z
 
 export const updateRedirectSchema = z.object({
   toPath: z.string().min(1, "المسار الجديد مطلوب").max(300).optional(),
+});
+
+export const createAffiliateSchema = z.object({
+  storeId: z.string().min(1),
+  name: z.string().min(1, "اسم المسوّق مطلوب").max(60),
+  phone: z.string().min(1, "رقم الهاتف مطلوب").max(20),
+  commissionPercent: z.number().int().min(1, "النسبة يجب أن تكون أكبر من صفر").max(100, "النسبة لا يمكن أن تتجاوز 100").optional(),
+});
+
+export const updateAffiliateSchema = z.object({
+  name: z.string().min(1, "اسم المسوّق مطلوب").max(60).optional(),
+  phone: z.string().min(1, "رقم الهاتف مطلوب").max(20).optional(),
+  commissionPercent: z.number().int().min(1, "النسبة يجب أن تكون أكبر من صفر").max(100, "النسبة لا يمكن أن تتجاوز 100").optional(),
+  active: z.boolean().optional(),
 });
 
 export const createCouponSchema = z.object({
