@@ -36,6 +36,13 @@ function getNavItems(storeType: string | undefined) {
     // empty there.
     ...(isShowcase ? [] : [{ href: "/dashboard/customers", label: "العملاء", icon: "👥" }]),
     { href: "/dashboard/design", label: "تصميم المتجر", icon: "🎨" },
+    // Pages/menu/redirects apply to every store type, including showcase —
+    // a catalog-only store still benefits from an "About us" page and a
+    // nav menu, unlike bundles/upsells/customers above which are tied to
+    // having a real checkout cart.
+    { href: "/dashboard/pages", label: "الصفحات", icon: "📄" },
+    { href: "/dashboard/menu", label: "القائمة الرئيسية", icon: "📋" },
+    { href: "/dashboard/redirects", label: "إعادة التوجيه", icon: "↪️" },
     { href: "/dashboard/payouts", label: "المستحقات المالية", icon: "💰" },
     { href: "/dashboard/coupons", label: "كوبونات الخصم", icon: "🏷️" },
     { href: "/dashboard/analytics", label: "التحليلات", icon: "📈" },

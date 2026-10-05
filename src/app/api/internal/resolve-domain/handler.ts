@@ -8,8 +8,11 @@ const ROOT_DOMAIN = process.env.ROOT_DOMAIN ?? "rifqa.ly";
 
 export type ResolveDomainDb = {
   store: {
-    findFirst: (args: { where: { customDomain: string; customDomainVerified: true }; select: { slug: true } }) => Promise<{ slug: string } | null>;
-    findUnique: (args: { where: { slug: string }; select: { slug: true } }) => Promise<{ slug: string } | null>;
+    findFirst: (args: { where: { customDomain: string; customDomainVerified: true }; select: { id: true; slug: true } }) => Promise<{ id: string; slug: string } | null>;
+    findUnique: (args: { where: { slug: string }; select: { id: true; slug: true } }) => Promise<{ id: string; slug: string } | null>;
+  };
+  redirect: {
+    findUnique: (args: { where: { storeId_fromPath: { storeId: string; fromPath: string } } }) => Promise<{ toPath: string } | null>;
   };
 };
 
@@ -32,22 +35,48 @@ export type ResolveDomainDb = {
 //    back to Unicode here (Node's domainToUnicode isn't available on
 //    the Edge runtime, which is why this round-trips through here at
 //    all) and looking it up directly fixes it.
+//
+// With an optional `path` param, also resolves the ASCII-subdomain case
+// (which middleware.ts otherwise never sends here) purely to check for a
+// configured Redirect on that exact path — see middleware.ts's
+// resolveViaApi for the full reasoning.
 export async function handleResolveDomain(db: ResolveDomainDb, req: Request): Promise<Response> {
-  const host = new URL(req.url).searchParams.get("host");
-  if (!host) return NextResponse.json({ slug: null });
+  const url = new URL(req.url);
+  const host = url.searchParams.get("host");
+  // Optional — when given, also checks whether a Redirect is configured
+  // for this exact path, in the same round trip as the slug resolution
+  // below (see middleware.ts's resolveViaApi for why this matters: it's
+  // the one DB round trip those callers already pay for anyway).
+  const path = url.searchParams.get("path");
+  if (!host) return NextResponse.json({ slug: null, redirectTo: null });
   const lower = host.toLowerCase();
+
+  let store: { id: string; slug: string } | null = null;
 
   if (lower.endsWith(`.${ROOT_DOMAIN}`)) {
     const label = lower.slice(0, -(ROOT_DOMAIN.length + 1));
-    if (!label.startsWith("xn--")) return NextResponse.json({ slug: null });
-    const decodedSlug = domainToUnicode(label);
-    const store = await db.store.findUnique({ where: { slug: decodedSlug }, select: { slug: true } });
-    return NextResponse.json({ slug: store?.slug ?? null });
+    // An ASCII label IS the slug already — middleware's fast path never
+    // calls this endpoint for ITS OWN slug resolution in that case (zero
+    // DB calls, by design), but it still calls here with `path` set to
+    // check for a redirect, which needs the store's real id. A punycode
+    // label needs decoding first (not available on the Edge runtime
+    // middleware itself runs on — see middleware.ts).
+    const resolvedSlug = label.startsWith("xn--") ? domainToUnicode(label) : label;
+    store = await db.store.findUnique({ where: { slug: resolvedSlug }, select: { id: true, slug: true } });
+  } else {
+    store = await db.store.findFirst({
+      where: { customDomain: lower, customDomainVerified: true },
+      select: { id: true, slug: true },
+    });
   }
 
-  const store = await db.store.findFirst({
-    where: { customDomain: lower, customDomainVerified: true },
-    select: { slug: true },
-  });
-  return NextResponse.json({ slug: store?.slug ?? null });
+  if (!store) return NextResponse.json({ slug: null, redirectTo: null });
+
+  let redirectTo: string | null = null;
+  if (path) {
+    const redirect = await db.redirect.findUnique({ where: { storeId_fromPath: { storeId: store.id, fromPath: path } } });
+    redirectTo = redirect?.toPath ?? null;
+  }
+
+  return NextResponse.json({ slug: store.slug, redirectTo });
 }

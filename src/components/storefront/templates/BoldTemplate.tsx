@@ -1,6 +1,7 @@
 import { StatsSection, ProductsSection, CategoriesSection, BundlesSection, TestimonialsSection, NewsletterSection } from "@/components/storefront/sections";
 import type { SectionRenderProps, SectionType } from "@/components/storefront/sections/types";
 import { StorefrontHeaderRow } from "./StorefrontHeaderRow";
+import { StorefrontNavRow } from "./StorefrontNavRow";
 import {
   resolveCoverImageHeightClass,
   resolveHeroPaddingClass,
@@ -33,6 +34,7 @@ export default function BoldTemplate({
   selectedCategoryId,
   setSelectedCategoryId,
   bundles,
+  navMenuItems,
   stats,
   testimonials,
   cartTotalItems,
@@ -131,6 +133,8 @@ export default function BoldTemplate({
           }
         />
       </div>
+
+      <StorefrontNavRow navMenuItems={navMenuItems} primaryColor={primary} />
 
       {store.customization?.coverImage && (
         <div className={`w-full overflow-hidden ${resolveCoverImageHeightClass(store.customization?.coverImageSize)}`}>

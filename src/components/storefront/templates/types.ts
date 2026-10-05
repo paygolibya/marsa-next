@@ -18,6 +18,7 @@ export type StorefrontTemplateProps = {
   selectedCategoryId: string | null;
   setSelectedCategoryId: (id: string | null) => void;
   bundles: Bundle[];
+  navMenuItems: { id: string; label: string; url: string }[];
   stats: StoreStats | null;
   testimonials: StoreTestimonial[];
   cartTotalItems: number;

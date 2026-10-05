@@ -1,6 +1,7 @@
 import { ProductsSection, CategoriesSection, BundlesSection, TestimonialsSection, NewsletterSection } from "@/components/storefront/sections";
 import type { SectionRenderProps, SectionType } from "@/components/storefront/sections/types";
 import { StorefrontLogo } from "./StorefrontLogo";
+import { StorefrontNavRow } from "./StorefrontNavRow";
 import { resolveCoverImageHeightClass, resolveLogoSizePx, resolveTextSizeClass, type StorefrontTemplateProps } from "./types";
 
 // "stats" has no entry here — Marketplace shows the social-proof line
@@ -33,6 +34,7 @@ export default function MarketplaceTemplate({
   selectedCategoryId,
   setSelectedCategoryId,
   bundles,
+  navMenuItems,
   stats,
   testimonials,
   cartTotalItems,
@@ -147,6 +149,8 @@ export default function MarketplaceTemplate({
           )}
         </div>
       </header>
+
+      <StorefrontNavRow navMenuItems={navMenuItems} primaryColor={primary} />
 
       {store.customization?.coverImage && (
         <div className={`w-full overflow-hidden ${resolveCoverImageHeightClass(store.customization?.coverImageSize)}`}>

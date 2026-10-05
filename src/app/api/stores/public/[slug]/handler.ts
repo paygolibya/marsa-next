@@ -81,6 +81,9 @@ export type PublicStoreDb = {
       select: { triggerProductId: true; offeredProductId: true };
     }) => Promise<{ triggerProductId: string; offeredProductId: string }[]>;
   };
+  navMenuItem: {
+    findMany: (args: { where: { storeId: string }; orderBy: { position: "asc" } }) => Promise<{ id: string; label: string; url: string }[]>;
+  };
   order: { count: (args: { where: { storeId: string; status: "delivered" } }) => Promise<number> };
   productReview: {
     aggregate: (args: {
@@ -119,7 +122,7 @@ export async function handleGetPublicStore(db: PublicStoreDb, slug: string): Pro
     const statsEnabled = sections.find((s) => s.type === "stats")?.enabled ?? true;
     const testimonialsEnabled = sections.find((s) => s.type === "testimonials")?.enabled ?? false;
 
-    const [products, categories, bundles, upsells] = await Promise.all([
+    const [products, categories, bundles, upsells, navMenuItems] = await Promise.all([
       db.product.findMany({
         where: { storeId: store.id, active: true },
         select: {
@@ -140,6 +143,7 @@ export async function handleGetPublicStore(db: PublicStoreDb, slug: string): Pro
         include: { items: { include: { product: { select: { name: true, priceCents: true, imageUrl: true } } } } },
       }),
       db.upsell.findMany({ where: { storeId: store.id, active: true }, select: { triggerProductId: true, offeredProductId: true } }),
+      db.navMenuItem.findMany({ where: { storeId: store.id }, orderBy: { position: "asc" } }),
     ]);
 
     const { merchant, sections: _rawSections, ...publicStore } = store;
@@ -174,7 +178,7 @@ export async function handleGetPublicStore(db: PublicStoreDb, slug: string): Pro
       testimonials = reviews.map((r) => ({ buyerName: r.buyerName, rating: r.rating, reviewText: r.reviewText, productName: r.product.name }));
     }
 
-    return NextResponse.json({ store: { ...publicStore, dpayAvailable, sections }, products, categories, bundles, upsells, stats, testimonials });
+    return NextResponse.json({ store: { ...publicStore, dpayAvailable, sections }, products, categories, bundles, upsells, navMenuItems, stats, testimonials });
   } catch (err) {
     console.error(err);
     Sentry.captureException(err);

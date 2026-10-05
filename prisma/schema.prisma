@@ -380,6 +380,9 @@ model Store {
   bundles        Bundle[]
   upsells        Upsell[]
   customers      Customer[]
+  pages          Page[]
+  navMenuItems   NavMenuItem[]
+  redirects      Redirect[]
 
   @@map("stores")
 }
@@ -933,4 +936,55 @@ model Customer {
   @@unique([storeId, phone])
   @@index([storeId])
   @@map("customers")
+}
+
+// A merchant-authored static page (About us, Return policy text, etc.) —
+// plain text with paragraph breaks only, same safe rendering as
+// Product.description. Rendered at /store/{slug}/page/{slug}.
+model Page {
+  id        String   @id @default(cuid())
+  storeId   String   @map("store_id")
+  slug      String
+  title     String
+  content   String   @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@unique([storeId, slug])
+  @@index([storeId])
+  @@map("pages")
+}
+
+// One flat (not nested) storefront nav link, rendered in header order —
+// url can be an internal path (e.g. /page/about) or a full external URL,
+// the storefront doesn't distinguish, it just renders an <a href>.
+model NavMenuItem {
+  id       String @id @default(cuid())
+  storeId  String @map("store_id")
+  label    String
+  url      String
+  position Int    @default(0)
+
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@index([storeId])
+  @@map("nav_menu_items")
+}
+
+// A storefront-path redirect (e.g. an old product URL a merchant shared
+// externally, now renamed) — checked in src/middleware.ts right after
+// slug resolution, folded into the same /api/internal/resolve-domain
+// round trip to avoid a second one per request.
+model Redirect {
+  id       String @id @default(cuid())
+  storeId  String @map("store_id")
+  fromPath String @map("from_path")
+  toPath   String @map("to_path")
+
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@unique([storeId, fromPath])
+  @@index([storeId])
+  @@map("redirects")
 }

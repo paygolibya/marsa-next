@@ -36,24 +36,36 @@ const ROOT_DOMAIN = process.env.ROOT_DOMAIN ?? "rifqa.ly";
 // Best-effort, per-Edge-instance cache — an Edge runtime has no shared
 // memory across instances/regions, so this only ever saves *some*
 // round trips, never all of them. A stale hit just means a domain change
-// takes a little longer to show up here; customDomainVerified itself is
-// only ever set by a real Vercel verification check, never by this cache.
-const domainCache = new Map<string, { slug: string | null; expiresAt: number }>();
+// (or a newly-configured redirect) takes a little longer to show up here;
+// customDomainVerified itself is only ever set by a real Vercel
+// verification check, never by this cache. Keyed by hostname+pathname
+// (not hostname alone) now that the same round trip also carries a
+// path-specific redirect lookup — see resolveViaApi below.
+const domainCache = new Map<string, { slug: string | null; redirectTo: string | null; expiresAt: number }>();
 const CACHE_TTL_MS = 60_000;
 
-async function resolveCustomDomainSlug(req: NextRequest, hostname: string): Promise<string | null> {
-  const cached = domainCache.get(hostname);
-  if (cached && cached.expiresAt > Date.now()) return cached.slug;
+// Resolves BOTH the store slug (for punycode-subdomain/custom-domain
+// hosts, which need a DB lookup Edge can't do directly) and, in the same
+// round trip, whether a Redirect is configured for this exact path —
+// avoiding a second round trip for stores that reach this function at
+// all. The ASCII-subdomain fast path below still resolves its own slug
+// locally with zero round trips either way; it only calls this for the
+// redirect-checking side, deliberately ignoring the slug this returns (to
+// never regress that path's existing zero-DB-call behavior).
+async function resolveViaApi(req: NextRequest, hostname: string, pathname: string): Promise<{ slug: string | null; redirectTo: string | null }> {
+  const cacheKey = `${hostname}${pathname}`;
+  const cached = domainCache.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) return cached;
 
   try {
-    const res = await fetch(new URL(`/api/internal/resolve-domain?host=${encodeURIComponent(hostname)}`, req.url));
-    const { slug } = (await res.json()) as { slug: string | null };
-    domainCache.set(hostname, { slug, expiresAt: Date.now() + CACHE_TTL_MS });
-    return slug;
+    const res = await fetch(new URL(`/api/internal/resolve-domain?host=${encodeURIComponent(hostname)}&path=${encodeURIComponent(pathname)}`, req.url));
+    const value = (await res.json()) as { slug: string | null; redirectTo: string | null };
+    domainCache.set(cacheKey, { ...value, expiresAt: Date.now() + CACHE_TTL_MS });
+    return value;
   } catch {
-    // Resolver route unreachable — fail open to "unrecognized host" rather
-    // than block the request indefinitely.
-    return null;
+    // Resolver route unreachable — fail open to "unrecognized host, no
+    // redirect" rather than block the request indefinitely.
+    return { slug: null, redirectTo: null };
   }
 }
 
@@ -87,6 +99,13 @@ export async function middleware(req: NextRequest) {
   }
 
   let slug: string | null = null;
+  // Set only when resolveViaApi already ran (punycode subdomain or custom
+  // domain) — the response already carries the redirect check for free in
+  // that case. The ASCII-subdomain fast path leaves this null and checks
+  // separately below, since it never calls the API for its slug.
+  let redirectTo: string | null = null;
+  let checkedRedirect = false;
+
   if (hostname.endsWith(`.${ROOT_DOMAIN}`)) {
     const label = hostname.slice(0, -(ROOT_DOMAIN.length + 1));
     // xn-- — a punycode-encoded label, meaning the real slug has
@@ -98,9 +117,19 @@ export async function middleware(req: NextRequest) {
     // custom-domain case below already needs for its own reason (a DB
     // lookup Edge can't do directly). Confirmed live: without this, no
     // Arabic-named store's subdomain ever resolved.
-    slug = label.startsWith("xn--") ? await resolveCustomDomainSlug(req, hostname) : label;
+    if (label.startsWith("xn--")) {
+      const resolved = await resolveViaApi(req, hostname, req.nextUrl.pathname);
+      slug = resolved.slug;
+      redirectTo = resolved.redirectTo;
+      checkedRedirect = true;
+    } else {
+      slug = label;
+    }
   } else {
-    slug = await resolveCustomDomainSlug(req, hostname);
+    const resolved = await resolveViaApi(req, hostname, req.nextUrl.pathname);
+    slug = resolved.slug;
+    redirectTo = resolved.redirectTo;
+    checkedRedirect = true;
   }
 
   if (!slug) {
@@ -121,6 +150,20 @@ export async function middleware(req: NextRequest) {
   // targets a real /store/... route, leave it alone.
   if (req.nextUrl.pathname.startsWith("/store/")) {
     return NextResponse.next();
+  }
+
+  // The ASCII-subdomain fast path never called the API above (zero DB
+  // calls, by design, to never regress that path's existing behavior) —
+  // a redirect for it still needs exactly one lookup, the real cost of
+  // adding redirect support without touching that path's slug resolution.
+  if (!checkedRedirect) {
+    redirectTo = (await resolveViaApi(req, hostname, req.nextUrl.pathname)).redirectTo;
+  }
+
+  if (redirectTo) {
+    const url = req.nextUrl.clone();
+    url.pathname = redirectTo;
+    return NextResponse.redirect(url, 308);
   }
 
   const url = req.nextUrl.clone();

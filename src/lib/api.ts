@@ -123,6 +123,10 @@ export type Customer = {
   lastOrderAt: string;
 };
 
+export type Page = { id: string; storeId: string; slug: string; title: string; content: string; createdAt: string };
+export type NavMenuItem = { id: string; storeId: string; label: string; url: string; position: number };
+export type Redirect = { id: string; storeId: string; fromPath: string; toPath: string };
+
 export type BundleItem = { id: string; productId: string; quantity: number; product: { name: string; priceCents: number; imageUrl: string | null } };
 export type Bundle = {
   id: string;
@@ -294,9 +298,13 @@ export const api = {
       categories: Category[];
       bundles: Bundle[];
       upsells: { triggerProductId: string; offeredProductId: string }[];
+      navMenuItems: { id: string; label: string; url: string }[];
       stats: StoreStats | null;
       testimonials: StoreTestimonial[];
     }>(`/api/stores/public/${slug}`),
+
+  publicPage: (storeSlug: string, pageSlug: string) =>
+    request<{ title: string; content: string }>(`/api/stores/public/${storeSlug}/pages/${pageSlug}`),
 
   subscribeNewsletter: (storeSlug: string, email: string) =>
     request<{ success: boolean }>("/api/newsletter/subscribe", { method: "POST", body: JSON.stringify({ storeSlug, email }) }),
@@ -595,6 +603,42 @@ export const api = {
 
   listCustomers: (token: string, storeId: string) =>
     request<Customer[]>(`/api/customers?storeId=${storeId}`, { headers: authHeaders(token) }),
+
+  createPage: (token: string, body: { storeId: string; title: string; content: string }) =>
+    request<Page>("/api/pages", { method: "POST", headers: authHeaders(token), body: JSON.stringify(body) }),
+
+  listPages: (token: string, storeId: string) =>
+    request<Page[]>(`/api/pages?storeId=${storeId}`, { headers: authHeaders(token) }),
+
+  updatePage: (token: string, id: string, body: Partial<{ title: string; content: string }>) =>
+    request<Page>(`/api/pages/${id}`, { method: "PATCH", headers: authHeaders(token), body: JSON.stringify(body) }),
+
+  deletePage: (token: string, id: string) =>
+    request<{ ok: boolean }>(`/api/pages/${id}`, { method: "DELETE", headers: authHeaders(token) }),
+
+  createNavMenuItem: (token: string, body: { storeId: string; label: string; url: string }) =>
+    request<NavMenuItem>("/api/nav-menu-items", { method: "POST", headers: authHeaders(token), body: JSON.stringify(body) }),
+
+  listNavMenuItems: (token: string, storeId: string) =>
+    request<NavMenuItem[]>(`/api/nav-menu-items?storeId=${storeId}`, { headers: authHeaders(token) }),
+
+  updateNavMenuItem: (token: string, id: string, body: Partial<{ label: string; url: string; position: number }>) =>
+    request<NavMenuItem>(`/api/nav-menu-items/${id}`, { method: "PATCH", headers: authHeaders(token), body: JSON.stringify(body) }),
+
+  deleteNavMenuItem: (token: string, id: string) =>
+    request<{ ok: boolean }>(`/api/nav-menu-items/${id}`, { method: "DELETE", headers: authHeaders(token) }),
+
+  createRedirect: (token: string, body: { storeId: string; fromPath: string; toPath: string }) =>
+    request<Redirect>("/api/redirects", { method: "POST", headers: authHeaders(token), body: JSON.stringify(body) }),
+
+  listRedirects: (token: string, storeId: string) =>
+    request<Redirect[]>(`/api/redirects?storeId=${storeId}`, { headers: authHeaders(token) }),
+
+  updateRedirect: (token: string, id: string, body: { toPath: string }) =>
+    request<Redirect>(`/api/redirects/${id}`, { method: "PATCH", headers: authHeaders(token), body: JSON.stringify(body) }),
+
+  deleteRedirect: (token: string, id: string) =>
+    request<{ ok: boolean }>(`/api/redirects/${id}`, { method: "DELETE", headers: authHeaders(token) }),
 
   trackOrder: (orderId: string, phone: string) =>
     request<{

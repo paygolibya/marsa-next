@@ -19,6 +19,7 @@ export default function StorefrontPage() {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [bundles, setBundles] = useState<Bundle[]>([]);
   const [upsells, setUpsells] = useState<{ triggerProductId: string; offeredProductId: string }[]>([]);
+  const [navMenuItems, setNavMenuItems] = useState<{ id: string; label: string; url: string }[]>([]);
   const [stats, setStats] = useState<StoreStats | null>(null);
   const [testimonials, setTestimonials] = useState<StoreTestimonial[]>([]);
   const [query, setQuery] = useState("");
@@ -33,12 +34,13 @@ export default function StorefrontPage() {
   useEffect(() => {
     api
       .publicStore(slug)
-      .then(({ store, products, categories, bundles, upsells, stats, testimonials }) => {
+      .then(({ store, products, categories, bundles, upsells, navMenuItems, stats, testimonials }) => {
         setStore(store);
         setProducts(products);
         setCategories(categories);
         setBundles(bundles);
         setUpsells(upsells);
+        setNavMenuItems(navMenuItems);
         setStats(stats);
         setTestimonials(testimonials);
       })
@@ -86,6 +88,7 @@ export default function StorefrontPage() {
         selectedCategoryId={selectedCategoryId}
         setSelectedCategoryId={setSelectedCategoryId}
         bundles={bundles}
+        navMenuItems={navMenuItems}
         stats={stats}
         testimonials={testimonials}
         cartTotalItems={cart.totalItems}

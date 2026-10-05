@@ -188,6 +188,43 @@ export const updateUpsellSchema = z.object({
   active: z.boolean().optional(),
 });
 
+export const createPageSchema = z.object({
+  storeId: z.string().min(1),
+  title: z.string().min(1, "عنوان الصفحة مطلوب").max(100),
+  // Capped like Product.description — a guard against pasting in an
+  // entire document, not a realistic page-length limit.
+  content: z.string().max(20000, "محتوى الصفحة طويل جدًا"),
+});
+
+export const updatePageSchema = z.object({
+  title: z.string().min(1, "عنوان الصفحة مطلوب").max(100).optional(),
+  content: z.string().max(20000, "محتوى الصفحة طويل جدًا").optional(),
+});
+
+export const createNavMenuItemSchema = z.object({
+  storeId: z.string().min(1),
+  label: z.string().min(1, "اسم الرابط مطلوب").max(40),
+  url: z.string().min(1, "الرابط مطلوب").max(500),
+});
+
+export const updateNavMenuItemSchema = z.object({
+  label: z.string().min(1, "اسم الرابط مطلوب").max(40).optional(),
+  url: z.string().min(1, "الرابط مطلوب").max(500).optional(),
+  position: z.number().int().min(0).optional(),
+});
+
+export const createRedirectSchema = z
+  .object({
+    storeId: z.string().min(1),
+    fromPath: z.string().min(1, "المسار الأصلي مطلوب").max(300),
+    toPath: z.string().min(1, "المسار الجديد مطلوب").max(300),
+  })
+  .refine((v) => v.fromPath !== v.toPath, { message: "لا يمكن أن يكون المسار الأصلي والجديد متطابقين" });
+
+export const updateRedirectSchema = z.object({
+  toPath: z.string().min(1, "المسار الجديد مطلوب").max(300).optional(),
+});
+
 export const createCouponSchema = z.object({
   storeId: z.string().min(1),
   code: z.string().min(1, "رمز الكوبون مطلوب").transform((v) => v.trim().toUpperCase()),

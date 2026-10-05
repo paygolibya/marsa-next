@@ -85,6 +85,7 @@ export function SectionEditor({ storeId, onSaved }: { storeId: string; onSaved?:
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [bundles, setBundles] = useState<Bundle[]>([]);
+  const [navMenuItems, setNavMenuItems] = useState<{ id: string; label: string; url: string }[]>([]);
   const [stats, setStats] = useState<StoreStats | null>(null);
   const [testimonials, setTestimonials] = useState<StoreTestimonial[]>([]);
 
@@ -165,6 +166,7 @@ export function SectionEditor({ storeId, onSaved }: { storeId: string; onSaved?:
         setProducts(publicData.products);
         setCategories(publicData.categories);
         setBundles(publicData.bundles);
+        setNavMenuItems(publicData.navMenuItems);
         setStats(publicData.stats);
         setTestimonials(publicData.testimonials);
         setLoaded(true);
@@ -598,6 +600,7 @@ export function SectionEditor({ storeId, onSaved }: { storeId: string; onSaved?:
               selectedCategoryId={selectedCategoryId}
               setSelectedCategoryId={setSelectedCategoryId}
               bundles={bundles}
+              navMenuItems={navMenuItems}
               stats={stats}
               testimonials={testimonials}
               cartTotalItems={0}

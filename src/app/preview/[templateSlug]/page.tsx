@@ -165,6 +165,7 @@ export default function TemplatePreviewPage() {
         selectedCategoryId={null}
         setSelectedCategoryId={() => {}}
         bundles={[]}
+        navMenuItems={[]}
         stats={MOCK_STATS}
         testimonials={MOCK_TESTIMONIALS}
         cartTotalItems={cartTotalItems}

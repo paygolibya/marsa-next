@@ -30,7 +30,7 @@ function baseStore(overrides: Partial<{ customization: any; sections: any[] }> =
   };
 }
 
-function makeFakeDb(opts: { store?: ReturnType<typeof baseStore> | null; products?: any[]; categories?: any[]; bundles?: any[]; upsells?: any[] }) {
+function makeFakeDb(opts: { store?: ReturnType<typeof baseStore> | null; products?: any[]; categories?: any[]; bundles?: any[]; upsells?: any[]; navMenuItems?: any[] }) {
   const calls: Record<string, unknown> = {};
   const db: PublicStoreDb = {
     store: { findUnique: async () => opts.store ?? null },
@@ -45,6 +45,9 @@ function makeFakeDb(opts: { store?: ReturnType<typeof baseStore> | null; product
     },
     upsell: {
       findMany: async () => opts.upsells ?? [],
+    },
+    navMenuItem: {
+      findMany: async () => opts.navMenuItems ?? [],
     },
     order: {
       count: async () => {
@@ -164,4 +167,12 @@ test("returns the store's active upsells as lightweight trigger/offered pairs", 
   const res = await handleGetPublicStore(db, "my-store");
   const body = await res.json();
   assert.deepEqual(body.upsells, upsells);
+});
+
+test("returns the store's nav menu items in position order", async () => {
+  const navMenuItems = [{ id: "n1", label: "عن المتجر", url: "/page/about" }];
+  const { db } = makeFakeDb({ store: baseStore(), navMenuItems });
+  const res = await handleGetPublicStore(db, "my-store");
+  const body = await res.json();
+  assert.deepEqual(body.navMenuItems, navMenuItems);
 });

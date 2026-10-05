@@ -1,6 +1,7 @@
 import { StatsSection, ProductsSection, CategoriesSection, BundlesSection, TestimonialsSection, NewsletterSection } from "@/components/storefront/sections";
 import type { SectionRenderProps, SectionType } from "@/components/storefront/sections/types";
 import { StorefrontHeaderRow } from "./StorefrontHeaderRow";
+import { StorefrontNavRow } from "./StorefrontNavRow";
 import { resolveCoverImageHeightClass, resolveLogoSizePx, resolveTextSizeClass, type StorefrontTemplateProps } from "./types";
 
 const SECTION_COMPONENTS: Record<SectionType, (props: SectionRenderProps) => React.ReactNode> = {
@@ -28,6 +29,7 @@ export default function ModernTemplate({
   selectedCategoryId,
   setSelectedCategoryId,
   bundles,
+  navMenuItems,
   stats,
   testimonials,
   cartTotalItems,
@@ -128,6 +130,8 @@ export default function ModernTemplate({
           }
         />
       </header>
+
+      <StorefrontNavRow navMenuItems={navMenuItems} primaryColor={primary} />
 
       {store.customization?.coverImage && (
         <div className={`w-full overflow-hidden ${resolveCoverImageHeightClass(store.customization?.coverImageSize)}`}>

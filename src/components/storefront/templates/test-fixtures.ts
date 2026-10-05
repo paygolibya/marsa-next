@@ -68,6 +68,7 @@ export const baseTemplateProps = {
   selectedCategoryId: null,
   setSelectedCategoryId: () => {},
   bundles: [],
+  navMenuItems: [],
   stats: null,
   testimonials: [],
   cartTotalItems: 0,

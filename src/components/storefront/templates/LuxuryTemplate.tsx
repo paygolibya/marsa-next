@@ -2,6 +2,7 @@ import Image from "next/image";
 import { StatsSection, ProductsSection, CategoriesSection, BundlesSection, TestimonialsSection, NewsletterSection } from "@/components/storefront/sections";
 import type { SectionRenderProps, SectionType } from "@/components/storefront/sections/types";
 import { resolveCoverImageHeightClass, resolveLogoSizePx, type StorefrontTemplateProps } from "./types";
+import { StorefrontNavRow } from "./StorefrontNavRow";
 
 const SECTION_COMPONENTS: Record<SectionType, (props: SectionRenderProps) => React.ReactNode> = {
   stats: StatsSection,
@@ -29,6 +30,7 @@ export default function LuxuryTemplate({
   selectedCategoryId,
   setSelectedCategoryId,
   bundles,
+  navMenuItems,
   stats,
   testimonials,
   cartTotalItems,
@@ -130,6 +132,8 @@ export default function LuxuryTemplate({
           )}
         </div>
       </header>
+
+      <StorefrontNavRow navMenuItems={navMenuItems} primaryColor={gold} />
 
       {store.customization?.coverImage && (
         <div className={`w-full overflow-hidden ${resolveCoverImageHeightClass(store.customization?.coverImageSize)}`}>
