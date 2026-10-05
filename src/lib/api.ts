@@ -110,6 +110,8 @@ export type ProductVariant = {
 };
 export type Category = { id: string; name: string; slug: string; position: number };
 
+export type Upsell = { id: string; storeId: string; triggerProductId: string; offeredProductId: string; active: boolean; triggerProduct: { name: string }; offeredProduct: { name: string } };
+
 export type BundleItem = { id: string; productId: string; quantity: number; product: { name: string; priceCents: number; imageUrl: string | null } };
 export type Bundle = {
   id: string;
@@ -275,9 +277,15 @@ export const api = {
     request<Store[]>("/api/stores/mine", { headers: authHeaders(token) }),
 
   publicStore: (slug: string) =>
-    request<{ store: Store; products: Product[]; categories: Category[]; bundles: Bundle[]; stats: StoreStats | null; testimonials: StoreTestimonial[] }>(
-      `/api/stores/public/${slug}`
-    ),
+    request<{
+      store: Store;
+      products: Product[];
+      categories: Category[];
+      bundles: Bundle[];
+      upsells: { triggerProductId: string; offeredProductId: string }[];
+      stats: StoreStats | null;
+      testimonials: StoreTestimonial[];
+    }>(`/api/stores/public/${slug}`),
 
   subscribeNewsletter: (storeSlug: string, email: string) =>
     request<{ success: boolean }>("/api/newsletter/subscribe", { method: "POST", body: JSON.stringify({ storeSlug, email }) }),
@@ -561,6 +569,18 @@ export const api = {
 
   deleteBundle: (token: string, id: string) =>
     request<{ ok: boolean }>(`/api/bundles/${id}`, { method: "DELETE", headers: authHeaders(token) }),
+
+  createUpsell: (token: string, body: { storeId: string; triggerProductId: string; offeredProductId: string }) =>
+    request<Upsell>("/api/upsells", { method: "POST", headers: authHeaders(token), body: JSON.stringify(body) }),
+
+  listUpsells: (token: string, storeId: string) =>
+    request<Upsell[]>(`/api/upsells?storeId=${storeId}`, { headers: authHeaders(token) }),
+
+  updateUpsell: (token: string, id: string, body: { active: boolean }) =>
+    request<Upsell>(`/api/upsells/${id}`, { method: "PATCH", headers: authHeaders(token), body: JSON.stringify(body) }),
+
+  deleteUpsell: (token: string, id: string) =>
+    request<{ ok: boolean }>(`/api/upsells/${id}`, { method: "DELETE", headers: authHeaders(token) }),
 
   trackOrder: (orderId: string, phone: string) =>
     request<{

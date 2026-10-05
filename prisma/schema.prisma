@@ -378,6 +378,7 @@ model Store {
   inquiries      Inquiry[]
   categories     Category[]
   bundles        Bundle[]
+  upsells        Upsell[]
 
   @@map("stores")
 }
@@ -516,6 +517,8 @@ model Product {
   variants    ProductVariant[]
   inquiries   Inquiry[]
   bundleItems BundleItem[]
+  upsellsAsTrigger Upsell[] @relation("UpsellTrigger")
+  upsellsAsOffered Upsell[] @relation("UpsellOffered")
 
   // Postgres doesn't auto-index foreign-key scalar columns (unlike MySQL) —
   // every merchant-facing product list filters by storeId, so without this
@@ -879,4 +882,29 @@ model BundleItem {
   @@index([bundleId])
   @@index([productId])
   @@map("bundle_items")
+}
+
+// A merchant-configured "buyers of X often also want Y" suggestion. Read
+// only by the storefront's cart drawer: when a cart line's productId
+// matches triggerProductId, the offered product is shown as a small
+// add-on suggestion — never auto-added, never a separate checkout step.
+model Upsell {
+  id               String  @id @default(cuid())
+  storeId          String  @map("store_id")
+  triggerProductId String  @map("trigger_product_id")
+  offeredProductId String  @map("offered_product_id")
+  active           Boolean @default(true)
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  store          Store   @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  triggerProduct Product @relation("UpsellTrigger", fields: [triggerProductId], references: [id], onDelete: Cascade)
+  offeredProduct Product @relation("UpsellOffered", fields: [offeredProductId], references: [id], onDelete: Cascade)
+
+  // One configured suggestion per trigger→offered pair, per store — not a
+  // hard business requirement, just prevents the dashboard from silently
+  // accumulating exact duplicates.
+  @@unique([storeId, triggerProductId, offeredProductId])
+  @@index([storeId])
+  @@index([triggerProductId])
+  @@map("upsells")
 }

@@ -176,6 +176,18 @@ export const updateBundleSchema = z.object({
   items: bundleItemsSchema.optional(),
 });
 
+export const createUpsellSchema = z
+  .object({
+    storeId: z.string().min(1),
+    triggerProductId: z.string().min(1),
+    offeredProductId: z.string().min(1),
+  })
+  .refine((v) => v.triggerProductId !== v.offeredProductId, { message: "لا يمكن اقتراح المنتج نفسه عند شرائه" });
+
+export const updateUpsellSchema = z.object({
+  active: z.boolean().optional(),
+});
+
 export const createCouponSchema = z.object({
   storeId: z.string().min(1),
   code: z.string().min(1, "رمز الكوبون مطلوب").transform((v) => v.trim().toUpperCase()),

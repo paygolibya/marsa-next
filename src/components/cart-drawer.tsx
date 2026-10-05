@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { formatLYD } from "@/lib/api";
+import { formatLYD, type Product } from "@/lib/api";
 import type { CartLine } from "@/lib/use-cart";
 
 // Optional — when the calling page has the store's own customization
@@ -24,6 +24,9 @@ export function CartDrawer({
   subtotalCents,
   setQuantity,
   theme,
+  products,
+  upsells,
+  onAddToCart,
 }: {
   open: boolean;
   onClose: () => void;
@@ -32,10 +35,32 @@ export function CartDrawer({
   subtotalCents: number;
   setQuantity: (productId: string | null, quantity: number, variantId?: string | null, bundleId?: string | null) => void;
   theme?: CartDrawerTheme;
+  // Optional — a call site without upsell data (or without a way to add a
+  // suggested product, e.g. nowhere else uses this drawer yet) just omits
+  // these three and gets no suggestion section, same as before this existed.
+  products?: Product[];
+  upsells?: { triggerProductId: string; offeredProductId: string }[];
+  onAddToCart?: (product: Product) => void;
 }) {
   const primary = theme?.primaryColor || undefined;
   const secondary = theme?.secondaryColor || undefined;
   const accent = theme?.accentColor || primary;
+
+  // "Buyers of X often also want Y" — only ever a quiet suggestion, never
+  // auto-added: a configured upsell whose trigger is already in the cart,
+  // offering a product not already in the cart.
+  const cartProductIds = new Set(lines.map((l) => l.productId).filter((id): id is string => id !== null));
+  const suggestedProducts = products
+    ? Array.from(
+        new Map(
+          (upsells ?? [])
+            .filter((u) => cartProductIds.has(u.triggerProductId) && !cartProductIds.has(u.offeredProductId))
+            .map((u) => products.find((p) => p.id === u.offeredProductId))
+            .filter((p): p is Product => Boolean(p))
+            .map((p) => [p.id, p])
+        ).values()
+      )
+    : [];
 
   return (
     <>
@@ -94,6 +119,29 @@ export function CartDrawer({
               </div>
             </div>
           ))}
+
+          {suggestedProducts.length > 0 && onAddToCart && (
+            <div className="pt-2">
+              <p className="text-xs font-bold text-rope mb-2">أضفها أيضًا</p>
+              <div className="space-y-2">
+                {suggestedProducts.map((product) => (
+                  <div key={product.id} className="flex items-center justify-between gap-3 rounded-xl border border-harbor/10 bg-harbor/5 px-3 py-2">
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold text-harbor truncate">{product.name}</p>
+                      <p className="text-xs text-rope">{formatLYD(product.priceCents)}</p>
+                    </div>
+                    <button
+                      onClick={() => onAddToCart(product)}
+                      style={accent ? { backgroundColor: accent } : undefined}
+                      className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-bold ${accent ? "text-white hover:opacity-90" : "bg-signal text-canvas hover:bg-signal-dark"}`}
+                    >
+                      أضف
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="border-t border-harbor/10 px-6 py-5 space-y-4">

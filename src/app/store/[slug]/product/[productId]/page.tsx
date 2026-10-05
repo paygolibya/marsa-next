@@ -16,6 +16,8 @@ export default function ProductDetailPage() {
   const productId = params.productId;
 
   const [store, setStore] = useState<Store | null>(null);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [upsells, setUpsells] = useState<{ triggerProductId: string; offeredProductId: string }[]>([]);
   const [product, setProduct] = useState<Product | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
@@ -30,8 +32,10 @@ export default function ProductDetailPage() {
   useEffect(() => {
     api
       .publicStore(slug)
-      .then(({ store, products }) => {
+      .then(({ store, products, upsells }) => {
         setStore(store);
+        setProducts(products);
+        setUpsells(upsells);
         const found = products.find((p) => p.id === productId);
         if (!found) {
           setNotFound(true);
@@ -220,6 +224,9 @@ export default function ProductDetailPage() {
         lines={cart.lines}
         subtotalCents={cart.subtotalCents}
         setQuantity={cart.setQuantity}
+        products={products}
+        upsells={upsells}
+        onAddToCart={(p) => cart.add(p)}
         theme={{
           primaryColor: store?.customization?.primaryColor || "#0066cc",
           secondaryColor: store?.customization?.secondaryColor || "#f0f0f0",

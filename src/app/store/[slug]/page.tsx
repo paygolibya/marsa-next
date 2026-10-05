@@ -18,6 +18,7 @@ export default function StorefrontPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [bundles, setBundles] = useState<Bundle[]>([]);
+  const [upsells, setUpsells] = useState<{ triggerProductId: string; offeredProductId: string }[]>([]);
   const [stats, setStats] = useState<StoreStats | null>(null);
   const [testimonials, setTestimonials] = useState<StoreTestimonial[]>([]);
   const [query, setQuery] = useState("");
@@ -32,11 +33,12 @@ export default function StorefrontPage() {
   useEffect(() => {
     api
       .publicStore(slug)
-      .then(({ store, products, categories, bundles, stats, testimonials }) => {
+      .then(({ store, products, categories, bundles, upsells, stats, testimonials }) => {
         setStore(store);
         setProducts(products);
         setCategories(categories);
         setBundles(bundles);
+        setUpsells(upsells);
         setStats(stats);
         setTestimonials(testimonials);
       })
@@ -112,6 +114,9 @@ export default function StorefrontPage() {
         lines={cart.lines}
         subtotalCents={cart.subtotalCents}
         setQuantity={cart.setQuantity}
+        products={products}
+        upsells={upsells}
+        onAddToCart={(product) => cart.add(product)}
         theme={{
           // Same fallback the Modern template itself uses when a store has
           // no customization row at all (this store's own header/buttons

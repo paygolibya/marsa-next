@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { api, formatLYD, type Bundle, type Store } from "@/lib/api";
+import { api, formatLYD, type Bundle, type Product, type Store } from "@/lib/api";
 import { useCart } from "@/lib/use-cart";
 import { CartDrawer } from "@/components/cart-drawer";
 import { SiteFooter } from "@/components/site-footer";
@@ -15,6 +15,8 @@ export default function BundleDetailPage() {
   const bundleId = params.bundleId;
 
   const [store, setStore] = useState<Store | null>(null);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [upsells, setUpsells] = useState<{ triggerProductId: string; offeredProductId: string }[]>([]);
   const [bundle, setBundle] = useState<Bundle | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
@@ -24,8 +26,10 @@ export default function BundleDetailPage() {
   useEffect(() => {
     api
       .publicStore(slug)
-      .then(({ store, bundles }) => {
+      .then(({ store, bundles, products, upsells }) => {
         setStore(store);
+        setProducts(products);
+        setUpsells(upsells);
         const found = bundles.find((b) => b.id === bundleId);
         if (!found) {
           setNotFound(true);
@@ -124,6 +128,9 @@ export default function BundleDetailPage() {
         lines={cart.lines}
         subtotalCents={cart.subtotalCents}
         setQuantity={cart.setQuantity}
+        products={products}
+        upsells={upsells}
+        onAddToCart={(p) => cart.add(p)}
         theme={{
           primaryColor: store?.customization?.primaryColor || "#0066cc",
           secondaryColor: store?.customization?.secondaryColor || "#f0f0f0",

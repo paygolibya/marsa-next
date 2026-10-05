@@ -28,6 +28,9 @@ function getNavItems(storeType: string | undefined) {
     // at all (catalog + inquiry only), so there's nothing for them to do
     // with a bundle's fixed-price "add to cart" action.
     ...(isShowcase ? [] : [{ href: "/dashboard/bundles", label: "الباقات", icon: "🎁" }]),
+    // Same reasoning as bundles above — upsells only ever surface in the
+    // cart drawer, which a showcase store never opens.
+    ...(isShowcase ? [] : [{ href: "/dashboard/upsells", label: "الاقتراحات الإضافية", icon: "➕" }]),
     { href: "/dashboard/design", label: "تصميم المتجر", icon: "🎨" },
     { href: "/dashboard/payouts", label: "المستحقات المالية", icon: "💰" },
     { href: "/dashboard/coupons", label: "كوبونات الخصم", icon: "🏷️" },
