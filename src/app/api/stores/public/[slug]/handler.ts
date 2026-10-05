@@ -30,7 +30,7 @@ type StoreRow = {
   [key: string]: unknown;
 };
 
-type ProductRow = { id: string; name: string; description: string | null; priceCents: number; categoryId: string | null };
+type ProductRow = { id: string; name: string; description: string | null; priceCents: number; categoryId: string | null; translations: unknown };
 type CategoryRow = { id: string; name: string; slug: string };
 type BundleRow = {
   id: string;
@@ -62,6 +62,7 @@ export type PublicStoreDb = {
         images: true;
         variantOptions: true;
         categoryId: true;
+        translations: true;
         variants: { where: { active: true }; select: { id: true; options: true; priceCents: true; stockQty: true } };
       };
     }) => Promise<ProductRow[]>;
@@ -134,6 +135,7 @@ export async function handleGetPublicStore(db: PublicStoreDb, slug: string): Pro
           images: true,
           variantOptions: true,
           categoryId: true,
+          translations: true,
           variants: { where: { active: true }, select: { id: true, options: true, priceCents: true, stockQty: true } },
         },
       }),

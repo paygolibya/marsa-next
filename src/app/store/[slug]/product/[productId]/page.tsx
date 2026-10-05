@@ -11,6 +11,8 @@ import { trackEvent } from "@/lib/track-event";
 import { CartDrawer } from "@/components/cart-drawer";
 import { SiteFooter } from "@/components/site-footer";
 import { InquiryModal } from "@/components/storefront/InquiryModal";
+import { isSupportedLanguage, resolveProductTranslation, translate, type Language } from "@/lib/i18n";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 
 export default function ProductDetailPage() {
   const params = useParams<{ slug: string; productId: string }>();
@@ -30,6 +32,8 @@ export default function ProductDetailPage() {
   const [inquiryOpen, setInquiryOpen] = useState(false);
 
   const cart = useCart(slug);
+  const language = store && isSupportedLanguage(store.language) ? store.language : "ar";
+  const { t } = useTranslation(language);
 
   useEffect(() => captureReferralCode(slug), [slug]);
   useEffect(() => trackEvent(slug, "pageview", `/store/${slug}/product/${productId}`), [slug, productId]);
@@ -90,9 +94,9 @@ export default function ProductDetailPage() {
   if (notFound) {
     return (
       <main className="mx-auto max-w-md px-6 py-24 text-center">
-        <h1 className="font-display text-2xl font-bold text-harbor">هذا المنتج غير موجود</h1>
+        <h1 className="font-display text-2xl font-bold text-harbor">{t("product.notFoundHeading")}</h1>
         <Link href={`/store/${slug}`} className="text-brass font-bold mt-4 inline-block">
-          العودة إلى المتجر
+          {t("common.backToStore")}
         </Link>
       </main>
     );
@@ -103,13 +107,22 @@ export default function ProductDetailPage() {
   const primary = store.customization?.primaryColor || "#0066cc";
   const secondary = store.customization?.secondaryColor || "#f0f0f0";
   const activeImageUrl = gallery[activeImage] ?? gallery[0];
+  const resolved = resolveProductTranslation(product, language);
 
   function handleAddToCart() {
     if (!product || outOfStock) return;
     cart.add(
       product,
       1,
-      selectedVariant ? { id: selectedVariant.id, label: Object.entries(selectedVariant.options).map(([k, v]) => `${k}: ${v}`).join("، "), priceCents: effectivePriceCents } : null
+      selectedVariant
+        ? {
+            id: selectedVariant.id,
+            label: Object.entries(selectedVariant.options)
+              .map(([k, v]) => `${k}: ${v}`)
+              .join(language === "en" ? ", " : "، "),
+            priceCents: effectivePriceCents,
+          }
+        : null
     );
     setCartOpen(true);
   }
@@ -118,16 +131,16 @@ export default function ProductDetailPage() {
     <div className="min-h-screen" style={{ backgroundColor: secondary }}>
       <main className="mx-auto max-w-4xl px-6 py-12">
         <Link href={`/store/${slug}`} className="text-sm text-rope hover:text-harbor">
-          ← العودة إلى المتجر
+          {t("common.backToStoreLink")}
         </Link>
 
         <div className="mt-6 grid md:grid-cols-2 gap-10">
           <div>
             <div className="aspect-square rounded-2xl border border-harbor/10 bg-harbor/5 overflow-hidden flex items-center justify-center">
               {activeImageUrl ? (
-                <Image src={activeImageUrl} alt={product.name} width={800} height={800} unoptimized className="h-full w-full object-cover" />
+                <Image src={activeImageUrl} alt={resolved.name} width={800} height={800} unoptimized className="h-full w-full object-cover" />
               ) : (
-                <span className="text-rope text-sm">لا توجد صورة</span>
+                <span className="text-rope text-sm">{t("common.noImage")}</span>
               )}
             </div>
             {gallery.length > 1 && (
@@ -146,19 +159,19 @@ export default function ProductDetailPage() {
           </div>
 
           <div>
-            <h1 className="font-display text-2xl font-extrabold text-harbor">{product.name}</h1>
+            <h1 className="font-display text-2xl font-extrabold text-harbor">{resolved.name}</h1>
             {reviews.length > 0 && (
               <p className="text-sm text-rope mt-1">
                 {"★".repeat(Math.round(average))}
-                {"☆".repeat(5 - Math.round(average))} ({reviews.length} تقييم)
+                {"☆".repeat(5 - Math.round(average))} {t("stats.reviewsSuffix", { count: reviews.length })}
               </p>
             )}
             <p className="font-bold text-xl mt-4" style={{ color: primary }}>
-              {formatLYD(effectivePriceCents)}
-              {store?.type === "rental" && <span className="text-base font-normal text-rope"> / يوم</span>}
+              {formatLYD(effectivePriceCents, language)}
+              {store?.type === "rental" && <span className="text-base font-normal text-rope">{t("common.perDay")}</span>}
             </p>
 
-            {product.description && <p className="text-sm text-rope mt-4 whitespace-pre-line leading-relaxed">{product.description}</p>}
+            {resolved.description && <p className="text-sm text-rope mt-4 whitespace-pre-line leading-relaxed">{resolved.description}</p>}
 
             {product.variantOptions?.map((option) => (
               <div key={option.name} className="mt-5">
@@ -187,29 +200,29 @@ export default function ProductDetailPage() {
                 style={{ backgroundColor: primary }}
                 className="mt-6 rounded-full text-white py-3 px-8 font-bold hover:opacity-90 transition-opacity"
               >
-                استفسر عن هذا المنتج
+                {t("product.inquireAboutThis")}
               </button>
             ) : outOfStock ? (
-              <p className="mt-6 text-signal font-bold">{hasVariants && !selectedVariant ? "هذا الخيار غير متوفر" : "نفدت الكمية"}</p>
+              <p className="mt-6 text-signal font-bold">{hasVariants && !selectedVariant ? t("products.optionUnavailable") : t("products.outOfStock")}</p>
             ) : (
               <button
                 onClick={handleAddToCart}
                 style={{ backgroundColor: primary }}
                 className="mt-6 rounded-full text-white py-3 px-8 font-bold hover:opacity-90 transition-opacity"
               >
-                أضف إلى السلة
+                {t("common.addToCart")}
               </button>
             )}
             {!hasVariants && product.trackInventory && !outOfStock && product.stockQty <= product.lowStockThreshold && (
-              <p className="mt-2 text-xs text-signal">كمية محدودة متبقية</p>
+              <p className="mt-2 text-xs text-signal">{t("products.lowStock")}</p>
             )}
             {hasVariants && selectedVariant && !outOfStock && selectedVariant.stockQty <= 5 && (
-              <p className="mt-2 text-xs text-signal">كمية محدودة متبقية</p>
+              <p className="mt-2 text-xs text-signal">{t("products.lowStock")}</p>
             )}
           </div>
         </div>
 
-        <ReviewsSection productId={productId} reviews={reviews} onSubmitted={refreshReviews} />
+        <ReviewsSection productId={productId} reviews={reviews} onSubmitted={refreshReviews} language={language} />
       </main>
 
       <SiteFooter
@@ -218,9 +231,10 @@ export default function ProductDetailPage() {
             ? { name: store.name, tagline: store.customization?.tagline, logo: store.customization?.logo }
             : undefined
         }
+        language={language}
       />
 
-      <InquiryModal open={inquiryOpen} onClose={() => setInquiryOpen(false)} storeSlug={slug} productId={product.id} productName={product.name} />
+      <InquiryModal open={inquiryOpen} onClose={() => setInquiryOpen(false)} storeSlug={slug} productId={product.id} productName={resolved.name} language={language} />
 
       <CartDrawer
         open={cartOpen}
@@ -232,6 +246,7 @@ export default function ProductDetailPage() {
         products={products}
         upsells={upsells}
         onAddToCart={(p) => cart.add(p)}
+        language={language}
         theme={{
           primaryColor: store?.customization?.primaryColor || "#0066cc",
           secondaryColor: store?.customization?.secondaryColor || "#f0f0f0",
@@ -246,11 +261,14 @@ function ReviewsSection({
   productId,
   reviews,
   onSubmitted,
+  language,
 }: {
   productId: string;
   reviews: ProductReview[];
   onSubmitted: () => void;
+  language: Language;
 }) {
+  const t = (key: string, vars?: Record<string, string | number>) => translate(language, key, vars);
   const [showForm, setShowForm] = useState(false);
   const [orderId, setOrderId] = useState("");
   const [phone, setPhone] = useState("");
@@ -271,7 +289,7 @@ function ReviewsSection({
       setShowForm(false);
       onSubmitted();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "تعذّر إرسال التقييم");
+      setError(err instanceof ApiError ? err.message : t("product.reviewErrorFallback"));
     } finally {
       setSaving(false);
     }
@@ -280,32 +298,32 @@ function ReviewsSection({
   return (
     <section className="mt-16 border-t border-harbor/10 pt-10">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="font-display text-xl font-extrabold text-harbor">التقييمات</h2>
+        <h2 className="font-display text-xl font-extrabold text-harbor">{t("product.reviewsHeading")}</h2>
         {!showForm && !success && (
           <button onClick={() => setShowForm(true)} className="text-sm font-bold text-brass hover:underline">
-            أضف تقييمًا
+            {t("product.addReview")}
           </button>
         )}
       </div>
 
-      {success && <p className="text-sm text-green-700 mb-4">✓ شكرًا لك، تم إرسال تقييمك</p>}
+      {success && <p className="text-sm text-green-700 mb-4">{t("product.reviewSubmitted")}</p>}
 
       {showForm && (
         <form onSubmit={handleSubmit} className="mb-8 rounded-2xl border border-harbor/10 bg-white/50 p-5 space-y-3">
-          <p className="text-xs text-rope">لإضافة تقييم، أدخل رقم الطلب ورقم الهاتف المستخدم عند الشراء.</p>
+          <p className="text-xs text-rope">{t("product.reviewInstructions")}</p>
           <div className="grid grid-cols-2 gap-3">
-            <input required placeholder="رقم الطلب" dir="ltr" value={orderId} onChange={(e) => setOrderId(e.target.value)} className="input" />
-            <input required placeholder="رقم الهاتف" dir="ltr" value={phone} onChange={(e) => setPhone(e.target.value)} className="input" />
+            <input required placeholder={t("product.orderIdPlaceholder")} dir="ltr" value={orderId} onChange={(e) => setOrderId(e.target.value)} className="input" />
+            <input required placeholder={t("product.phonePlaceholder")} dir="ltr" value={phone} onChange={(e) => setPhone(e.target.value)} className="input" />
           </div>
-          <input required placeholder="اسمك" value={buyerName} onChange={(e) => setBuyerName(e.target.value)} className="input" />
+          <input required placeholder={t("product.namePlaceholder")} value={buyerName} onChange={(e) => setBuyerName(e.target.value)} className="input" />
           <select value={rating} onChange={(e) => setRating(Number(e.target.value))} className="input">
             {[5, 4, 3, 2, 1].map((n) => (
               <option key={n} value={n}>
-                {"★".repeat(n)} ({n})
+                {t("product.ratingOption", { stars: "★".repeat(n), n })}
               </option>
             ))}
           </select>
-          <textarea placeholder="رأيك (اختياري)" value={reviewText} onChange={(e) => setReviewText(e.target.value)} className="input" rows={3} />
+          <textarea placeholder={t("product.reviewTextPlaceholder")} value={reviewText} onChange={(e) => setReviewText(e.target.value)} className="input" rows={3} />
           {error && <p className="text-signal text-sm">{error}</p>}
           <div className="flex gap-2">
             <button
@@ -313,17 +331,17 @@ function ReviewsSection({
               disabled={saving}
               className="rounded-full bg-signal px-5 py-2 text-sm font-bold text-canvas hover:bg-signal-dark disabled:opacity-60"
             >
-              {saving ? "جارٍ الإرسال..." : "إرسال التقييم"}
+              {saving ? t("product.submittingReview") : t("product.submitReview")}
             </button>
             <button type="button" onClick={() => setShowForm(false)} className="text-sm font-bold text-rope">
-              إلغاء
+              {t("common.cancel")}
             </button>
           </div>
         </form>
       )}
 
       {reviews.length === 0 ? (
-        <p className="text-rope text-sm">لا توجد تقييمات بعد.</p>
+        <p className="text-rope text-sm">{t("product.noReviews")}</p>
       ) : (
         <ul className="space-y-4">
           {reviews.map((r) => (

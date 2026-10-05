@@ -93,3 +93,37 @@ test("rejects an out-of-range hour/minute (e.g. 25:00) even though it's digit-sh
   assert.equal(res.status, 400);
   assert.equal(calls.update, undefined);
 });
+
+test("accepts language/supportedLanguages and passes them straight through", async () => {
+  const { db, calls } = makeFakeDb("store-1");
+  const res = await handleUpdateStore(
+    db,
+    authReq("http://localhost/x", { method: "PATCH", body: JSON.stringify({ language: "en", supportedLanguages: ["ar", "en"] }) }),
+    "store-1"
+  );
+  assert.equal(res.status, 200);
+  assert.equal((calls.update as any).data.language, "en");
+  assert.deepEqual((calls.update as any).data.supportedLanguages, ["ar", "en"]);
+});
+
+test("rejects an unsupported language code with 400", async () => {
+  const { db, calls } = makeFakeDb("store-1");
+  const res = await handleUpdateStore(
+    db,
+    authReq("http://localhost/x", { method: "PATCH", body: JSON.stringify({ language: "fr" }) }),
+    "store-1"
+  );
+  assert.equal(res.status, 400);
+  assert.equal(calls.update, undefined);
+});
+
+test("rejects an empty supportedLanguages array with 400", async () => {
+  const { db, calls } = makeFakeDb("store-1");
+  const res = await handleUpdateStore(
+    db,
+    authReq("http://localhost/x", { method: "PATCH", body: JSON.stringify({ supportedLanguages: [] }) }),
+    "store-1"
+  );
+  assert.equal(res.status, 400);
+  assert.equal(calls.update, undefined);
+});

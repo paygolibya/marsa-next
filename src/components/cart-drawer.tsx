@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { formatLYD, type Product } from "@/lib/api";
 import type { CartLine } from "@/lib/use-cart";
+import { translate, type Language } from "@/lib/i18n";
 
 // Optional — when the calling page has the store's own customization
 // loaded, the drawer picks up the MERCHANT's colors instead of always
@@ -27,6 +28,7 @@ export function CartDrawer({
   products,
   upsells,
   onAddToCart,
+  language = "ar",
 }: {
   open: boolean;
   onClose: () => void;
@@ -41,7 +43,9 @@ export function CartDrawer({
   products?: Product[];
   upsells?: { triggerProductId: string; offeredProductId: string }[];
   onAddToCart?: (product: Product) => void;
+  language?: Language;
 }) {
+  const t = (key: string, vars?: Record<string, string | number>) => translate(language, key, vars);
   const primary = theme?.primaryColor || undefined;
   const secondary = theme?.secondaryColor || undefined;
   const accent = theme?.accentColor || primary;
@@ -76,34 +80,34 @@ export function CartDrawer({
           style={primary ? { backgroundColor: primary } : undefined}
           className={`flex items-center justify-between px-6 py-5 ${primary ? "" : "border-b border-harbor/10"}`}
         >
-          <h2 className={`font-display text-xl font-bold ${primary ? "text-white" : "text-harbor"}`}>سلة التسوق</h2>
+          <h2 className={`font-display text-xl font-bold ${primary ? "text-white" : "text-harbor"}`}>{t("cart.title")}</h2>
           <button
             onClick={onClose}
             className={primary ? "text-white/80 hover:text-white" : "text-rope hover:text-harbor"}
-            aria-label="إغلاق السلة"
+            aria-label={t("cart.close")}
           >
             ✕
           </button>
         </div>
 
         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
-          {lines.length === 0 && <p className="text-rope text-sm py-10 text-center">سلتك فارغة حاليًا.</p>}
+          {lines.length === 0 && <p className="text-rope text-sm py-10 text-center">{t("cart.empty")}</p>}
           {lines.map((line) => (
             <div key={`${line.productId ?? line.bundleId}:${line.variantId ?? ""}`} className="flex items-center justify-between gap-3 border-b border-harbor/10 pb-4">
               <div className="flex-1">
                 <p className="font-bold text-harbor text-sm">
                   {line.name}
-                  {line.bundleId && <span className="mr-1.5 rounded-full bg-harbor/10 px-2 py-0.5 text-[11px] font-bold text-harbor">باقة</span>}
+                  {line.bundleId && <span className="mr-1.5 rounded-full bg-harbor/10 px-2 py-0.5 text-[11px] font-bold text-harbor">{t("cart.bundleTag")}</span>}
                 </p>
                 {line.variantLabel && <p className="text-xs text-rope">{line.variantLabel}</p>}
-                <p className="text-rope text-sm">{formatLYD(line.priceCents)}</p>
+                <p className="text-rope text-sm">{formatLYD(line.priceCents, language)}</p>
               </div>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setQuantity(line.productId, line.quantity - 1, line.variantId, line.bundleId)}
                   style={accent ? { borderColor: `${accent}80`, color: accent } : undefined}
                   className={`h-7 w-7 rounded-full border ${accent ? "hover:bg-black/5" : "border-harbor/20 text-harbor hover:bg-harbor/5"}`}
-                  aria-label="إنقاص الكمية"
+                  aria-label={t("cart.decrease")}
                 >
                   −
                 </button>
@@ -112,7 +116,7 @@ export function CartDrawer({
                   onClick={() => setQuantity(line.productId, line.quantity + 1, line.variantId, line.bundleId)}
                   style={accent ? { borderColor: `${accent}80`, color: accent } : undefined}
                   className={`h-7 w-7 rounded-full border ${accent ? "hover:bg-black/5" : "border-harbor/20 text-harbor hover:bg-harbor/5"}`}
-                  aria-label="زيادة الكمية"
+                  aria-label={t("cart.increase")}
                 >
                   +
                 </button>
@@ -122,20 +126,20 @@ export function CartDrawer({
 
           {suggestedProducts.length > 0 && onAddToCart && (
             <div className="pt-2">
-              <p className="text-xs font-bold text-rope mb-2">أضفها أيضًا</p>
+              <p className="text-xs font-bold text-rope mb-2">{t("cart.upsellHeading")}</p>
               <div className="space-y-2">
                 {suggestedProducts.map((product) => (
                   <div key={product.id} className="flex items-center justify-between gap-3 rounded-xl border border-harbor/10 bg-harbor/5 px-3 py-2">
                     <div className="min-w-0">
                       <p className="text-sm font-bold text-harbor truncate">{product.name}</p>
-                      <p className="text-xs text-rope">{formatLYD(product.priceCents)}</p>
+                      <p className="text-xs text-rope">{formatLYD(product.priceCents, language)}</p>
                     </div>
                     <button
                       onClick={() => onAddToCart(product)}
                       style={accent ? { backgroundColor: accent } : undefined}
                       className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-bold ${accent ? "text-white hover:opacity-90" : "bg-signal text-canvas hover:bg-signal-dark"}`}
                     >
-                      أضف
+                      {t("cart.upsellAdd")}
                     </button>
                   </div>
                 ))}
@@ -146,8 +150,8 @@ export function CartDrawer({
 
         <div className="border-t border-harbor/10 px-6 py-5 space-y-4">
           <div className="flex items-center justify-between font-bold text-harbor">
-            <span>الإجمالي</span>
-            <span>{formatLYD(subtotalCents)}</span>
+            <span>{t("common.total")}</span>
+            <span>{formatLYD(subtotalCents, language)}</span>
           </div>
           <Link
             href={`/store/${storeSlug}/checkout`}
@@ -160,7 +164,7 @@ export function CartDrawer({
                   : "bg-signal text-canvas hover:bg-signal-dark"
             }`}
           >
-            إتمام الطلب
+            {t("cart.checkout")}
           </Link>
         </div>
       </aside>

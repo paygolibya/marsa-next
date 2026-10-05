@@ -140,3 +140,15 @@ test("rejects a negative costPriceCents with 400", async () => {
   assert.equal(res.status, 400);
   assert.equal(calls.create, undefined);
 });
+
+test("persists optional per-language translations, or JsonNull when omitted", async () => {
+  const { db, calls } = makeFakeDb("store-1");
+  await handleCreateProduct(db, req({ ...validBody, translations: { en: { name: "English name" } } }));
+  const create1 = calls.create as { data: { translations: unknown } };
+  assert.deepEqual(create1.data.translations, { en: { name: "English name" } });
+
+  const { db: db2, calls: calls2 } = makeFakeDb("store-1");
+  await handleCreateProduct(db2, req(validBody));
+  const create2 = calls2.create as { data: { translations: unknown } };
+  assert.notEqual(create2.data.translations, undefined);
+});

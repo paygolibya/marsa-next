@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
+import { Prisma } from "@prisma/client";
 import { getAuthMerchantId } from "@/lib/auth";
 import { createProductSchema } from "@/lib/validation";
 
@@ -21,6 +22,7 @@ export type CreateProductDb = {
         metaTitle: string | null;
         metaDescription: string | null;
         costPriceCents: number | null;
+        translations: Prisma.InputJsonValue | typeof Prisma.JsonNull;
       };
     }) => Promise<ProductRow>;
   };
@@ -37,7 +39,7 @@ export async function handleCreateProduct(db: CreateProductDb, req: Request): Pr
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "بيانات غير صالحة" }, { status: 400 });
     }
-    const { storeId, name, description, priceCents, images, categoryId, metaTitle, metaDescription, costPriceCents } = parsed.data;
+    const { storeId, name, description, priceCents, images, categoryId, metaTitle, metaDescription, costPriceCents, translations } = parsed.data;
 
     const store = await db.store.findFirst({ where: { id: storeId, merchantId } });
     if (!store) return NextResponse.json({ error: "You do not own this store" }, { status: 403 });
@@ -62,6 +64,7 @@ export async function handleCreateProduct(db: CreateProductDb, req: Request): Pr
         metaTitle: metaTitle || null,
         metaDescription: metaDescription || null,
         costPriceCents: costPriceCents ?? null,
+        translations: translations ?? Prisma.JsonNull,
       },
     });
 

@@ -50,6 +50,8 @@ export function makeTestStore(customizationOverrides: Partial<StoreCustomization
     returnPolicy: null,
     shippingPolicy: null,
     businessHours: null,
+    language: "ar",
+    supportedLanguages: ["ar"],
     customization,
   };
 }

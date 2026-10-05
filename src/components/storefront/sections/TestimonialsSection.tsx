@@ -1,25 +1,28 @@
+import { translate, isSupportedLanguage } from "@/lib/i18n";
 import { safeParseSettings, testimonialsSettingsSchema } from "./schemas";
 import type { SectionRenderProps } from "./types";
 
-export function TestimonialsSection({ variant, colors, settings: rawSettings, testimonials }: SectionRenderProps) {
+export function TestimonialsSection({ variant, colors, settings: rawSettings, testimonials, store }: SectionRenderProps) {
   const settings = safeParseSettings(testimonialsSettingsSchema, rawSettings);
   const items = testimonials.slice(0, settings.limit);
+  const language = isSupportedLanguage(store.language) ? store.language : "ar";
+  const t = (key: string) => translate(language, key);
   if (items.length === 0) return null;
 
   if (variant === "bold") {
     return (
       <div>
-        <h2 className="font-display text-2xl font-extrabold text-harbor mb-8 text-center" style={{ color: colors.text }}>{settings.title || "ماذا يقول عملاؤنا"}</h2>
+        <h2 className="font-display text-2xl font-extrabold text-harbor mb-8 text-center" style={{ color: colors.text }}>{settings.title || t("testimonials.titleBold")}</h2>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {items.map((t, i) => (
+          {items.map((item, i) => (
             <div key={i} className="rounded-2xl bg-white p-6 shadow-lg">
               <p className="text-lg mb-3" style={{ color: colors.accent }}>
-                {"★".repeat(t.rating)}
-                {"☆".repeat(5 - t.rating)}
+                {"★".repeat(item.rating)}
+                {"☆".repeat(5 - item.rating)}
               </p>
-              {t.reviewText && <p className="text-harbor/80 mb-4">&quot;{t.reviewText}&quot;</p>}
+              {item.reviewText && <p className="text-harbor/80 mb-4">&quot;{item.reviewText}&quot;</p>}
               <p className="text-xs font-bold text-rope">
-                {t.buyerName} — {t.productName}
+                {item.buyerName} — {item.productName}
               </p>
             </div>
           ))}
@@ -32,18 +35,18 @@ export function TestimonialsSection({ variant, colors, settings: rawSettings, te
     return (
       <div className="text-center">
         <h2 className="font-display text-xl font-extrabold mb-10 tracking-wide" style={{ color: colors.accent }}>
-          {settings.title || "آراء عملائنا"}
+          {settings.title || t("testimonials.titleDefault")}
         </h2>
         <div className="grid sm:grid-cols-3 gap-8">
-          {items.map((t, i) => (
+          {items.map((item, i) => (
             <div key={i}>
               <p className="mb-3" style={{ color: colors.accent }}>
-                {"★".repeat(t.rating)}
-                {"☆".repeat(5 - t.rating)}
+                {"★".repeat(item.rating)}
+                {"☆".repeat(5 - item.rating)}
               </p>
-              {t.reviewText && <p className="text-sm text-white/70 mb-3">&quot;{t.reviewText}&quot;</p>}
+              {item.reviewText && <p className="text-sm text-white/70 mb-3">&quot;{item.reviewText}&quot;</p>}
               <p className="text-xs text-white/40 tracking-wide">
-                {t.buyerName} — {t.productName}
+                {item.buyerName} — {item.productName}
               </p>
             </div>
           ))}
@@ -55,17 +58,17 @@ export function TestimonialsSection({ variant, colors, settings: rawSettings, te
   if (variant === "marketplace") {
     return (
       <div>
-        <h2 className="font-display text-lg font-extrabold text-harbor mb-4" style={{ color: colors.text }}>{settings.title || "آراء المشترين"}</h2>
+        <h2 className="font-display text-lg font-extrabold text-harbor mb-4" style={{ color: colors.text }}>{settings.title || t("testimonials.titleMarketplace")}</h2>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {items.map((t, i) => (
+          {items.map((item, i) => (
             <div key={i} className="rounded-lg border border-harbor/10 bg-white p-3">
               <p className="text-xs mb-1" style={{ color: colors.accent }}>
-                {"★".repeat(t.rating)}
-                {"☆".repeat(5 - t.rating)}
+                {"★".repeat(item.rating)}
+                {"☆".repeat(5 - item.rating)}
               </p>
-              {t.reviewText && <p className="text-xs text-harbor/80 mb-2 line-clamp-3">&quot;{t.reviewText}&quot;</p>}
+              {item.reviewText && <p className="text-xs text-harbor/80 mb-2 line-clamp-3">&quot;{item.reviewText}&quot;</p>}
               <p className="text-[10px] text-rope">
-                {t.buyerName} — {t.productName}
+                {item.buyerName} — {item.productName}
               </p>
             </div>
           ))}
@@ -77,17 +80,17 @@ export function TestimonialsSection({ variant, colors, settings: rawSettings, te
   // modern
   return (
     <div>
-      <h2 className="font-display text-xl font-extrabold text-harbor mb-6" style={{ color: colors.text }}>{settings.title || "آراء عملائنا"}</h2>
+      <h2 className="font-display text-xl font-extrabold text-harbor mb-6" style={{ color: colors.text }}>{settings.title || t("testimonials.titleDefault")}</h2>
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {items.map((t, i) => (
+        {items.map((item, i) => (
           <div key={i} className="rounded-2xl border border-harbor/10 bg-white p-5">
             <p className="font-bold mb-2" style={{ color: colors.accent }}>
-              {"★".repeat(t.rating)}
-              {"☆".repeat(5 - t.rating)}
+              {"★".repeat(item.rating)}
+              {"☆".repeat(5 - item.rating)}
             </p>
-            {t.reviewText && <p className="text-sm text-harbor/80 mb-3">&quot;{t.reviewText}&quot;</p>}
+            {item.reviewText && <p className="text-sm text-harbor/80 mb-3">&quot;{item.reviewText}&quot;</p>}
             <p className="text-xs text-rope">
-              {t.buyerName} — {t.productName}
+              {item.buyerName} — {item.productName}
             </p>
           </div>
         ))}

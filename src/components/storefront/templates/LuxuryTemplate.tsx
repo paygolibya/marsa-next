@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { StatsSection, ProductsSection, CategoriesSection, BundlesSection, TestimonialsSection, NewsletterSection } from "@/components/storefront/sections";
 import type { SectionRenderProps, SectionType } from "@/components/storefront/sections/types";
+import { translate, isSupportedLanguage } from "@/lib/i18n";
 import { resolveCoverImageHeightClass, resolveLogoSizePx, type StorefrontTemplateProps } from "./types";
 import { StorefrontNavRow } from "./StorefrontNavRow";
 
@@ -51,6 +52,8 @@ export default function LuxuryTemplate({
   // variant="luxury" branch already knows this and reads colors.primary/
   // accent accordingly.
   const colors = { primary: dark, secondary: dark, accent: gold };
+  const language = isSupportedLanguage(store.language) ? store.language : "ar";
+  const t = (key: string) => translate(language, key);
   const showLogo = store.customization?.showLogo !== false;
   const showStoreName = store.customization?.showStoreName !== false;
   const logoPx = resolveLogoSizePx(store.customization?.logoSize);
@@ -119,7 +122,7 @@ export default function LuxuryTemplate({
               className="relative mt-2 rounded-full border px-6 py-2 text-sm font-bold tracking-wide hover:bg-white/5 transition-colors"
               style={{ borderColor: gold, color: gold }}
             >
-              سلة التسوق
+              {t("cart.title")}
               {cartTotalItems > 0 && (
                 <span
                   className="absolute -top-2 -left-2 h-5 w-5 rounded-full text-[11px] font-bold flex items-center justify-center"

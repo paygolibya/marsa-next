@@ -10,6 +10,8 @@ import { captureReferralCode } from "@/lib/referral";
 import { trackEvent } from "@/lib/track-event";
 import { CartDrawer } from "@/components/cart-drawer";
 import { SiteFooter } from "@/components/site-footer";
+import { isSupportedLanguage } from "@/lib/i18n";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 
 export default function BundleDetailPage() {
   const params = useParams<{ slug: string; bundleId: string }>();
@@ -24,6 +26,8 @@ export default function BundleDetailPage() {
   const [cartOpen, setCartOpen] = useState(false);
 
   const cart = useCart(slug);
+  const language = store && isSupportedLanguage(store.language) ? store.language : "ar";
+  const { t } = useTranslation(language);
 
   useEffect(() => captureReferralCode(slug), [slug]);
   useEffect(() => trackEvent(slug, "pageview", `/store/${slug}/bundle/${bundleId}`), [slug, bundleId]);
@@ -48,9 +52,9 @@ export default function BundleDetailPage() {
   if (notFound) {
     return (
       <main className="mx-auto max-w-md px-6 py-24 text-center">
-        <h1 className="font-display text-2xl font-bold text-harbor">هذه الباقة غير موجودة</h1>
+        <h1 className="font-display text-2xl font-bold text-harbor">{t("bundles.notFound")}</h1>
         <Link href={`/store/${slug}`} className="text-brass font-bold mt-4 inline-block">
-          العودة إلى المتجر
+          {t("common.backToStore")}
         </Link>
       </main>
     );
@@ -73,7 +77,7 @@ export default function BundleDetailPage() {
     <div className="min-h-screen" style={{ backgroundColor: secondary }}>
       <main className="mx-auto max-w-4xl px-6 py-12">
         <Link href={`/store/${slug}`} className="text-sm text-rope hover:text-harbor">
-          ← العودة إلى المتجر
+          {t("common.backToStoreLink")}
         </Link>
 
         <div className="mt-6 grid md:grid-cols-2 gap-10">
@@ -81,27 +85,27 @@ export default function BundleDetailPage() {
             {bundle.imageUrl ? (
               <Image src={bundle.imageUrl} alt={bundle.name} width={800} height={800} unoptimized className="h-full w-full object-cover" />
             ) : (
-              <span className="text-rope text-sm">لا توجد صورة</span>
+              <span className="text-rope text-sm">{t("common.noImage")}</span>
             )}
           </div>
 
           <div>
-            <span className="inline-block rounded-full bg-harbor/10 px-3 py-1 text-xs font-bold text-harbor mb-2">باقة</span>
+            <span className="inline-block rounded-full bg-harbor/10 px-3 py-1 text-xs font-bold text-harbor mb-2">{t("cart.bundleTag")}</span>
             <h1 className="font-display text-2xl font-extrabold text-harbor">{bundle.name}</h1>
             <p className="font-bold text-xl mt-4" style={{ color: primary }}>
-              {formatLYD(bundle.priceCents)}
+              {formatLYD(bundle.priceCents, language)}
             </p>
             {savingsCents > 0 && (
-              <p className="text-sm text-green-700 mt-1">وفّر {formatLYD(savingsCents)} عند شراء هذه الباقة مجمّعة</p>
+              <p className="text-sm text-green-700 mt-1">{t("bundles.savings", { amount: formatLYD(savingsCents, language) })}</p>
             )}
 
             <div className="mt-6">
-              <span className="block text-sm font-bold text-harbor mb-2">تحتوي هذه الباقة على</span>
+              <span className="block text-sm font-bold text-harbor mb-2">{t("bundles.contains")}</span>
               <ul className="space-y-2">
                 {bundle.items.map((item) => (
                   <li key={item.id} className="flex items-center justify-between rounded-xl border border-harbor/10 bg-white/50 px-4 py-2.5 text-sm">
                     <span className="text-harbor">{item.product.name}</span>
-                    <span className="text-rope">× {item.quantity}</span>
+                    <span className="text-rope">{t("bundles.quantityPrefix", { count: item.quantity })}</span>
                   </li>
                 ))}
               </ul>
@@ -112,7 +116,7 @@ export default function BundleDetailPage() {
               style={{ backgroundColor: primary }}
               className="mt-6 rounded-full text-white py-3 px-8 font-bold hover:opacity-90 transition-opacity"
             >
-              أضف الباقة للسلة
+              {t("bundles.addToCart")}
             </button>
           </div>
         </div>
@@ -124,6 +128,7 @@ export default function BundleDetailPage() {
             ? { name: store.name, tagline: store.customization?.tagline, logo: store.customization?.logo }
             : undefined
         }
+        language={language}
       />
 
       <CartDrawer
@@ -136,6 +141,7 @@ export default function BundleDetailPage() {
         products={products}
         upsells={upsells}
         onAddToCart={(p) => cart.add(p)}
+        language={language}
         theme={{
           primaryColor: store?.customization?.primaryColor || "#0066cc",
           secondaryColor: store?.customization?.secondaryColor || "#f0f0f0",

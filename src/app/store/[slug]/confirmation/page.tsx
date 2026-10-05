@@ -5,6 +5,8 @@ import { useSearchParams, useParams } from "next/navigation";
 import Link from "next/link";
 import { api, formatLYD, type Store } from "@/lib/api";
 import { trackEvent } from "@/lib/track-event";
+import { isSupportedLanguage } from "@/lib/i18n";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 
 const courierLabels: Record<string, string> = {
   vanex: "Vanex",
@@ -43,14 +45,16 @@ function ConfirmationPageContent() {
   const courier = search.get("courier") ?? "";
   const paymentStatus = search.get("paymentStatus");
   const secondary = store?.customization?.secondaryColor || "#f0f0f0";
+  const language = store && isSupportedLanguage(store.language) ? store.language : "ar";
+  const { t } = useTranslation(language);
 
   if (!orderId) {
     return (
       <div className="min-h-screen" style={{ backgroundColor: secondary }}>
         <main className="mx-auto max-w-md px-6 py-24 text-center">
-          <h1 className="font-display text-2xl font-bold text-harbor">لا يوجد طلب لعرضه</h1>
+          <h1 className="font-display text-2xl font-bold text-harbor">{t("confirmation.noOrderHeading")}</h1>
           <Link href={`/store/${params.slug}`} className="text-brass font-bold mt-4 inline-block">
-            العودة إلى المتجر
+            {t("common.backToStore")}
           </Link>
         </main>
       </div>
@@ -61,16 +65,16 @@ function ConfirmationPageContent() {
     <div className="min-h-screen" style={{ backgroundColor: secondary }}>
       <main className="mx-auto max-w-lg px-6 py-20 text-center">
         <span className="stamp mx-auto mb-6 h-16 w-16 border-brass text-brass text-2xl font-bold">✓</span>
-        <h1 className="font-display text-3xl font-extrabold text-harbor">تم تأكيد طلبك</h1>
-        <p className="text-rope mt-2">سيصلك المندوب قريبًا. احتفظ برقم التتبع أدناه لمتابعة الشحنة.</p>
+        <h1 className="font-display text-3xl font-extrabold text-harbor">{t("confirmation.heading")}</h1>
+        <p className="text-rope mt-2">{t("confirmation.subtext")}</p>
 
         <dl className="mt-10 rounded-2xl border border-harbor/10 bg-white/50 p-6 text-right space-y-4">
-          <Row label="رقم الطلب" value={orderId} mono />
-          <Row label="رقم التتبع" value={trackingId ?? "—"} mono />
-          <Row label="شركة الشحن" value={courierLabels[courier] ?? courier} />
-          {shippingCents > 0 && <Row label="تكلفة الشحن" value={formatLYD(shippingCents)} />}
-          <Row label="الإجمالي" value={formatLYD(totalCents)} />
-          <Row label="حالة الدفع" value={paymentStatus === "paid" ? "مدفوع" : "قيد الدفع عند الاستلام"} />
+          <Row label={t("confirmation.orderNumber")} value={orderId} mono />
+          <Row label={t("confirmation.trackingNumber")} value={trackingId ?? t("common.dash")} mono />
+          <Row label={t("confirmation.courier")} value={courierLabels[courier] ?? courier} />
+          {shippingCents > 0 && <Row label={t("confirmation.shippingCost")} value={formatLYD(shippingCents, language)} />}
+          <Row label={t("common.total")} value={formatLYD(totalCents, language)} />
+          <Row label={t("confirmation.paymentStatus")} value={paymentStatus === "paid" ? t("confirmation.paid") : t("confirmation.pendingCod")} />
         </dl>
 
         <div className="mt-10 flex items-center justify-center gap-4">
@@ -78,13 +82,13 @@ function ConfirmationPageContent() {
             href={`/store/${params.slug}`}
             className="inline-block rounded-full bg-harbor text-canvas px-8 py-3 font-bold hover:bg-harbor-deep transition-colors"
           >
-            متابعة التسوق
+            {t("confirmation.continueShopping")}
           </Link>
           <Link
             href={`/store/${params.slug}/track?orderId=${orderId}`}
             className="inline-block rounded-full border border-harbor/20 px-8 py-3 font-bold text-harbor hover:bg-harbor/5 transition-colors"
           >
-            تتبع طلبك
+            {t("confirmation.trackOrder")}
           </Link>
         </div>
       </main>

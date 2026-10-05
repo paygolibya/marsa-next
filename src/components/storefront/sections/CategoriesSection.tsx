@@ -1,3 +1,4 @@
+import { translate, isSupportedLanguage } from "@/lib/i18n";
 import { safeParseSettings, categoriesSettingsSchema } from "./schemas";
 import type { SectionRenderProps } from "./types";
 
@@ -5,8 +6,10 @@ import type { SectionRenderProps } from "./types";
 // ProductsSection/StatsSection, which each have a bespoke per-variant
 // layout) — this is a filter control, not a showcase element, so a single
 // consistent design is the right amount of visual investment here.
-export function CategoriesSection({ colors, categories, selectedCategoryId, setSelectedCategoryId, settings: rawSettings }: SectionRenderProps) {
+export function CategoriesSection({ colors, categories, selectedCategoryId, setSelectedCategoryId, settings: rawSettings, store }: SectionRenderProps) {
   const settings = safeParseSettings(categoriesSettingsSchema, rawSettings);
+  const language = isSupportedLanguage(store.language) ? store.language : "ar";
+  const t = (key: string) => translate(language, key);
   if (categories.length === 0) return null;
 
   return (
@@ -22,7 +25,7 @@ export function CategoriesSection({ colors, categories, selectedCategoryId, setS
               : { borderColor: "rgba(0,0,0,0.15)", color: colors.text }
           }
         >
-          الكل
+          {t("common.all")}
         </button>
         {categories.map((c) => (
           <button

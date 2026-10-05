@@ -5,20 +5,22 @@ import { useSearchParams, useParams } from "next/navigation";
 import Link from "next/link";
 import { api, ApiError, formatLYD, type Store } from "@/lib/api";
 import { SiteFooter } from "@/components/site-footer";
+import { isSupportedLanguage } from "@/lib/i18n";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 
-const statusLabels: Record<string, string> = {
-  pending: "قيد الانتظار",
-  confirmed: "مؤكد",
-  shipped: "تم الشحن",
-  delivered: "تم التسليم",
-  cancelled: "ملغى",
+const statusKeys: Record<string, string> = {
+  pending: "track.statusPending",
+  confirmed: "track.statusConfirmed",
+  shipped: "track.statusShipped",
+  delivered: "track.statusDelivered",
+  cancelled: "track.statusCancelled",
 };
 
-const courierStatusLabels: Record<string, string> = {
-  accepted: "مستلمة من المخزن",
-  delivered: "تم التسليم",
-  failed_delivery: "فشل التسليم",
-  returned: "مرتجعة",
+const courierStatusKeys: Record<string, string> = {
+  accepted: "track.courierAccepted",
+  delivered: "track.courierDelivered",
+  failed_delivery: "track.courierFailed",
+  returned: "track.courierReturned",
 };
 
 type TrackResult = Awaited<ReturnType<typeof api.trackOrder>>;
@@ -47,6 +49,8 @@ function StoreTrackPageContent() {
   const [result, setResult] = useState<TrackResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const language = store && isSupportedLanguage(store.language) ? store.language : "ar";
+  const { t } = useTranslation(language);
 
   useEffect(() => {
     api.publicStore(params.slug).then(({ store }) => setStore(store)).catch(() => {});
@@ -66,7 +70,7 @@ function StoreTrackPageContent() {
       const data = await api.trackOrder(orderId.trim(), phone.trim());
       setResult(data);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "تعذّر العثور على الطلب");
+      setError(err instanceof ApiError ? err.message : t("track.orderNotFound"));
     } finally {
       setLoading(false);
     }
@@ -79,20 +83,20 @@ function StoreTrackPageContent() {
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: secondary }}>
       <main className="flex-1 mx-auto max-w-lg px-6 py-12 w-full">
         <Link href={`/store/${params.slug}`} className="text-sm text-rope hover:text-harbor">
-          ← العودة إلى المتجر
+          {t("common.backToStoreLink")}
         </Link>
 
         <div className="mt-6 rounded-2xl bg-white/90 shadow-xl p-8">
-          <h1 className="font-display text-2xl font-extrabold text-harbor mb-2">تتبع طلبك</h1>
-          <p className="text-rope mb-8">أدخل رقم الطلب ورقم الهاتف المستخدم عند الشراء.</p>
+          <h1 className="font-display text-2xl font-extrabold text-harbor mb-2">{t("track.heading")}</h1>
+          <p className="text-rope mb-8">{t("track.instructions")}</p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <label className="block">
-              <span className="block text-sm font-bold text-harbor mb-1.5">رقم الطلب</span>
+              <span className="block text-sm font-bold text-harbor mb-1.5">{t("product.orderIdPlaceholder")}</span>
               <input required dir="ltr" value={orderId} onChange={(e) => setOrderId(e.target.value)} className="input font-mono" />
             </label>
             <label className="block">
-              <span className="block text-sm font-bold text-harbor mb-1.5">رقم الهاتف</span>
+              <span className="block text-sm font-bold text-harbor mb-1.5">{t("product.phonePlaceholder")}</span>
               <input required dir="ltr" value={phone} onChange={(e) => setPhone(e.target.value)} className="input" />
             </label>
             {error && <p className="text-signal text-sm">{error}</p>}
@@ -102,33 +106,33 @@ function StoreTrackPageContent() {
               style={{ backgroundColor: primary }}
               className="w-full rounded-full py-3 font-bold text-white hover:opacity-90 transition-opacity disabled:opacity-60"
             >
-              {loading ? "جارٍ البحث..." : "تتبع"}
+              {loading ? t("track.searching") : t("track.trackButton")}
             </button>
           </form>
 
           {result && (
             <div className="mt-10 rounded-2xl border border-harbor/10 bg-white/90 p-6 space-y-4 text-right">
-              <Row label="حالة الطلب" value={statusLabels[result.status] ?? result.status} />
+              <Row label={t("track.orderStatus")} value={statusKeys[result.status] ? t(statusKeys[result.status]) : result.status} />
               {result.courierStatus && (
-                <Row label="حالة الشحنة" value={courierStatusLabels[result.courierStatus] ?? result.courierStatus} />
+                <Row label={t("track.shipmentStatus")} value={courierStatusKeys[result.courierStatus] ? t(courierStatusKeys[result.courierStatus]) : result.courierStatus} />
               )}
-              {result.courierTrackingId && <Row label="رقم التتبع" value={result.courierTrackingId} mono />}
-              {result.courierNote && <Row label="ملاحظة الشحن" value={result.courierNote} />}
+              {result.courierTrackingId && <Row label={t("confirmation.trackingNumber")} value={result.courierTrackingId} mono />}
+              {result.courierNote && <Row label={t("track.courierNote")} value={result.courierNote} />}
               {store?.type === "booking" && result.scheduledStartAt && (
                 // Sliced from the ISO string directly, not toLocaleString
                 // — see src/lib/booking.ts's module comment on why.
-                <Row label="الموعد" value={`${result.scheduledStartAt.slice(0, 10)} — ${result.scheduledStartAt.slice(11, 16)}`} />
+                <Row label={t("track.appointment")} value={`${result.scheduledStartAt.slice(0, 10)} — ${result.scheduledStartAt.slice(11, 16)}`} />
               )}
               {store?.type === "rental" && result.scheduledStartAt && result.scheduledEndAt && (
                 <Row
-                  label="فترة الاستئجار"
-                  value={`${new Date(result.scheduledStartAt).toLocaleDateString("ar-LY")} → ${new Date(result.scheduledEndAt).toLocaleDateString("ar-LY")}`}
+                  label={t("track.rentalPeriod")}
+                  value={`${new Date(result.scheduledStartAt).toLocaleDateString(language === "en" ? "en-US" : "ar-LY")} → ${new Date(result.scheduledEndAt).toLocaleDateString(language === "en" ? "en-US" : "ar-LY")}`}
                 />
               )}
-              <Row label="الإجمالي" value={formatLYD(result.totalCents)} />
+              <Row label={t("common.total")} value={formatLYD(result.totalCents, language)} />
 
               <div className="border-t border-harbor/10 pt-4">
-                <p className="text-sm font-bold text-harbor mb-2">المنتجات</p>
+                <p className="text-sm font-bold text-harbor mb-2">{t("track.products")}</p>
                 <ul className="space-y-1 text-sm text-rope">
                   {result.items.map((item) => (
                     <li key={item.id} className="flex justify-between">
@@ -136,7 +140,7 @@ function StoreTrackPageContent() {
                         {item.productName}
                         {item.variantLabel && <span className="text-xs opacity-70"> ({item.variantLabel})</span>} × {item.quantity}
                       </span>
-                      <span>{formatLYD(item.unitPriceCents * item.quantity)}</span>
+                      <span>{formatLYD(item.unitPriceCents * item.quantity, language)}</span>
                     </li>
                   ))}
                 </ul>
@@ -152,6 +156,7 @@ function StoreTrackPageContent() {
             ? { name: store.name, tagline: store.customization?.tagline, logo: store.customization?.logo }
             : undefined
         }
+        language={language}
       />
     </div>
   );

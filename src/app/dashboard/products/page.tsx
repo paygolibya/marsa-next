@@ -23,9 +23,12 @@ export default function DashboardProductsPage() {
   const [metaTitle, setMetaTitle] = useState("");
   const [metaDescription, setMetaDescription] = useState("");
   const [costPrice, setCostPrice] = useState("");
+  const [enName, setEnName] = useState("");
+  const [enDescription, setEnDescription] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const supportsEnglish = store?.supportedLanguages?.includes("en") ?? false;
   // Non-null right after a product is created — variants need a real
   // product id to exist server-side (ProductVariant rows reference
   // productId), so there's no way to define them before creation. Instead
@@ -63,6 +66,7 @@ export default function DashboardProductsPage() {
         metaTitle: metaTitle || null,
         metaDescription: metaDescription || null,
         costPriceCents: costPrice ? Math.round(parseFloat(costPrice) * 100) : null,
+        translations: enName || enDescription ? { en: { ...(enName && { name: enName }), ...(enDescription && { description: enDescription }) } } : null,
       });
       const final = trackInventory
         ? await api.updateProduct(token, created.id, { trackInventory: true, stockQty: Number(stockQty) || 0 })
@@ -211,6 +215,22 @@ export default function DashboardProductsPage() {
                 </div>
               </details>
 
+              {supportsEnglish && (
+                <details className="rounded-xl border border-harbor/15 bg-white px-4 py-3">
+                  <summary className="font-bold text-harbor text-sm cursor-pointer">النسخة الإنجليزية (اختياري)</summary>
+                  <div className="mt-3 space-y-3">
+                    <label className="block">
+                      <span className="block text-xs text-rope mb-1">الاسم بالإنجليزية</span>
+                      <input dir="ltr" value={enName} onChange={(e) => setEnName(e.target.value)} className="input" placeholder={name} />
+                    </label>
+                    <label className="block">
+                      <span className="block text-xs text-rope mb-1">الوصف بالإنجليزية</span>
+                      <textarea dir="ltr" value={enDescription} onChange={(e) => setEnDescription(e.target.value)} className="input" rows={3} />
+                    </label>
+                  </div>
+                </details>
+              )}
+
               <p className="text-xs text-rope">يمكنك إضافة متغيرات (مقاسات، ألوان...) في الخطوة التالية بعد الإضافة.</p>
 
               {error && <p className="text-signal text-sm">{error}</p>}
@@ -244,6 +264,7 @@ export default function DashboardProductsPage() {
                   product={p}
                   token={token}
                   categories={categories}
+                  supportsEnglish={supportsEnglish}
                   onDone={() => {
                     setEditingId(null);
                     refresh();
@@ -305,12 +326,14 @@ function ProductEditRow({
   product,
   token,
   categories,
+  supportsEnglish,
   onDone,
   onCancel,
 }: {
   product: Product;
   token: string | null;
   categories: Category[];
+  supportsEnglish: boolean;
   onDone: () => void;
   onCancel: () => void;
 }) {
@@ -325,6 +348,8 @@ function ProductEditRow({
   const [metaTitle, setMetaTitle] = useState(product.metaTitle ?? "");
   const [metaDescription, setMetaDescription] = useState(product.metaDescription ?? "");
   const [costPrice, setCostPrice] = useState(product.costPriceCents != null ? String(product.costPriceCents / 100) : "");
+  const [enName, setEnName] = useState(product.translations?.en?.name ?? "");
+  const [enDescription, setEnDescription] = useState(product.translations?.en?.description ?? "");
   const [saving, setSaving] = useState(false);
 
   const [variantOptions, setVariantOptions] = useState<ProductVariantOption[] | null>(product.variantOptions);
@@ -346,6 +371,7 @@ function ProductEditRow({
         metaTitle: metaTitle || null,
         metaDescription: metaDescription || null,
         costPriceCents: costPrice ? Math.round(parseFloat(costPrice) * 100) : null,
+        translations: enName || enDescription ? { en: { ...(enName && { name: enName }), ...(enDescription && { description: enDescription }) } } : null,
       });
       onDone();
     } finally {
@@ -429,6 +455,22 @@ function ProductEditRow({
           </label>
         </div>
       </details>
+
+      {supportsEnglish && (
+        <details className="rounded-lg border border-harbor/15 px-3 py-2">
+          <summary className="text-sm font-bold text-harbor cursor-pointer">النسخة الإنجليزية (اختياري)</summary>
+          <div className="mt-3 space-y-3">
+            <label className="block">
+              <span className="block text-xs text-rope mb-1">الاسم بالإنجليزية</span>
+              <input dir="ltr" value={enName} onChange={(e) => setEnName(e.target.value)} className="input" placeholder={name} />
+            </label>
+            <label className="block">
+              <span className="block text-xs text-rope mb-1">الوصف بالإنجليزية</span>
+              <textarea dir="ltr" value={enDescription} onChange={(e) => setEnDescription(e.target.value)} className="input" rows={3} />
+            </label>
+          </div>
+        </details>
+      )}
 
       <ProductVariantsManager
         productId={product.id}

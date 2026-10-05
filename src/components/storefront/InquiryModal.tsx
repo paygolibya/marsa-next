@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Modal, Button } from "@/components/ui";
 import { api, ApiError } from "@/lib/api";
+import { translate, type Language } from "@/lib/i18n";
 
 // Showcase stores (store.type === "showcase", e.g. a car exhibition) have
 // no checkout at all — this is what every "add to cart"/"اختر الخيارات"
@@ -14,13 +15,16 @@ export function InquiryModal({
   storeSlug,
   productId,
   productName,
+  language = "ar",
 }: {
   open: boolean;
   onClose: () => void;
   storeSlug: string;
   productId?: string;
   productName?: string;
+  language?: Language;
 }) {
+  const t = (key: string, vars?: Record<string, string | number>) => translate(language, key, vars);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [message, setMessage] = useState("");
@@ -36,7 +40,7 @@ export function InquiryModal({
       await api.createInquiry({ storeSlug, productId, buyerName: name, buyerPhone: phone, message });
       setDone(true);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "تعذّر إرسال الاستفسار");
+      setError(err instanceof ApiError ? err.message : t("inquiry.errorFallback"));
     } finally {
       setSending(false);
     }
@@ -52,32 +56,32 @@ export function InquiryModal({
   }
 
   return (
-    <Modal open={open} onClose={handleClose} title={productName ? `استفسار عن ${productName}` : "استفسار"}>
+    <Modal open={open} onClose={handleClose} title={productName ? t("inquiry.titleWithProduct", { productName }) : t("inquiry.titlePlain")}>
       {done ? (
         <div className="text-center py-6">
-          <p className="text-harbor font-bold">تم إرسال استفسارك بنجاح</p>
-          <p className="text-rope text-sm mt-1">سيتواصل معك المتجر قريبًا.</p>
+          <p className="text-harbor font-bold">{t("inquiry.successHeading")}</p>
+          <p className="text-rope text-sm mt-1">{t("inquiry.successSubtext")}</p>
           <Button className="mt-4" onClick={handleClose}>
-            إغلاق
+            {t("common.close")}
           </Button>
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
           <label className="block">
-            <span className="block text-sm font-bold text-harbor mb-1.5">الاسم</span>
+            <span className="block text-sm font-bold text-harbor mb-1.5">{t("inquiry.name")}</span>
             <input required value={name} onChange={(e) => setName(e.target.value)} className="input" />
           </label>
           <label className="block">
-            <span className="block text-sm font-bold text-harbor mb-1.5">رقم الهاتف</span>
+            <span className="block text-sm font-bold text-harbor mb-1.5">{t("inquiry.phone")}</span>
             <input required dir="ltr" value={phone} onChange={(e) => setPhone(e.target.value)} className="input" />
           </label>
           <label className="block">
-            <span className="block text-sm font-bold text-harbor mb-1.5">رسالتك</span>
+            <span className="block text-sm font-bold text-harbor mb-1.5">{t("inquiry.message")}</span>
             <textarea required value={message} onChange={(e) => setMessage(e.target.value)} className="input" rows={3} />
           </label>
           {error && <p className="text-signal text-sm">{error}</p>}
-          <Button type="submit" loading={sending} loadingText="جارٍ الإرسال..." className="w-full">
-            إرسال الاستفسار
+          <Button type="submit" loading={sending} loadingText={t("inquiry.sending")} className="w-full">
+            {t("inquiry.submit")}
           </Button>
         </form>
       )}

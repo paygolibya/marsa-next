@@ -8,6 +8,8 @@ import { api, ApiError, formatLYD, type Store, type VanexCity } from "@/lib/api"
 import { useCart } from "@/lib/use-cart";
 import { getReferralCode } from "@/lib/referral";
 import { trackEvent } from "@/lib/track-event";
+import { isSupportedLanguage } from "@/lib/i18n";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 
 const courierLabels: Record<string, string> = {
   vanex: "Vanex",
@@ -100,6 +102,8 @@ export default function CheckoutPage() {
   const [availableSlots, setAvailableSlots] = useState<string[]>([]);
   const [slotsLoading, setSlotsLoading] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState("");
+  const language = store && isSupportedLanguage(store.language) ? store.language : "ar";
+  const { t } = useTranslation(language);
 
   useEffect(() => {
     if (!isBooking || !bookingDate) {
@@ -164,14 +168,14 @@ export default function CheckoutPage() {
       const result = await api.validateCoupon({ storeSlug: slug, code: couponInput.trim(), subtotalCents: effectiveSubtotalCents });
       if (result.valid) {
         setAppliedCoupon({ code: couponInput.trim(), discountCents: result.discountCents });
-        setCouponMessage("✓ تم تطبيق الكوبون");
+        setCouponMessage(t("checkout.couponApplied"));
       } else {
         setAppliedCoupon(null);
-        setCouponMessage(result.message || "رمز الكوبون غير صحيح");
+        setCouponMessage(result.message || t("checkout.couponInvalid"));
       }
     } catch {
       setAppliedCoupon(null);
-      setCouponMessage("تعذّر التحقق من الكوبون");
+      setCouponMessage(t("checkout.couponCheckFailed"));
     } finally {
       setCouponChecking(false);
     }
@@ -194,15 +198,15 @@ export default function CheckoutPage() {
     e.preventDefault();
     if (cart.lines.length === 0) return;
     if (usesVanexPricing && !selectedArea) {
-      setError("اختر المدينة والمنطقة");
+      setError(t("checkout.selectCityArea"));
       return;
     }
     if (isRental && (!rentalStart || !rentalEnd)) {
-      setError("اختر تاريخ الاستلام والإرجاع");
+      setError(t("checkout.selectRentalDates"));
       return;
     }
     if (isBooking && !selectedSlot) {
-      setError("اختر موعدًا");
+      setError(t("checkout.selectSlot"));
       return;
     }
     setError(null);
@@ -248,15 +252,15 @@ export default function CheckoutPage() {
                 goToConfirmation({ ...pending, trackingId: completeResult.trackingId, courier: completeResult.courier, paymentStatus: "paid" });
                 return;
               }
-              setError(completeResult.error ?? "تعذّر تأكيد الدفع، تواصل معنا إن تم خصم المبلغ");
+              setError(completeResult.error ?? t("checkout.paymentConfirmFailed"));
             } catch (err) {
-              setError(err instanceof ApiError ? err.message : "تعذّر تأكيد الدفع، تواصل معنا إن تم خصم المبلغ");
+              setError(err instanceof ApiError ? err.message : t("checkout.paymentConfirmFailed"));
             } finally {
               setWalletPending(false);
             }
           },
           errorCallback: () => {
-            setError("فشلت عملية الدفع، حاول مجددًا");
+            setError(t("checkout.paymentFailed"));
             setWalletPending(false);
           },
           cancelCallback: () => {
@@ -269,7 +273,7 @@ export default function CheckoutPage() {
 
       goToConfirmation(result);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "تعذّر إتمام الطلب، حاول مجددًا");
+      setError(err instanceof ApiError ? err.message : t("checkout.orderFailed"));
       setWalletPending(false);
     } finally {
       setLoading(false);
@@ -285,9 +289,9 @@ export default function CheckoutPage() {
       <div className="min-h-screen" style={{ backgroundColor: secondary }}>
         <main className="mx-auto max-w-md px-6 py-24 text-center">
           <div className="rounded-2xl bg-white shadow-xl p-8">
-            <h1 className="font-display text-2xl font-bold text-harbor">سلتك فارغة</h1>
+            <h1 className="font-display text-2xl font-bold text-harbor">{t("checkout.emptyCartHeading")}</h1>
             <Link href={`/store/${slug}`} className="text-brass font-bold mt-4 inline-block">
-              العودة إلى المتجر
+              {t("common.backToStore")}
             </Link>
           </div>
         </main>
@@ -299,31 +303,31 @@ export default function CheckoutPage() {
     <div className="min-h-screen" style={{ backgroundColor: secondary }}>
       <main className="mx-auto max-w-4xl px-6 py-16 grid md:grid-cols-[1.2fr_1fr] gap-8 items-start">
         <div className="rounded-2xl bg-white shadow-xl p-8">
-          <h1 className="font-display text-2xl font-extrabold text-harbor mb-6">إتمام الطلب</h1>
+          <h1 className="font-display text-2xl font-extrabold text-harbor mb-6">{t("checkout.heading")}</h1>
           <form onSubmit={handleSubmit} className="space-y-4">
             <label className="block">
-              <span className="block text-sm font-bold text-harbor mb-1.5">الاسم الكامل</span>
+              <span className="block text-sm font-bold text-harbor mb-1.5">{t("checkout.fullName")}</span>
               <input required value={name} onChange={(e) => setName(e.target.value)} className="input" />
             </label>
             <label className="block">
-              <span className="block text-sm font-bold text-harbor mb-1.5">رقم الهاتف</span>
+              <span className="block text-sm font-bold text-harbor mb-1.5">{t("checkout.phone")}</span>
               <input required dir="ltr" value={phone} onChange={(e) => setPhone(e.target.value)} className="input" />
             </label>
             <label className="block">
-              <span className="block text-sm font-bold text-harbor mb-1.5">البريد الإلكتروني (اختياري)</span>
+              <span className="block text-sm font-bold text-harbor mb-1.5">{t("checkout.email")}</span>
               <input
                 type="email"
                 dir="ltr"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="input"
-                placeholder="لتصلك تحديثات الطلب"
+                placeholder={t("checkout.emailPlaceholder")}
               />
             </label>
             {isRental && (
               <div className="grid grid-cols-2 gap-3">
                 <label className="block">
-                  <span className="block text-sm font-bold text-harbor mb-1.5">تاريخ الاستلام</span>
+                  <span className="block text-sm font-bold text-harbor mb-1.5">{t("checkout.pickupDate")}</span>
                   <input
                     type="date"
                     required
@@ -337,7 +341,7 @@ export default function CheckoutPage() {
                   />
                 </label>
                 <label className="block">
-                  <span className="block text-sm font-bold text-harbor mb-1.5">تاريخ الإرجاع</span>
+                  <span className="block text-sm font-bold text-harbor mb-1.5">{t("checkout.returnDate")}</span>
                   <input
                     type="date"
                     required
@@ -353,7 +357,7 @@ export default function CheckoutPage() {
             {isBooking && (
               <div>
                 <label className="block">
-                  <span className="block text-sm font-bold text-harbor mb-1.5">التاريخ</span>
+                  <span className="block text-sm font-bold text-harbor mb-1.5">{t("checkout.bookingDate")}</span>
                   <input
                     type="date"
                     required
@@ -365,11 +369,11 @@ export default function CheckoutPage() {
                 </label>
                 {bookingDate && (
                   <div className="mt-3">
-                    <span className="block text-sm font-bold text-harbor mb-1.5">الوقت المتاح</span>
+                    <span className="block text-sm font-bold text-harbor mb-1.5">{t("checkout.availableTime")}</span>
                     {slotsLoading ? (
-                      <p className="text-sm text-rope">جارٍ تحميل المواعيد...</p>
+                      <p className="text-sm text-rope">{t("checkout.loadingSlots")}</p>
                     ) : availableSlots.length === 0 ? (
-                      <p className="text-sm text-rope">لا توجد مواعيد متاحة في هذا اليوم</p>
+                      <p className="text-sm text-rope">{t("checkout.noSlots")}</p>
                     ) : (
                       <div className="flex flex-wrap gap-2">
                         {availableSlots.map((slot) => (
@@ -394,7 +398,7 @@ export default function CheckoutPage() {
             {usesVanexPricing ? (
               <div className="grid grid-cols-2 gap-3">
                 <label className="block">
-                  <span className="block text-sm font-bold text-harbor mb-1.5">المدينة</span>
+                  <span className="block text-sm font-bold text-harbor mb-1.5">{t("checkout.city")}</span>
                   <select
                     required
                     value={vanexCityId}
@@ -404,7 +408,7 @@ export default function CheckoutPage() {
                     }}
                     className="input"
                   >
-                    <option value="">اختر المدينة</option>
+                    <option value="">{t("checkout.selectCity")}</option>
                     {vanexCities.map((c) => (
                       <option key={c.id} value={c.id}>
                         {c.name}
@@ -413,7 +417,7 @@ export default function CheckoutPage() {
                   </select>
                 </label>
                 <label className="block">
-                  <span className="block text-sm font-bold text-harbor mb-1.5">المنطقة</span>
+                  <span className="block text-sm font-bold text-harbor mb-1.5">{t("checkout.area")}</span>
                   <select
                     required
                     disabled={!selectedCity}
@@ -421,10 +425,10 @@ export default function CheckoutPage() {
                     onChange={(e) => setVanexAreaId(e.target.value)}
                     className="input disabled:opacity-50"
                   >
-                    <option value="">اختر المنطقة</option>
+                    <option value="">{t("checkout.selectArea")}</option>
                     {selectedCity?.areas.map((a) => (
                       <option key={a.id} value={a.id}>
-                        {a.name} — {formatLYD(a.priceCents)}
+                        {a.name} — {formatLYD(a.priceCents, language)}
                       </option>
                     ))}
                   </select>
@@ -432,12 +436,12 @@ export default function CheckoutPage() {
               </div>
             ) : (
               <label className="block">
-                <span className="block text-sm font-bold text-harbor mb-1.5">المدينة</span>
-                <input required value={city} onChange={(e) => setCity(e.target.value)} className="input" placeholder="طرابلس" />
+                <span className="block text-sm font-bold text-harbor mb-1.5">{t("checkout.city")}</span>
+                <input required value={city} onChange={(e) => setCity(e.target.value)} className="input" placeholder={t("checkout.cityPlaceholder")} />
               </label>
             )}
             <label className="block">
-              <span className="block text-sm font-bold text-harbor mb-1.5">العنوان بالتفصيل</span>
+              <span className="block text-sm font-bold text-harbor mb-1.5">{t("checkout.address")}</span>
               <textarea
                 required
                 value={address}
@@ -446,10 +450,10 @@ export default function CheckoutPage() {
                 rows={3}
               />
             </label>
-  
+
             {store.type === "physical" && (
               <div>
-                <span className="block text-sm font-bold text-harbor mb-1.5">شركة الشحن</span>
+                <span className="block text-sm font-bold text-harbor mb-1.5">{t("checkout.courier")}</span>
                 <p className="rounded-xl border border-harbor/15 bg-canvas px-4 py-3 text-sm text-rope">
                   {courierLabels[store.courier] ?? store.courier}
                 </p>
@@ -457,7 +461,7 @@ export default function CheckoutPage() {
             )}
 
             <div>
-              <span className="block text-sm font-bold text-harbor mb-2">طريقة الدفع</span>
+              <span className="block text-sm font-bold text-harbor mb-2">{t("checkout.paymentMethod")}</span>
               <div className="space-y-2">
                 {store.codEnabled && (
                   <label
@@ -472,7 +476,7 @@ export default function CheckoutPage() {
                       onChange={() => setPaymentMethod("cod")}
                       className="accent-signal"
                     />
-                    <span className="font-bold text-harbor text-sm">الدفع عند الاستلام</span>
+                    <span className="font-bold text-harbor text-sm">{t("checkout.cod")}</span>
                   </label>
                 )}
                 {walletAvailable && (
@@ -489,7 +493,7 @@ export default function CheckoutPage() {
                         onChange={() => setPaymentMethod("wallet")}
                         className="accent-signal"
                       />
-                      <span className="font-bold text-harbor text-sm">الدفع الإلكتروني</span>
+                      <span className="font-bold text-harbor text-sm">{t("checkout.wallet")}</span>
                     </span>
                     {/* width/height must match the real file's aspect ratio
                         (2077x1126, ~1.84:1) — the old 90x30 (3:1) guess gave
@@ -515,25 +519,25 @@ export default function CheckoutPage() {
               }
               className="w-full rounded-full bg-signal py-3.5 font-bold text-canvas shadow-lg shadow-signal/20 hover:bg-signal-dark hover:-translate-y-0.5 transition-all disabled:opacity-60 disabled:translate-y-0"
             >
-              {loading || walletPending ? "جارٍ التأكيد..." : `تأكيد الطلب — ${formatLYD(grandTotalCents)}`}
+              {loading || walletPending ? t("checkout.confirming") : t("checkout.confirmOrder", { total: formatLYD(grandTotalCents, language) })}
             </button>
           </form>
         </div>
-  
+
         <aside className="rounded-2xl bg-white shadow-xl p-6 h-fit">
-          <h2 className="font-display font-bold text-harbor mb-4">ملخص الطلب</h2>
+          <h2 className="font-display font-bold text-harbor mb-4">{t("checkout.orderSummary")}</h2>
           <ul className="space-y-3 text-sm">
             {cart.lines.map((line) => (
               <li key={line.productId ?? line.bundleId} className="flex justify-between text-harbor/90">
                 <span>
                   {line.name} × {line.quantity}
-                  {isRental && rentalDays > 1 ? ` × ${rentalDays} يوم` : ""}
+                  {isRental && rentalDays > 1 ? t("checkout.rentalDaySuffix", { days: rentalDays }) : ""}
                 </span>
-                <span>{formatLYD(line.priceCents * line.quantity * (isRental ? rentalDays : 1))}</span>
+                <span>{formatLYD(line.priceCents * line.quantity * (isRental ? rentalDays : 1), language)}</span>
               </li>
             ))}
           </ul>
-  
+
           <div className="mt-4 pt-4 border-t border-harbor/10">
             <div className="flex gap-2">
               <input
@@ -541,7 +545,7 @@ export default function CheckoutPage() {
                 onChange={(e) => setCouponInput(e.target.value)}
                 className="input flex-1"
                 dir="ltr"
-                placeholder="رمز الكوبون"
+                placeholder={t("checkout.couponPlaceholder")}
               />
               <button
                 type="button"
@@ -549,29 +553,29 @@ export default function CheckoutPage() {
                 disabled={couponChecking || !couponInput.trim()}
                 className="rounded-full border border-harbor/20 px-4 py-2 text-sm font-bold text-harbor hover:bg-harbor/5 disabled:opacity-50"
               >
-                {couponChecking ? "..." : "تطبيق"}
+                {couponChecking ? "..." : t("checkout.apply")}
               </button>
             </div>
             {couponMessage && (
               <p className={`mt-2 text-xs ${appliedCoupon ? "text-green-700" : "text-signal"}`}>{couponMessage}</p>
             )}
           </div>
-  
+
           {usesVanexPricing && (
             <div className="flex justify-between text-sm mt-3 pt-3 border-t border-harbor/10 text-harbor/90">
-              <span>الشحن</span>
-              <span>{selectedArea ? formatLYD(shippingCents) : "—"}</span>
+              <span>{t("checkout.shipping")}</span>
+              <span>{selectedArea ? formatLYD(shippingCents, language) : t("common.dash")}</span>
             </div>
           )}
           {discountCents > 0 && (
             <div className="flex justify-between text-sm mt-3 text-green-700">
-              <span>الخصم</span>
-              <span>-{formatLYD(discountCents)}</span>
+              <span>{t("checkout.discount")}</span>
+              <span>-{formatLYD(discountCents, language)}</span>
             </div>
           )}
           <div className="border-t border-harbor/10 mt-4 pt-4 flex justify-between font-bold text-harbor text-lg">
-            <span>الإجمالي</span>
-            <span>{formatLYD(grandTotalCents)}</span>
+            <span>{t("common.total")}</span>
+            <span>{formatLYD(grandTotalCents, language)}</span>
           </div>
         </aside>
       </main>

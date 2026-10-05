@@ -97,6 +97,8 @@ export type Store = {
   returnPolicy: string | null;
   shippingPolicy: string | null;
   businessHours: string | null;
+  language: string;
+  supportedLanguages: string[];
 };
 export type ProductVariantOption = { name: string; values: string[] };
 export type ProductVariant = {
@@ -171,6 +173,7 @@ export type Product = {
   metaTitle: string | null;
   metaDescription: string | null;
   costPriceCents: number | null;
+  translations?: Record<string, { name?: string; description?: string; metaTitle?: string; metaDescription?: string }> | null;
 };
 export type OrderItem = {
   id: string;
@@ -354,6 +357,7 @@ export const api = {
       metaTitle?: string | null;
       metaDescription?: string | null;
       costPriceCents?: number | null;
+      translations?: Record<string, { name?: string; description?: string; metaTitle?: string; metaDescription?: string }> | null;
     }
   ) =>
     request<Product>("/api/products", {
@@ -420,6 +424,7 @@ export const api = {
       metaTitle: string | null;
       metaDescription: string | null;
       costPriceCents: number | null;
+      translations: Record<string, { name?: string; description?: string; metaTitle?: string; metaDescription?: string }> | null;
     }>
   ) =>
     request<Product>(`/api/products/${id}`, {
@@ -439,6 +444,8 @@ export const api = {
       type: StoreType;
       bookingSlotMinutes: number | null;
       bookingWorkingHours: Record<string, { open: string; close: string } | null> | null;
+      language: string;
+      supportedLanguages: string[];
     }>
   ) =>
     request<Store>(`/api/stores/${id}`, {
@@ -744,6 +751,9 @@ export const api = {
     }),
 };
 
-export function formatLYD(cents: number): string {
+export function formatLYD(cents: number, language: "ar" | "en" = "ar"): string {
+  if (language === "en") {
+    return `LYD ${(cents / 100).toLocaleString("en-US", { minimumFractionDigits: 2 })}`;
+  }
   return `${(cents / 100).toLocaleString("ar-LY", { minimumFractionDigits: 2 })} د.ل`;
 }

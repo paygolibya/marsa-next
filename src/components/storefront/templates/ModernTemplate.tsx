@@ -1,5 +1,6 @@
 import { StatsSection, ProductsSection, CategoriesSection, BundlesSection, TestimonialsSection, NewsletterSection } from "@/components/storefront/sections";
 import type { SectionRenderProps, SectionType } from "@/components/storefront/sections/types";
+import { translate, isSupportedLanguage } from "@/lib/i18n";
 import { StorefrontHeaderRow } from "./StorefrontHeaderRow";
 import { StorefrontNavRow } from "./StorefrontNavRow";
 import { resolveCoverImageHeightClass, resolveLogoSizePx, resolveTextSizeClass, type StorefrontTemplateProps } from "./types";
@@ -53,6 +54,8 @@ export default function ModernTemplate({
   const textColor = store.customization?.textColor || undefined;
   const textSize = resolveTextSizeClass(store.customization?.textSize);
   const colors = { primary, secondary, accent, text: textColor };
+  const language = isSupportedLanguage(store.language) ? store.language : "ar";
+  const t = (key: string) => translate(language, key);
 
   const sectionProps: Omit<SectionRenderProps, "settings"> = {
     variant: "modern",
@@ -119,7 +122,7 @@ export default function ModernTemplate({
                 onClick={onOpenCart}
                 className="rounded-full bg-white/15 px-5 py-2 text-white font-bold text-sm hover:bg-white/25 transition-colors relative"
               >
-                سلة التسوق
+                {t("cart.title")}
                 {cartTotalItems > 0 && (
                   <span className="absolute -top-2 -left-2 h-5 w-5 rounded-full bg-signal text-[11px] flex items-center justify-center text-white">
                     {cartTotalItems}

@@ -1,5 +1,6 @@
 import { StatsSection, ProductsSection, CategoriesSection, BundlesSection, TestimonialsSection, NewsletterSection } from "@/components/storefront/sections";
 import type { SectionRenderProps, SectionType } from "@/components/storefront/sections/types";
+import { translate, isSupportedLanguage } from "@/lib/i18n";
 import { StorefrontHeaderRow } from "./StorefrontHeaderRow";
 import { StorefrontNavRow } from "./StorefrontNavRow";
 import {
@@ -59,6 +60,8 @@ export default function BoldTemplate({
   const heroEnabled = store.customization?.heroEnabled !== false;
   const cartOnRight = store.customization?.cartPosition === "right";
   const colors = { primary, secondary, accent, text: textColor };
+  const language = isSupportedLanguage(store.language) ? store.language : "ar";
+  const t = (key: string) => translate(language, key);
 
   const sectionProps: Omit<SectionRenderProps, "settings"> = {
     variant: "bold",
@@ -122,7 +125,7 @@ export default function BoldTemplate({
                 style={{ backgroundColor: primary }}
                 className="relative rounded-xl px-5 py-2 text-white font-extrabold text-sm shadow-lg hover:opacity-90 transition-opacity"
               >
-                🛒 السلة
+                🛒 {t("cart.titleShort")}
                 {cartTotalItems > 0 && (
                   <span className="absolute -top-2 -left-2 h-5 w-5 rounded-full bg-harbor text-[11px] font-bold flex items-center justify-center text-white">
                     {cartTotalItems}

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
+import { isSupportedLanguage, resolveProductTranslation } from "@/lib/i18n";
 
 // The product detail page itself (./page.tsx) is a Client Component (it
 // fetches via useEffect + api.publicStore) — Client Components can't export
@@ -8,7 +9,7 @@ import { prisma } from "@/lib/prisma";
 async function getProductMeta(productId: string) {
   return prisma.product.findUnique({
     where: { id: productId },
-    select: { name: true, description: true, metaTitle: true, metaDescription: true },
+    select: { name: true, description: true, metaTitle: true, metaDescription: true, translations: true, store: { select: { language: true } } },
   });
 }
 
@@ -17,9 +18,15 @@ export async function generateMetadata({ params }: { params: Promise<{ productId
   const product = await getProductMeta(productId);
   if (!product) return {};
 
+  const language = isSupportedLanguage(product.store.language) ? product.store.language : "ar";
+  const resolved = resolveProductTranslation(
+    { ...product, translations: product.translations as Record<string, { name?: string; description?: string; metaTitle?: string; metaDescription?: string }> | null },
+    language,
+  );
+
   return {
-    title: product.metaTitle || product.name,
-    description: product.metaDescription || product.description?.slice(0, 160) || undefined,
+    title: resolved.metaTitle || resolved.name,
+    description: resolved.metaDescription || resolved.description?.slice(0, 160) || undefined,
   };
 }
 

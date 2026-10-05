@@ -5,6 +5,8 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { api, type Store } from "@/lib/api";
 import { SiteFooter } from "@/components/site-footer";
+import { isSupportedLanguage } from "@/lib/i18n";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 
 export default function StorePageDetail() {
   const params = useParams<{ slug: string; pageSlug: string }>();
@@ -14,6 +16,8 @@ export default function StorePageDetail() {
   const [store, setStore] = useState<Store | null>(null);
   const [page, setPage] = useState<{ title: string; content: string } | null>(null);
   const [notFound, setNotFound] = useState(false);
+  const language = store && isSupportedLanguage(store.language) ? store.language : "ar";
+  const { t } = useTranslation(language);
 
   useEffect(() => {
     Promise.all([api.publicStore(slug), api.publicPage(slug, pageSlug)])
@@ -27,9 +31,9 @@ export default function StorePageDetail() {
   if (notFound) {
     return (
       <main className="mx-auto max-w-md px-6 py-24 text-center">
-        <h1 className="font-display text-2xl font-bold text-harbor">هذه الصفحة غير موجودة</h1>
+        <h1 className="font-display text-2xl font-bold text-harbor">{t("page.notFoundHeading")}</h1>
         <Link href={`/store/${slug}`} className="text-brass font-bold mt-4 inline-block">
-          العودة إلى المتجر
+          {t("common.backToStore")}
         </Link>
       </main>
     );
@@ -44,7 +48,7 @@ export default function StorePageDetail() {
     <div className="min-h-screen" style={{ backgroundColor: secondary }}>
       <main className="mx-auto max-w-2xl px-6 py-12">
         <Link href={`/store/${slug}`} className="text-sm text-rope hover:text-harbor">
-          ← العودة إلى المتجر
+          {t("common.backToStoreLink")}
         </Link>
         <h1 className="font-display text-2xl font-extrabold text-harbor mt-6" style={{ color: primary }}>
           {page.title}
@@ -60,6 +64,7 @@ export default function StorePageDetail() {
             ? { name: store.name, tagline: store.customization?.tagline, logo: store.customization?.logo }
             : undefined
         }
+        language={language}
       />
     </div>
   );

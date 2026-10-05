@@ -15,6 +15,11 @@ const STORE_TYPES: { value: StoreType; label: string; description: string }[] = 
   { value: "showcase", label: "عرض فقط (استفسار)", description: "بدون شراء مباشر — العميل يرسل استفسارًا" },
 ];
 
+const LANGUAGE_OPTIONS: { value: "ar" | "en"; label: string }[] = [
+  { value: "ar", label: "العربية" },
+  { value: "en", label: "English" },
+];
+
 const DAY_LABELS: { key: string; label: string }[] = [
   { key: "0", label: "الأحد" },
   { key: "1", label: "الإثنين" },
@@ -37,6 +42,8 @@ export default function DashboardSettingsPage() {
   const [storeType, setStoreType] = useState<StoreType>("physical");
   const [slotMinutes, setSlotMinutes] = useState(60);
   const [workingHours, setWorkingHours] = useState<Record<string, DayHours>>({});
+  const [language, setLanguage] = useState<"ar" | "en">("ar");
+  const [supportedLanguages, setSupportedLanguages] = useState<("ar" | "en")[]>(["ar"]);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -50,7 +57,16 @@ export default function DashboardSettingsPage() {
     setStoreType(store.type);
     setSlotMinutes(store.bookingSlotMinutes ?? 60);
     setWorkingHours(store.bookingWorkingHours ?? {});
+    setLanguage(store.language === "en" ? "en" : "ar");
+    setSupportedLanguages(store.supportedLanguages?.length ? (store.supportedLanguages.filter((l): l is "ar" | "en" => l === "ar" || l === "en")) : ["ar"]);
   }, [store]);
+
+  function toggleSupportedLanguage(value: "ar" | "en", checked: boolean) {
+    setSupportedLanguages((prev) => {
+      const next = checked ? [...prev, value] : prev.filter((l) => l !== value);
+      return next.length > 0 ? next : prev;
+    });
+  }
 
   function toggleDayClosed(day: string, closed: boolean) {
     setWorkingHours((prev) => ({ ...prev, [day]: closed ? null : { open: "09:00", close: "17:00" } }));
@@ -76,6 +92,8 @@ export default function DashboardSettingsPage() {
         type: storeType,
         bookingSlotMinutes: storeType === "booking" ? slotMinutes : null,
         bookingWorkingHours: storeType === "booking" ? workingHours : null,
+        language,
+        supportedLanguages: supportedLanguages.includes(language) ? supportedLanguages : [...supportedLanguages, language],
       });
       setSaved(true);
       // The dashboard sidebar/nav depends on store.type (e.g. "الاستفسارات"
@@ -166,6 +184,34 @@ export default function DashboardSettingsPage() {
             </div>
           </div>
         )}
+
+        <div className="rounded-xl border border-harbor/15 p-4 space-y-3">
+          <label className="block">
+            <span className="block text-sm font-bold text-harbor mb-1.5">لغة المتجر الافتراضية</span>
+            <select value={language} onChange={(e) => setLanguage(e.target.value as "ar" | "en")} className="input">
+              {LANGUAGE_OPTIONS.map((l) => (
+                <option key={l.value} value={l.value}>
+                  {l.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <div>
+            <span className="block text-sm font-bold text-harbor mb-1.5">اللغات المتاحة للعميل</span>
+            <div className="flex gap-4">
+              {LANGUAGE_OPTIONS.map((l) => (
+                <label key={l.value} className="flex items-center gap-1.5">
+                  <input
+                    type="checkbox"
+                    checked={supportedLanguages.includes(l.value)}
+                    onChange={(e) => toggleSupportedLanguage(l.value, e.target.checked)}
+                  />
+                  <span className="text-sm text-harbor">{l.label}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        </div>
 
         <label className="block">
           <span className="block text-sm font-bold text-harbor mb-1.5">عن المتجر</span>

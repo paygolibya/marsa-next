@@ -99,6 +99,8 @@ export default function TemplatePreviewPage() {
       returnPolicy: null,
       shippingPolicy: null,
       businessHours: null,
+      language: "ar",
+      supportedLanguages: ["ar"],
       customization: {
         primaryColor: template.defaultColors.primaryColor,
         secondaryColor: template.defaultColors.secondaryColor,

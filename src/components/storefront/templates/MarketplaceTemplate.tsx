@@ -1,5 +1,6 @@
 import { ProductsSection, CategoriesSection, BundlesSection, TestimonialsSection, NewsletterSection } from "@/components/storefront/sections";
 import type { SectionRenderProps, SectionType } from "@/components/storefront/sections/types";
+import { translate, isSupportedLanguage } from "@/lib/i18n";
 import { StorefrontLogo } from "./StorefrontLogo";
 import { StorefrontNavRow } from "./StorefrontNavRow";
 import { resolveCoverImageHeightClass, resolveLogoSizePx, resolveTextSizeClass, type StorefrontTemplateProps } from "./types";
@@ -56,6 +57,8 @@ export default function MarketplaceTemplate({
   const textColor = store.customization?.textColor || undefined;
   const textSize = resolveTextSizeClass(store.customization?.textSize);
   const colors = { primary, secondary, accent, text: textColor };
+  const language = isSupportedLanguage(store.language) ? store.language : "ar";
+  const t = (key: string, vars?: Record<string, string | number>) => translate(language, key, vars);
   // Marketplace shows this inline in the header rather than as a body
   // section (see the SECTION_COMPONENTS comment above), but should still
   // respect the "stats" section's enabled toggle from the editor.
@@ -119,7 +122,7 @@ export default function MarketplaceTemplate({
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="ابحث في المتجر..."
+            placeholder={t("products.searchStorePlaceholder")}
             className="input flex-1 min-w-0 !py-2"
           />
           {store.type !== "showcase" && (
@@ -128,7 +131,7 @@ export default function MarketplaceTemplate({
               style={{ backgroundColor: primary }}
               className="relative rounded-lg px-3 sm:px-4 py-2 text-white font-bold text-sm shrink-0 hover:opacity-90 transition-opacity"
             >
-              السلة
+              {t("cart.titleShort")}
               {cartTotalItems > 0 && (
                 <span className="absolute -top-2 -left-2 h-5 w-5 rounded-full bg-signal text-[11px] flex items-center justify-center text-white">
                   {cartTotalItems}
@@ -139,11 +142,11 @@ export default function MarketplaceTemplate({
         </div>
         <div className="mx-auto max-w-7xl px-4 pb-3 flex items-center gap-2 text-xs">
           <span className="rounded-full px-3 py-1 font-bold text-white" style={{ backgroundColor: accent }}>
-            الكل
+            {t("common.all")}
           </span>
           {statsEnabled && stats && (
             <span className="text-rope">
-              {stats.deliveredOrderCount > 0 && `+${stats.deliveredOrderCount} طلب مُسلَّم`}
+              {stats.deliveredOrderCount > 0 && t("stats.deliveredBadge", { count: stats.deliveredOrderCount })}
               {stats.averageRating != null && stats.reviewCount > 0 && ` · ★ ${stats.averageRating.toFixed(1)} (${stats.reviewCount})`}
             </span>
           )}

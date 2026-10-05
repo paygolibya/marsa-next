@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
+import { Prisma } from "@prisma/client";
 import { getAuthMerchantId } from "@/lib/auth";
 import { updateProductSchema } from "@/lib/validation";
 
@@ -43,13 +44,17 @@ export async function handleUpdateProduct(db: ProductByIdDb, req: Request, id: s
       if (!category) return NextResponse.json({ error: "التصنيف غير موجود" }, { status: 400 });
     }
 
-    const { images, ...rest } = parsed.data;
+    const { images, translations, ...rest } = parsed.data;
     // imageUrl mirrors images[0] — only touch it when images was actually
     // part of this request, same "derived, never independent" rule as
     // creating a product.
     const product = await db.product.update({
       where: { id },
-      data: { ...rest, ...(images !== undefined ? { images, imageUrl: images[0] ?? null } : {}) },
+      data: {
+        ...rest,
+        ...(images !== undefined ? { images, imageUrl: images[0] ?? null } : {}),
+        ...(translations !== undefined ? { translations: translations ?? Prisma.JsonNull } : {}),
+      },
       include: { variants: true },
     });
     return NextResponse.json(product);

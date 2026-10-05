@@ -41,6 +41,21 @@ const metaTitleSchema = z.string().max(70, "العنوان الوصفي طويل
 const metaDescriptionSchema = z.string().max(160, "الوصف التعريفي طويل جدًا").optional().nullable();
 const costPriceCentsSchema = z.number().int().min(0, "سعر التكلفة يجب أن يكون صفرًا أو أكبر").optional().nullable();
 
+// Optional per-language overrides, keyed by language code — any field left
+// out falls back to the product's own Arabic field, never to a blank string.
+const productTranslationsSchema = z
+  .record(
+    z.string(),
+    z.object({
+      name: z.string().max(200).optional(),
+      description: z.string().max(5000).optional(),
+      metaTitle: z.string().max(70).optional(),
+      metaDescription: z.string().max(160).optional(),
+    }),
+  )
+  .optional()
+  .nullable();
+
 export const createProductSchema = z.object({
   storeId: z.string().min(1),
   name: z.string().min(1, "اسم المنتج مطلوب"),
@@ -51,6 +66,7 @@ export const createProductSchema = z.object({
   metaTitle: metaTitleSchema,
   metaDescription: metaDescriptionSchema,
   costPriceCents: costPriceCentsSchema,
+  translations: productTranslationsSchema,
 });
 
 export const updateProductSchema = z.object({
@@ -66,6 +82,7 @@ export const updateProductSchema = z.object({
   metaTitle: metaTitleSchema,
   metaDescription: metaDescriptionSchema,
   costPriceCents: costPriceCentsSchema,
+  translations: productTranslationsSchema,
 });
 
 // Capped at 2 option types (e.g. "الحجم" + "اللون") — enough for the
@@ -99,6 +116,12 @@ const bookingDaySchema = z.object({
 });
 export const bookingWorkingHoursSchema = z.record(z.string(), bookingDaySchema.nullable());
 
+// "ar" is always a supported language regardless of what's in the list —
+// every string dictionary falls back to it, and the dashboard itself stays
+// Arabic-only — so there's no scenario where a store should be able to drop
+// it entirely.
+const languageSchema = z.enum(["ar", "en"]);
+
 export const updateStoreSettingsSchema = z.object({
   aboutText: z.string().optional().nullable(),
   returnPolicy: z.string().optional().nullable(),
@@ -107,6 +130,8 @@ export const updateStoreSettingsSchema = z.object({
   type: z.enum(["physical", "digital", "booking", "rental", "showcase"]).optional(),
   bookingSlotMinutes: z.number().int().positive().max(24 * 60).optional().nullable(),
   bookingWorkingHours: bookingWorkingHoursSchema.optional().nullable(),
+  language: languageSchema.optional(),
+  supportedLanguages: z.array(languageSchema).min(1).optional(),
 });
 
 export const createOrderSchema = z

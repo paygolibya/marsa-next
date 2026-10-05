@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { translate, type Language } from "@/lib/i18n";
 
 // The `store` prop is what makes footerStyle "branded" actually different
 // from "standard" — previously this component took no props at all, so a
@@ -13,10 +14,13 @@ import Image from "next/image";
 export function SiteFooter({
   store,
   transparent = false,
+  language = "ar",
 }: {
   store?: { name: string; tagline?: string | null; logo?: string | null };
   transparent?: boolean;
+  language?: Language;
 } = {}) {
+  const t = (key: string, vars?: Record<string, string | number>) => translate(language, key, vars);
   return (
     <footer className={`border-t ${transparent ? "border-white/15 text-canvas/80" : "border-harbor/10 bg-harbor text-canvas/70"}`}>
       <div className="mx-auto max-w-6xl px-6 py-10">
@@ -35,10 +39,10 @@ export function SiteFooter({
         )}
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-sm">
           <div className="flex items-center gap-2">
-            <Image src="/logo.png" alt="رفقة" width={28} height={28} className="h-7 w-7 object-contain" />
-            <span>رفقة — منتج من مرسى (Marsa)</span>
+            <Image src="/logo.png" alt={t("footer.alt")} width={28} height={28} className="h-7 w-7 object-contain" />
+            <span>{t("footer.brand")}</span>
           </div>
-          <p>صُنعت في طرابلس، لتجار ليبيا. © {new Date().getFullYear()}</p>
+          <p>{t("footer.madeIn", { year: new Date().getFullYear() })}</p>
         </div>
       </div>
     </footer>

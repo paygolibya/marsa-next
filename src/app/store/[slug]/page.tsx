@@ -10,6 +10,8 @@ import { CartDrawer } from "@/components/cart-drawer";
 import { SiteFooter } from "@/components/site-footer";
 import { STOREFRONT_TEMPLATES } from "@/components/storefront/templates/registry";
 import ModernTemplate from "@/components/storefront/templates/ModernTemplate";
+import { isSupportedLanguage } from "@/lib/i18n";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 
 export default function StorefrontPage() {
   const params = useParams<{ slug: string }>();
@@ -32,6 +34,8 @@ export default function StorefrontPage() {
   const [newsletterState, setNewsletterState] = useState<"idle" | "loading" | "done" | "error">("idle");
 
   const cart = useCart(slug);
+  const language = store && isSupportedLanguage(store.language) ? store.language : "ar";
+  const { t } = useTranslation(language);
 
   useEffect(() => captureReferralCode(slug), [slug]);
   useEffect(() => trackEvent(slug, "pageview", `/store/${slug}`), [slug]);
@@ -68,8 +72,8 @@ export default function StorefrontPage() {
   if (notFound) {
     return (
       <main className="mx-auto max-w-md px-6 py-24 text-center">
-        <h1 className="font-display text-2xl font-bold text-harbor">هذا المتجر غير موجود</h1>
-        <p className="text-rope mt-2">تأكد من الرابط وحاول مجددًا.</p>
+        <h1 className="font-display text-2xl font-bold text-harbor">{t("store.notFoundHeading")}</h1>
+        <p className="text-rope mt-2">{t("store.notFoundSubtext")}</p>
       </main>
     );
   }
@@ -113,7 +117,7 @@ export default function StorefrontPage() {
         sections={store.sections ?? []}
       />
 
-      <SiteFooter store={footerBranded ? { name: store.name, tagline: store.customization?.tagline, logo: store.customization?.logo } : undefined} />
+      <SiteFooter store={footerBranded ? { name: store.name, tagline: store.customization?.tagline, logo: store.customization?.logo } : undefined} language={language} />
 
       <CartDrawer
         open={cartOpen}
@@ -125,6 +129,7 @@ export default function StorefrontPage() {
         products={products}
         upsells={upsells}
         onAddToCart={(product) => cart.add(product)}
+        language={language}
         theme={{
           // Same fallback the Modern template itself uses when a store has
           // no customization row at all (this store's own header/buttons

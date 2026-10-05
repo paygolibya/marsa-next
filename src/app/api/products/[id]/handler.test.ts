@@ -95,6 +95,22 @@ test("PATCH passes metaTitle/metaDescription/costPriceCents straight through whe
   assert.equal(update.data.costPriceCents, 2000);
 });
 
+test("PATCH passes translations straight through when present, and omits the key entirely when absent", async () => {
+  const { db, calls } = makeFakeDb({ product: { id: "product-1", storeId: "store-1" }, ownedStoreId: "store-1" });
+  await handleUpdateProduct(
+    db,
+    authReq("http://localhost/x", { method: "PATCH", body: JSON.stringify({ translations: { en: { name: "English name" } } }) }),
+    "product-1"
+  );
+  const update = calls.update as { data: { translations?: unknown } };
+  assert.deepEqual(update.data.translations, { en: { name: "English name" } });
+
+  const { db: db2, calls: calls2 } = makeFakeDb({ product: { id: "product-1", storeId: "store-1" }, ownedStoreId: "store-1" });
+  await handleUpdateProduct(db2, authReq("http://localhost/x", { method: "PATCH", body: JSON.stringify({ name: "اسم جديد" }) }), "product-1");
+  const update2 = calls2.update as { data: { translations?: unknown } };
+  assert.equal("translations" in update2.data, false);
+});
+
 test("PATCH rejects a metaDescription over the length cap with 400", async () => {
   const { db, calls } = makeFakeDb({ product: { id: "product-1", storeId: "store-1" }, ownedStoreId: "store-1" });
   const res = await handleUpdateProduct(
