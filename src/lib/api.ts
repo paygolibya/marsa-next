@@ -258,7 +258,33 @@ export type BugReport = {
   conversation?: { messages: SupportMessage[] } | null;
 };
 
+export type Template = {
+  id: string;
+  name: string;
+  nameAr: string;
+  slug: string;
+  description: string;
+  descriptionAr: string;
+  price: number;
+  billingType: string;
+  thumbnail: string;
+  previewUrl: string | null;
+  features: unknown;
+  usageCount: number;
+  rating: number;
+  reviews: number;
+  isNew: boolean;
+  featured: boolean;
+  storeTypes: string[];
+};
+
 export const api = {
+  // Public — no auth. An omitted storeType returns every active template;
+  // a given one narrows to templates built for that store type (see
+  // Template.storeTypes).
+  listTemplates: (storeType?: StoreType | null) =>
+    request<{ templates: Template[] }>(`/api/templates${storeType ? `?storeType=${storeType}` : ""}`),
+
   register: (body: { name: string; phone: string; password: string }) =>
     request<{ token: string; merchant: Merchant; otpSendFailed: boolean }>("/api/auth/register", {
       method: "POST",

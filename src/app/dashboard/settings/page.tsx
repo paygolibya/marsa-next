@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useCurrentStore } from "@/lib/use-current-store";
-import { api, ApiError, type StoreType } from "@/lib/api";
+import { api, ApiError, type StoreType, type Template } from "@/lib/api";
 import DomainSettings from "@/components/store/DomainSettings";
+import TemplateSwitcher from "@/components/store/TemplateSwitcher";
 import { Button } from "@/components/ui";
 
 const STORE_TYPES: { value: StoreType; label: string; description: string }[] = [
@@ -47,6 +48,15 @@ export default function DashboardSettingsPage() {
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [availableTemplates, setAvailableTemplates] = useState<Template[]>([]);
+
+  // Scoped to the store's actual saved type (not the pending `storeType`
+  // form state above) — switching templates acts on the store as it
+  // exists today, not an unsaved in-progress type change.
+  useEffect(() => {
+    if (!store) return;
+    api.listTemplates(store.type).then(({ templates }) => setAvailableTemplates(templates));
+  }, [store]);
 
   useEffect(() => {
     if (!store) return;
@@ -133,6 +143,23 @@ export default function DashboardSettingsPage() {
             ))}
           </div>
         </div>
+
+        {availableTemplates.length > 0 && (
+          <div className="flex items-center justify-between rounded-xl border border-harbor/15 p-4">
+            <div>
+              <span className="block text-sm font-bold text-harbor">تصميم المتجر</span>
+              <span className="block text-xs text-rope mt-0.5">
+                {store.customization?.template?.nameAr ? `الحالي: ${store.customization.template.nameAr}` : "لم يُحدَّد تصميم بعد"}
+              </span>
+            </div>
+            <TemplateSwitcher
+              currentTemplateSlug={store.customization?.template?.slug ?? null}
+              storeId={store.id}
+              availableTemplates={availableTemplates}
+              onSwitched={() => window.location.reload()}
+            />
+          </div>
+        )}
 
         {storeType === "booking" && (
           <div className="rounded-xl border border-harbor/15 p-4 space-y-4">

@@ -6,8 +6,7 @@ import { SiteNav } from "@/components/site-nav";
 import TemplateSelector from "@/components/onboarding/TemplateSelector";
 import { useAuth } from "@/lib/auth-context";
 import { isAdminMerchant } from "@/lib/is-admin";
-import { api, ApiError, type StoreType } from "@/lib/api";
-import { templatesData } from "@/lib/templates-data";
+import { api, ApiError, type StoreType, type Template } from "@/lib/api";
 
 const STORE_TYPES: { value: StoreType; label: string; description: string }[] = [
   { value: "physical", label: "منتجات فعلية", description: "شحن عبر Vanex، دفع عند الاستلام أو إلكتروني" },
@@ -37,9 +36,22 @@ export default function OnboardingPage() {
   const courier = "vanex";
   const [codEnabled, setCodEnabled] = useState(true);
   const [walletEnabled, setWalletEnabled] = useState(true);
-  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(templatesData[0]?.id ?? null);
+  const [templates, setTemplates] = useState<Template[]>([]);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // Re-fetched whenever the chosen store type changes — a rental/booking/
+  // showcase merchant should only ever see templates built for that type
+  // (see Template.storeTypes), not the generic shop ones. The previously
+  // selected template may not exist in the new list, so default back to
+  // the first option every time the type changes.
+  useEffect(() => {
+    api.listTemplates(storeType).then(({ templates }) => {
+      setTemplates(templates);
+      setSelectedTemplateId(templates[0]?.id ?? null);
+    });
+  }, [storeType]);
 
   useEffect(() => {
     if (ready && !token) router.replace("/login");
@@ -149,7 +161,7 @@ export default function OnboardingPage() {
             <div className="rounded-2xl border border-harbor/10 bg-white p-4">
               <h2 className="mb-4 text-lg font-bold text-harbor">اختر قالب المتجر</h2>
               <TemplateSelector
-                templates={templatesData}
+                templates={templates.map((t) => ({ ...t, previewUrl: t.previewUrl ?? "", features: (t.features as string[]) ?? [] }))}
                 selectedId={selectedTemplateId}
                 onSelect={(template) => setSelectedTemplateId(template.id)}
               />
