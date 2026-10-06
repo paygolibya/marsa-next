@@ -119,28 +119,35 @@ export default function StorefrontPage() {
 
       <SiteFooter store={footerBranded ? { name: store.name, tagline: store.customization?.tagline, logo: store.customization?.logo } : undefined} language={language} />
 
-      <CartDrawer
-        open={cartOpen}
-        onClose={() => setCartOpen(false)}
-        storeSlug={slug}
-        lines={cart.lines}
-        subtotalCents={cart.subtotalCents}
-        setQuantity={cart.setQuantity}
-        products={products}
-        upsells={upsells}
-        onAddToCart={(product) => cart.add(product)}
-        language={language}
-        theme={{
-          // Same fallback the Modern template itself uses when a store has
-          // no customization row at all (this store's own header/buttons
-          // are already that blue) — matching it here, not the platform's
-          // own harbor/signal colors, so the drawer always echoes whatever
-          // the storefront around it is actually showing.
-          primaryColor: store.customization?.primaryColor || "#0066cc",
-          secondaryColor: store.customization?.secondaryColor || "#f0f0f0",
-          accentColor: store.customization?.accentColor,
-        }}
-      />
+      {/* Showcase stores have no checkout at all — every template already
+          hides the cart BUTTON for them, but the drawer itself was still
+          being rendered (hidden, unreachable) underneath. Skipping it
+          entirely here matches ShowcaseTemplate's own "no cart UI
+          anywhere" design instead of leaving dead markup in the DOM. */}
+      {store.type !== "showcase" && (
+        <CartDrawer
+          open={cartOpen}
+          onClose={() => setCartOpen(false)}
+          storeSlug={slug}
+          lines={cart.lines}
+          subtotalCents={cart.subtotalCents}
+          setQuantity={cart.setQuantity}
+          products={products}
+          upsells={upsells}
+          onAddToCart={(product) => cart.add(product)}
+          language={language}
+          theme={{
+            // Same fallback the Modern template itself uses when a store has
+            // no customization row at all (this store's own header/buttons
+            // are already that blue) — matching it here, not the platform's
+            // own harbor/signal colors, so the drawer always echoes whatever
+            // the storefront around it is actually showing.
+            primaryColor: store.customization?.primaryColor || "#0066cc",
+            secondaryColor: store.customization?.secondaryColor || "#f0f0f0",
+            accentColor: store.customization?.accentColor,
+          }}
+        />
+      )}
     </>
   );
 }

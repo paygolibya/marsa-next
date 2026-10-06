@@ -236,23 +236,25 @@ export default function ProductDetailPage() {
 
       <InquiryModal open={inquiryOpen} onClose={() => setInquiryOpen(false)} storeSlug={slug} productId={product.id} productName={resolved.name} language={language} />
 
-      <CartDrawer
-        open={cartOpen}
-        onClose={() => setCartOpen(false)}
-        storeSlug={slug}
-        lines={cart.lines}
-        subtotalCents={cart.subtotalCents}
-        setQuantity={cart.setQuantity}
-        products={products}
-        upsells={upsells}
-        onAddToCart={(p) => cart.add(p)}
-        language={language}
-        theme={{
-          primaryColor: store?.customization?.primaryColor || "#0066cc",
-          secondaryColor: store?.customization?.secondaryColor || "#f0f0f0",
-          accentColor: store?.customization?.accentColor,
-        }}
-      />
+      {store.type !== "showcase" && (
+        <CartDrawer
+          open={cartOpen}
+          onClose={() => setCartOpen(false)}
+          storeSlug={slug}
+          lines={cart.lines}
+          subtotalCents={cart.subtotalCents}
+          setQuantity={cart.setQuantity}
+          products={products}
+          upsells={upsells}
+          onAddToCart={(p) => cart.add(p)}
+          language={language}
+          theme={{
+            primaryColor: store?.customization?.primaryColor || "#0066cc",
+            secondaryColor: store?.customization?.secondaryColor || "#f0f0f0",
+            accentColor: store?.customization?.accentColor,
+          }}
+        />
+      )}
     </div>
   );
 }
