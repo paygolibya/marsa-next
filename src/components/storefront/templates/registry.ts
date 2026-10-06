@@ -2,6 +2,7 @@ import ModernTemplate from "./ModernTemplate";
 import BoldTemplate from "./BoldTemplate";
 import LuxuryTemplate from "./LuxuryTemplate";
 import MarketplaceTemplate from "./MarketplaceTemplate";
+import BookingTemplate from "./BookingTemplate";
 import type { StorefrontTemplateProps } from "./types";
 
 // The one place a template slug maps to its real component — shared by
@@ -21,4 +22,5 @@ export const STOREFRONT_TEMPLATES: Record<string, (props: StorefrontTemplateProp
   bold: BoldTemplate,
   luxury: LuxuryTemplate,
   marketplace: MarketplaceTemplate,
+  booking: BookingTemplate,
 };

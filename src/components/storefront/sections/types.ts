@@ -25,7 +25,7 @@ export type SectionData = {
   settings: unknown;
 };
 
-export type TemplateVariant = "modern" | "bold" | "luxury" | "marketplace";
+export type TemplateVariant = "modern" | "bold" | "luxury" | "marketplace" | "booking" | "rental" | "showcase";
 
 // Colors every section needs, resolved once by the calling template from
 // store.customization (with the same fallbacks used everywhere else, e.g.

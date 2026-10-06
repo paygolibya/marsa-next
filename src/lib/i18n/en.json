@@ -33,6 +33,21 @@
   "products.ratingBadge": "★ {rating}",
   "products.reviewsCount": "({count} reviews)",
 
+  "booking.heroHeading": "Book your appointment now",
+  "booking.heroSubtext": "Choose the service that suits you and book a time that works",
+  "booking.bookNow": "Book Now",
+  "booking.duration": "{minutes} min",
+  "booking.cartLabel": "My Bookings",
+
+  "rental.heroHeading": "Rent instead of buying",
+  "rental.heroSubtext": "Browse available items and pick the rental period that works for you",
+  "rental.rentNow": "Rent Now",
+  "rental.cartLabel": "My Items",
+
+  "showcase.heroHeading": "Browse our collection",
+  "showcase.heroSubtext": "Browse the work and send your inquiry directly",
+  "showcase.inquireAboutThis": "Inquire about this",
+
   "bundles.heading": "Bundles",
   "bundles.itemsCount": "{count} products in one bundle",
   "bundles.addToCart": "Add bundle to cart",

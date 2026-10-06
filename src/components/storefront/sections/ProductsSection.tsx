@@ -244,6 +244,129 @@ export function ProductsSection({
     );
   }
 
+  if (variant === "booking") {
+    return (
+      <div>
+        {settings.title && <h2 className="font-display text-xl font-extrabold text-harbor mb-6" style={{ color: colors.text }}>{settings.title}</h2>}
+        {filtered.length === 0 ? (
+          empty
+        ) : (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filtered.map((product) => (
+              <div key={product.id} className="rounded-2xl border border-harbor/10 bg-white overflow-hidden flex flex-col">
+                <Link href={`/store/${slug}/product/${product.id}`} className="aspect-[4/3] bg-harbor/5 flex items-center justify-center text-rope text-sm relative">
+                  {product.imageUrl ? (
+                    <Image src={product.imageUrl} alt={productName(product)} width={800} height={600} unoptimized className="h-full w-full object-cover" />
+                  ) : (
+                    t("common.noImage")
+                  )}
+                  {store.bookingSlotMinutes && (
+                    <span className="absolute top-2 right-2 rounded-full px-3 py-1 text-xs font-bold text-white" style={{ backgroundColor: colors.accent }}>
+                      {t("booking.duration", { minutes: store.bookingSlotMinutes })}
+                    </span>
+                  )}
+                </Link>
+                <div className="p-4 flex flex-col flex-1">
+                  <Link href={`/store/${slug}/product/${product.id}`} className="font-bold text-harbor hover:underline" style={{ color: colors.text }}>
+                    {productName(product)}
+                  </Link>
+                  <p className="font-bold text-sm mt-1" style={{ color: colors.primary }}>
+                    {formatLYD(product.priceCents, language)}
+                  </p>
+                  <button
+                    onClick={() => onAddToCart(product)}
+                    style={{ backgroundColor: colors.primary }}
+                    className="mt-4 rounded-full text-white py-2 font-bold text-sm hover:opacity-90 transition-opacity"
+                  >
+                    {t("booking.bookNow")}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (variant === "rental") {
+    return (
+      <div>
+        {settings.title && <h2 className="font-display text-xl font-extrabold text-harbor mb-6" style={{ color: colors.text }}>{settings.title}</h2>}
+        {filtered.length === 0 ? (
+          empty
+        ) : (
+          <div className="grid sm:grid-cols-2 gap-8">
+            {filtered.map((product) => (
+              <div key={product.id} className="rounded-2xl border border-harbor/10 bg-white overflow-hidden flex flex-col">
+                <Link href={`/store/${slug}/product/${product.id}`} className="aspect-[4/3] bg-harbor/5 flex items-center justify-center text-rope text-sm">
+                  {product.imageUrl ? (
+                    <Image src={product.imageUrl} alt={productName(product)} width={900} height={675} unoptimized className="h-full w-full object-cover" />
+                  ) : (
+                    t("common.noImage")
+                  )}
+                </Link>
+                <div className="p-5 flex flex-col flex-1">
+                  <Link href={`/store/${slug}/product/${product.id}`} className="font-extrabold text-harbor text-lg hover:underline" style={{ color: colors.text }}>
+                    {productName(product)}
+                  </Link>
+                  <p className="font-extrabold text-lg mt-2" style={{ color: colors.accent }}>
+                    {formatLYD(product.priceCents, language)}{t("common.perDay")}
+                  </p>
+                  <button
+                    onClick={() => onAddToCart(product)}
+                    style={{ backgroundColor: colors.primary }}
+                    className="mt-4 rounded-xl text-white py-3 font-extrabold hover:opacity-90 transition-opacity"
+                  >
+                    {t("rental.rentNow")}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (variant === "showcase") {
+    return (
+      <div>
+        {settings.title && <h2 className="font-display text-xl font-extrabold text-harbor mb-6" style={{ color: colors.text }}>{settings.title}</h2>}
+        {filtered.length === 0 ? (
+          empty
+        ) : (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filtered.map((product) => (
+              <div key={product.id} className="rounded-2xl border border-harbor/10 bg-white overflow-hidden flex flex-col">
+                <Link href={`/store/${slug}/product/${product.id}`} className="aspect-square bg-harbor/5 flex items-center justify-center text-rope text-sm">
+                  {product.imageUrl ? (
+                    <Image src={product.imageUrl} alt={productName(product)} width={800} height={800} unoptimized className="h-full w-full object-cover" />
+                  ) : (
+                    t("common.noImage")
+                  )}
+                </Link>
+                <div className="p-4 flex flex-col flex-1">
+                  <Link href={`/store/${slug}/product/${product.id}`} className="font-bold text-harbor hover:underline" style={{ color: colors.text }}>
+                    {productName(product)}
+                  </Link>
+                  <button
+                    onClick={() => setInquiryProduct(product)}
+                    style={{ backgroundColor: colors.primary }}
+                    className="mt-4 rounded-full text-white py-2 font-bold text-sm hover:opacity-90 transition-opacity"
+                  >
+                    {t("common.inquire")}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        {inquiryModal}
+      </div>
+    );
+  }
+
   // modern
   return (
     <div>

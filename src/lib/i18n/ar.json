@@ -33,6 +33,21 @@
   "products.ratingBadge": "★ {rating}",
   "products.reviewsCount": "({count} تقييم)",
 
+  "booking.heroHeading": "احجز موعدك الآن",
+  "booking.heroSubtext": "اختر الخدمة التي تناسبك واحجز في الوقت المناسب لك",
+  "booking.bookNow": "احجز الآن",
+  "booking.duration": "{minutes} دقيقة",
+  "booking.cartLabel": "حجوزاتي",
+
+  "rental.heroHeading": "استأجر بدلاً من الشراء",
+  "rental.heroSubtext": "تصفح القطع المتاحة للإيجار واختر المدة التي تناسبك",
+  "rental.rentNow": "استأجر الآن",
+  "rental.cartLabel": "عناصري",
+
+  "showcase.heroHeading": "استعرض مجموعتنا",
+  "showcase.heroSubtext": "تصفح الأعمال وأرسل استفسارك مباشرة",
+  "showcase.inquireAboutThis": "استفسر عن هذا",
+
   "bundles.heading": "الباقات",
   "bundles.itemsCount": "{count} منتجات في باقة واحدة",
   "bundles.addToCart": "أضف الباقة للسلة",
