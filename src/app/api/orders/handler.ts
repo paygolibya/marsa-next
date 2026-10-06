@@ -158,7 +158,15 @@ export async function handleCreateOrder(deps: OrdersDeps, req: Request): Promise
     const { storeSlug, items, buyer, paymentMethod, couponCode, referralCode } = parsed.data;
 
     const store = await db.store.findUnique({ where: { slug: storeSlug }, include: { merchant: true } });
-    if (!store) return NextResponse.json({ error: "Store not found" }, { status: 404 });
+    if (!store) {
+      // A buyer hitting this from a checkout page that just loaded fine
+      // (same slug, same request) would mean the store was deleted/renamed
+      // mid-session, or the buyer's page/bundle was stale — capture the
+      // exact slug sent so a real recurrence is actually diagnosable,
+      // instead of only a generic 404 in access logs.
+      Sentry.captureMessage("Order creation: store not found for slug", { level: "warning", extra: { storeSlug } });
+      return NextResponse.json({ error: "Store not found" }, { status: 404 });
+    }
 
     // Showcase stores have no checkout at all — catalog + inquiry only
     // (see POST /api/inquiries). The storefront UI never shows a cart for

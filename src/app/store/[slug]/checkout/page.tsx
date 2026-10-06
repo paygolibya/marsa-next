@@ -71,6 +71,10 @@ export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState<"cod" | "wallet">("cod");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  // True only once order creation confirms the store is genuinely gone
+  // (re-checked, not just a single 404) — renders a dedicated blocking
+  // message instead of leaving the buyer staring at a raw inline error.
+  const [storeGone, setStoreGone] = useState(false);
   // True while the Moamalat widget is open / being finalized — keeps the
   // submit button disabled without reusing `loading` (which also covers
   // the initial /api/orders call).
@@ -277,7 +281,24 @@ export default function CheckoutPage() {
 
       goToConfirmation(result);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : t("checkout.orderFailed"));
+      // A 404 here specifically means the server couldn't resolve this
+      // store by slug at order-creation time — rare, but confusing when it
+      // happens (a raw untranslated "Store not found" with no path
+      // forward). Re-check via the same public lookup the page itself used
+      // on load before concluding the store is really gone: if it still
+      // resolves, this was transient (stale data/bundle) and the buyer can
+      // just retry; only show the dead-end message if it's genuinely gone.
+      if (err instanceof ApiError && err.status === 404) {
+        try {
+          const fresh = await api.publicStore(slug);
+          setStore(fresh.store);
+          setError(t("checkout.staleRetry"));
+        } catch {
+          setStoreGone(true);
+        }
+      } else {
+        setError(err instanceof ApiError ? err.message : t("checkout.orderFailed"));
+      }
       setWalletPending(false);
     } finally {
       setLoading(false);
@@ -287,6 +308,19 @@ export default function CheckoutPage() {
   if (!store) return null;
 
   const secondary = store.customization?.secondaryColor || "#f0f0f0";
+
+  if (storeGone) {
+    return (
+      <div className="min-h-screen" style={{ backgroundColor: secondary }}>
+        <main className="mx-auto max-w-md px-6 py-24 text-center">
+          <div className="rounded-2xl bg-white shadow-xl p-8">
+            <h1 className="font-display text-2xl font-bold text-harbor">{t("checkout.storeGoneHeading")}</h1>
+            <p className="text-rope mt-2">{t("checkout.storeGoneSubtext")}</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   if (cart.ready && cart.lines.length === 0) {
     return (
