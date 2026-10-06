@@ -23,6 +23,12 @@ model Template {
   description   String
   descriptionAr String
   category      String   @default("all")
+  // Which store type(s) this template is built for — "physical"/"digital"
+  // share the original general-purpose templates (same browse-and-buy
+  // shape, just with or without shipping), while booking/rental/showcase
+  // each get their own dedicated template(s). Drives the ?storeType=
+  // filter on GET /api/templates and the onboarding/dashboard pickers.
+  storeTypes    String[] @default(["physical", "digital"]) @map("store_types")
   price         Int      @default(0)
   currency      String   @default("LYD")
   billingType   String   @default("free")

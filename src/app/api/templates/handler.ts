@@ -18,12 +18,13 @@ type TemplateRow = {
   reviews: number;
   isNew: boolean;
   featured: boolean;
+  storeTypes: string[];
 };
 
 export type ListTemplatesDb = {
   template: {
     findMany: (args: {
-      where: { active: true };
+      where: { active: true; storeTypes?: { has: string } };
       orderBy: [{ featured: "desc" }, { usageCount: "desc" }];
       select: {
         id: true;
@@ -42,15 +43,20 @@ export type ListTemplatesDb = {
         reviews: true;
         isNew: true;
         featured: true;
+        storeTypes: true;
       };
     }) => Promise<TemplateRow[]>;
   };
 };
 
-export async function handleListTemplates(db: ListTemplatesDb): Promise<Response> {
+// GET /api/templates — public: lists templates available for the storefront
+// editor/onboarding picker. An optional ?storeType= narrows the list to
+// templates built for that store type (see Template.storeTypes) — omitted
+// entirely returns every active template, unfiltered.
+export async function handleListTemplates(db: ListTemplatesDb, storeType?: string | null): Promise<Response> {
   try {
     const templates = await db.template.findMany({
-      where: { active: true },
+      where: { active: true, ...(storeType ? { storeTypes: { has: storeType } } : {}) },
       orderBy: [{ featured: "desc" }, { usageCount: "desc" }],
       select: {
         id: true,
@@ -69,6 +75,7 @@ export async function handleListTemplates(db: ListTemplatesDb): Promise<Response
         reviews: true,
         isNew: true,
         featured: true,
+        storeTypes: true,
       },
     });
 

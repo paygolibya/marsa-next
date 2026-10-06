@@ -19,6 +19,7 @@ const fullTemplate = {
   reviews: 10,
   isNew: false,
   featured: true,
+  storeTypes: ["physical", "digital"],
 };
 
 test("filters to active templates, ordered featured-first then by usage", async () => {
@@ -37,6 +38,24 @@ test("filters to active templates, ordered featured-first then by usage", async 
   assert.equal(body.templates.length, 1);
   assert.deepEqual((receivedArgs as any).where, { active: true });
   assert.deepEqual((receivedArgs as any).orderBy, [{ featured: "desc" }, { usageCount: "desc" }]);
+});
+
+test("with no storeType given, doesn't filter by storeTypes at all", async () => {
+  let receivedArgs: unknown;
+  const db: ListTemplatesDb = {
+    template: { findMany: async (args) => { receivedArgs = args; return []; } },
+  };
+  await handleListTemplates(db, null);
+  assert.deepEqual((receivedArgs as any).where, { active: true });
+});
+
+test("with a storeType given, filters to templates whose storeTypes array includes it", async () => {
+  let receivedArgs: unknown;
+  const db: ListTemplatesDb = {
+    template: { findMany: async (args) => { receivedArgs = args; return []; } },
+  };
+  await handleListTemplates(db, "booking");
+  assert.deepEqual((receivedArgs as any).where, { active: true, storeTypes: { has: "booking" } });
 });
 
 test("returns a 500 if the query fails, not an unhandled exception", async () => {
