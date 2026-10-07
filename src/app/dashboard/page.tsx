@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useCurrentStore } from "@/lib/use-current-store";
 import { api, formatLYD, type Order, type Product } from "@/lib/api";
+import { GetStartedChecklist } from "@/components/dashboard/GetStartedChecklist";
 
 export default function DashboardOverviewPage() {
   const { token } = useAuth();
@@ -36,6 +37,8 @@ export default function DashboardOverviewPage() {
     <div className="p-4 sm:p-6 lg:p-10">
       <h1 className="font-display text-2xl font-extrabold text-harbor mb-1">نظرة عامة</h1>
       <p className="text-rope mb-8">{store.name}</p>
+
+      <GetStartedChecklist store={store} productCount={products.length} />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-10">
         {stats.map((s) => (
