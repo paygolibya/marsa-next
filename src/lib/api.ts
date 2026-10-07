@@ -551,6 +551,13 @@ export const api = {
       body: JSON.stringify({ period }),
     }),
 
+  // Public — no auth. Rebuilds the signed LightBox config for a pending
+  // wallet order, for the apex-domain pay page (/pay/[orderId]) to use.
+  moamalatPayConfig: (orderId: string) =>
+    request<{ storeSlug: string; totalCents: number; shippingCents: number; moamalat: LightboxConfig; moamalatScriptUrl: string }>(
+      `/api/payments/moamalat/pay-config/${orderId}`
+    ),
+
   ordersByStore: (token: string, storeId: string) =>
     request<Order[]>(`/api/orders/by-store/${storeId}`, { headers: authHeaders(token) }),
 

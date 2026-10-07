@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
@@ -24,36 +24,6 @@ function addDays(dateStr: string, days: number): string {
   const d = new Date(dateStr);
   d.setUTCDate(d.getUTCDate() + days);
   return d.toISOString().slice(0, 10);
-}
-
-declare global {
-  interface Window {
-    Lightbox?: {
-      Checkout: {
-        configure: Record<string, unknown>;
-        showLightbox: () => void;
-        closeLightbox: () => void;
-      };
-    };
-  }
-}
-
-// Loads Moamalat's LightBox widget script at most once per page — the
-// script itself defines window.Lightbox, so a second injection would just
-// redefine the same global.
-let lightboxScriptPromise: Promise<void> | null = null;
-function loadLightboxScript(src: string): Promise<void> {
-  if (window.Lightbox) return Promise.resolve();
-  if (!lightboxScriptPromise) {
-    lightboxScriptPromise = new Promise((resolve, reject) => {
-      const script = document.createElement("script");
-      script.src = src;
-      script.onload = () => resolve();
-      script.onerror = () => reject(new Error("failed to load lightbox.js"));
-      document.body.appendChild(script);
-    });
-  }
-  return lightboxScriptPromise;
 }
 
 export default function CheckoutPage() {
@@ -122,11 +92,6 @@ export default function CheckoutPage() {
       .finally(() => setSlotsLoading(false));
   }, [isBooking, slug, bookingDate]);
 
-  // Cart/order details kept around so completeCallback (fired from inside
-  // Moamalat's widget, well after the initial submit) can still build the
-  // confirmation-page redirect.
-  const pendingOrderRef = useRef<{ orderId: string; totalCents: number; shippingCents: number } | null>(null);
-
   useEffect(() => {
     api.publicStore(slug).then(({ store }) => {
       setStore(store);
@@ -139,6 +104,17 @@ export default function CheckoutPage() {
   // (that's the order_completed moment instead, fired on the confirmation
   // page once the order actually exists).
   useEffect(() => trackEvent(slug, "checkout_started", `/store/${slug}/checkout`), [slug]);
+
+  // Landed back here from the apex-domain pay page (src/app/pay/[orderId])
+  // after a failed/cancelled Moamalat attempt — window.location.search, not
+  // useSearchParams(), so this page doesn't need a Suspense boundary just
+  // for a one-time read on mount.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("paymentError") === "1") {
+      setError(t("checkout.paymentFailed"));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (!usesVanexPricing) return;
@@ -241,41 +217,15 @@ export default function CheckoutPage() {
       });
 
       if (result.moamalat && result.moamalatScriptUrl) {
-        pendingOrderRef.current = { orderId: result.orderId, totalCents: result.totalCents, shippingCents: result.shippingCents };
+        // Moamalat's merchant-account domain whitelist rejects this when
+        // run from the store's own {slug}.rifqa.ly subdomain ("Invalid
+        // Domain", confirmed live) — but accepts the bare apex domain
+        // (also confirmed live, via the existing merchant-subscription
+        // payment page at rifqa.ly/payment). Until that's fixed on
+        // Moamalat's own side, the actual widget runs on a dedicated apex-
+        // domain page instead of here; see src/app/pay/[orderId].
         setWalletPending(true);
-        await loadLightboxScript(result.moamalatScriptUrl);
-        const lightbox = result.moamalat;
-        window.Lightbox!.Checkout.configure = {
-          MID: lightbox.MID,
-          TID: lightbox.TID,
-          AmountTrxn: lightbox.AmountTrxn,
-          MerchantReference: lightbox.MerchantReference,
-          TrxDateTime: lightbox.TrxDateTime,
-          SecureHash: lightbox.SecureHash,
-          completeCallback: async (data: Record<string, string>) => {
-            try {
-              const completeResult = await api.moamalatComplete(data);
-              const pending = pendingOrderRef.current;
-              if (completeResult.status === "paid" && pending) {
-                goToConfirmation({ ...pending, trackingId: completeResult.trackingId, courier: completeResult.courier, paymentStatus: "paid" });
-                return;
-              }
-              setError(completeResult.error ?? t("checkout.paymentConfirmFailed"));
-            } catch (err) {
-              setError(err instanceof ApiError ? err.message : t("checkout.paymentConfirmFailed"));
-            } finally {
-              setWalletPending(false);
-            }
-          },
-          errorCallback: () => {
-            setError(t("checkout.paymentFailed"));
-            setWalletPending(false);
-          },
-          cancelCallback: () => {
-            setWalletPending(false);
-          },
-        };
-        window.Lightbox!.Checkout.showLightbox();
+        window.location.href = `https://rifqa.ly/pay/${result.orderId}`;
         return;
       }
 

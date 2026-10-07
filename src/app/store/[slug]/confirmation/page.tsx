@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useSearchParams, useParams } from "next/navigation";
 import Link from "next/link";
 import { api, formatLYD, type Store } from "@/lib/api";
+import { useCart } from "@/lib/use-cart";
 import { trackEvent } from "@/lib/track-event";
 import { isSupportedLanguage } from "@/lib/i18n";
 import { useTranslation } from "@/lib/i18n/useTranslation";
@@ -24,6 +25,7 @@ function ConfirmationPageContent() {
   const params = useParams<{ slug: string }>();
   const search = useSearchParams();
   const [store, setStore] = useState<Store | null>(null);
+  const cart = useCart(params.slug);
 
   useEffect(() => {
     api.publicStore(params.slug).then(({ store }) => setStore(store)).catch(() => {});
@@ -38,6 +40,16 @@ function ConfirmationPageContent() {
     if (orderId) trackEvent(params.slug, "order_completed", `/store/${params.slug}/confirmation`);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.slug, orderId]);
+
+  // The COD/same-page Moamalat flow already clears the cart itself
+  // (checkout/page.tsx's goToConfirmation) before navigating here, but the
+  // apex-domain pay redirect (src/app/pay/[orderId]) lands here directly
+  // without ever running that function — this covers that path too.
+  // Clearing an already-empty cart is a harmless no-op either way.
+  useEffect(() => {
+    if (orderId) cart.clear();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orderId]);
 
   const totalCents = Number(search.get("totalCents") ?? 0);
   const shippingCents = Number(search.get("shippingCents") ?? 0);
