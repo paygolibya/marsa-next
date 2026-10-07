@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Almarai } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
@@ -26,6 +26,23 @@ const almaraiBody = Almarai({
 export const metadata: Metadata = {
   title: "رفقة — من مرسى",
   description: "منصة رفقة للتجارة الإلكترونية في ليبيا، من مرسى",
+  appleWebApp: {
+    capable: true,
+    title: "رفقة",
+    statusBarStyle: "default",
+  },
+  // Next's `appleWebApp.capable` only emits the newer, unprefixed
+  // "mobile-web-app-capable" tag — iOS Safari specifically still checks
+  // this legacy Apple-prefixed one to hide its browser chrome when
+  // launched from the home screen, matching the same fix already applied
+  // per-store in store/[slug]/layout.tsx.
+  other: {
+    "apple-mobile-web-app-capable": "yes",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0E2A3F",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

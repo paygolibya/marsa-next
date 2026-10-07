@@ -2,9 +2,9 @@ import type { Metadata, Viewport } from "next";
 import { prisma } from "@/lib/prisma";
 
 // The storefront page itself (./page.tsx) is a Client Component (it fetches
-// its data via useEffect + api.publicStore, and does a client-side favicon
-// swap once that resolves) — Client Components can't export
-// generateMetadata/generateViewport, which only run in Server Components.
+// its data via useEffect + api.publicStore) — Client Components can't
+// export generateMetadata/generateViewport, which only run in Server
+// Components.
 // This layout exists specifically to carry real per-request, server-rendered
 // metadata for each merchant's own storefront: its own <title>, its own
 // manifest (own name + icon on "Add to Home Screen"), its own
@@ -16,7 +16,7 @@ async function getStoreBranding(slug: string) {
     where: { slug },
     select: {
       name: true,
-      customization: { select: { logo: true, favicon: true, primaryColor: true } },
+      customization: { select: { primaryColor: true } },
     },
   });
 }
@@ -26,7 +26,14 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const store = await getStoreBranding(slug);
   if (!store) return {};
 
-  const icon = store.customization?.favicon || store.customization?.logo || undefined;
+  // Every icon is served through the resizing endpoint (see
+  // api/stores/public/[slug]/icon) — a real, correctly-sized PNG
+  // regardless of what the merchant actually uploaded, and always
+  // present even when they haven't uploaded anything at all (it falls
+  // back to the platform's own icon rather than omitting icons entirely).
+  // apple-touch-icon specifically wants 180x180, not the manifest's
+  // 192/512 sizes.
+  const iconUrl = (size: 180 | 192 | 512) => `/api/stores/public/${slug}/icon?size=${size}`;
 
   return {
     title: store.name,
@@ -43,13 +50,11 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     other: {
       "apple-mobile-web-app-capable": "yes",
     },
-    ...(icon && {
-      icons: {
-        icon: [{ url: icon }],
-        apple: [{ url: icon }],
-        shortcut: [{ url: icon }],
-      },
-    }),
+    icons: {
+      icon: [{ url: iconUrl(192) }],
+      apple: [{ url: iconUrl(180) }],
+      shortcut: [{ url: iconUrl(192) }],
+    },
   };
 }
 

@@ -11,6 +11,11 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   outputFileTracingRoot: __dirname,
+  // sharp ships a native binary — bundling it through webpack (the default
+  // for server code) breaks that binary. This keeps it as a real
+  // node_modules import at runtime instead, the way Next expects for any
+  // native dependency used in a Route Handler.
+  serverExternalPackages: ["sharp"],
 };
 
 // withSentryConfig wraps the build to (optionally) upload source maps and

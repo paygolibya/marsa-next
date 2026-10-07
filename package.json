@@ -36,6 +36,7 @@
     "react-colorful": "^5.8.0",
     "react-dom": "^19.0.0",
     "recharts": "^3.10.1",
+    "sharp": "^0.35.5",
     "zod": "^3.23.8"
   },
   "devDependencies": {
