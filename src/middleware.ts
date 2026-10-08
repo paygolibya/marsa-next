@@ -172,5 +172,14 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
+  // The `.*\..*` branch excludes any path with a file extension (logo.png,
+  // payment-logos/moamalat.png, icon-192.png, ...) — these are real files
+  // under public/, never storefront routes, but without this the subdomain
+  // rewrite below ran on them too and turned `{slug}.rifqa.ly/logo.png`
+  // into a rewrite to `/store/{slug}/logo.png` (not a real route) — a
+  // real, confirmed-live 404 that broke every <Image> using a public
+  // asset on any storefront page (next/image's own image-optimization
+  // pipeline fetches the source over HTTP, so it hit this rewrite too,
+  // surfacing as a 400 in the browser instead of the 404 itself).
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|.*\\..*).*)"],
 };
