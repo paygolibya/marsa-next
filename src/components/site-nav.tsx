@@ -82,7 +82,10 @@ export function SiteNav() {
     >
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 sm:px-6 py-4 gap-3">
         <Link href="/" className="flex items-center gap-2 min-w-0 shrink-0" onClick={() => setMenuOpen(false)}>
-          <Image src="/logo.png" alt="رفقة" width={36} height={36} priority className="h-9 w-9 shrink-0 object-contain" />
+          {/* logo.png is 720x836 (portrait) — width matches that real
+              aspect ratio for a 36px-tall box instead of forcing a square
+              that letterboxes it smaller than its own box. */}
+          <Image src="/logo.png" alt="رفقة" width={31} height={36} priority className="h-9 w-auto shrink-0 object-contain" />
           <span className="font-display text-lg sm:text-xl font-extrabold text-harbor whitespace-nowrap">
             رفقة <span className="hidden sm:inline text-rope font-normal text-sm">من مرسى</span>
           </span>

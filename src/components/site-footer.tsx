@@ -39,7 +39,13 @@ export function SiteFooter({
         )}
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-sm">
           <div className="flex items-center gap-2">
-            <Image src="/logo.png" alt={t("footer.alt")} width={28} height={28} className="h-7 w-7 object-contain" />
+            {/* logo.png is 720x836 (portrait, ~0.86:1) — forcing it into a
+                square h-7 w-7 box let object-contain shrink it to fit the
+                height, letterboxed with blank padding on both sides, so it
+                rendered visibly smaller than its own box. width/height now
+                match the real aspect ratio, same fix already applied to the
+                Moamalat payment icon below. */}
+            <Image src="/logo.png" alt={t("footer.alt")} width={24} height={28} className="h-7 w-auto object-contain" />
             <span>{t("footer.brand")}</span>
           </div>
           <p>{t("footer.madeIn", { year: new Date().getFullYear() })}</p>

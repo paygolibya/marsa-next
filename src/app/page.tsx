@@ -66,7 +66,10 @@ export default function MarketingPage() {
         <div className="relative mx-auto max-w-6xl px-6 py-20 md:py-28 grid lg:grid-cols-2 gap-12 items-center">
           <Reveal>
             <div className="text-center lg:text-right">
-              <Image src="/logo.png" alt="رفقة" width={64} height={64} priority className="mx-auto lg:mx-0 mb-6 h-14 w-14 object-contain" />
+              {/* logo.png is 720x836 (portrait) — width matches that real
+                  aspect ratio for a 56px-tall box instead of forcing a
+                  square that letterboxes it smaller than its own box. */}
+              <Image src="/logo.png" alt="رفقة" width={55} height={64} priority className="mx-auto lg:mx-0 mb-6 h-14 w-auto object-contain" />
               <h1 className="font-display text-4xl md:text-5xl font-extrabold leading-tight text-harbor">
                 التجارة الإلكترونية في ليبيا أصبحت أسهل مع رفقة
               </h1>

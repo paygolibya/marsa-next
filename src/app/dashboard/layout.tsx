@@ -184,7 +184,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <>
       <div className="px-6 py-6 border-b border-canvas/10 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 font-display text-lg font-extrabold">
-          <Image src="/logo.png" alt="رفقة" width={28} height={28} className="h-7 w-7 object-contain" />
+          {/* logo.png is 720x836 (portrait) — width matches that real
+              aspect ratio for a 28px-tall box instead of forcing a square
+              that letterboxes it smaller than its own box. */}
+          <Image src="/logo.png" alt="رفقة" width={24} height={28} className="h-7 w-auto object-contain" />
           رفقة <span className="text-canvas/50 font-normal text-sm">من مرسى</span>
         </Link>
         <div className="flex items-center gap-1">
