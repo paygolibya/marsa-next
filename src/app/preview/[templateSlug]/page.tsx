@@ -90,6 +90,7 @@ export default function TemplatePreviewPage() {
       courier: "vanex",
       codEnabled: true,
       type: "physical",
+      industry: null,
       bookingSlotMinutes: null,
       bookingWorkingHours: null,
       walletProvider: null,

@@ -38,6 +38,7 @@ export type CreateStoreDb = {
         walletProvider: string | null;
         templateId: string | null;
         type?: string;
+        industry?: string | null;
       };
     }) => Promise<StoreRow>;
   };
@@ -68,7 +69,7 @@ export async function handleCreateStore(db: CreateStoreDb, req: Request): Promis
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "بيانات غير صالحة" }, { status: 400 });
     }
-    const { name, theme, courier, codEnabled, walletProvider, templateId, type } = parsed.data;
+    const { name, theme, courier, codEnabled, walletProvider, templateId, type, industry } = parsed.data;
 
     let slug = slugify(name) || fallbackSlug();
     const clash = await db.store.findUnique({ where: { slug } });
@@ -85,6 +86,7 @@ export async function handleCreateStore(db: CreateStoreDb, req: Request): Promis
         walletProvider: walletProvider || null,
         templateId: templateId || null,
         type: type || "physical",
+        industry: industry || null,
       },
     });
 

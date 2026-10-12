@@ -13,6 +13,7 @@ function makeStore(overrides: Partial<Store> = {}): Store {
     courier: "vanex",
     codEnabled: false,
     type: "physical",
+    industry: null,
     bookingSlotMinutes: null,
     bookingWorkingHours: null,
     walletProvider: null,

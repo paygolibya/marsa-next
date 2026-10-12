@@ -85,6 +85,7 @@ export type Store = {
   courier: string;
   codEnabled: boolean;
   type: StoreType;
+  industry: string | null;
   bookingSlotMinutes: number | null;
   bookingWorkingHours: Record<string, { open: string; close: string } | null> | null;
   walletProvider: string | null;
@@ -322,6 +323,7 @@ export const api = {
       walletProvider?: string | null;
       templateId?: string | null;
       type?: StoreType;
+      industry?: string | null;
     }
   ) =>
     request<Store>("/api/stores", {
@@ -468,6 +470,7 @@ export const api = {
       shippingPolicy: string | null;
       businessHours: string | null;
       type: StoreType;
+      industry: string | null;
       bookingSlotMinutes: number | null;
       bookingWorkingHours: Record<string, { open: string; close: string } | null> | null;
       language: string;

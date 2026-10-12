@@ -7,6 +7,7 @@ import TemplateSelector from "@/components/onboarding/TemplateSelector";
 import { useAuth } from "@/lib/auth-context";
 import { isAdminMerchant } from "@/lib/is-admin";
 import { api, ApiError, type StoreType, type Template } from "@/lib/api";
+import { STORE_INDUSTRIES } from "@/lib/store-industries";
 
 const STORE_TYPES: { value: StoreType; label: string; description: string }[] = [
   { value: "physical", label: "منتجات فعلية", description: "شحن عبر Vanex، دفع عند الاستلام أو إلكتروني" },
@@ -33,6 +34,7 @@ export default function OnboardingPage() {
   const [step, setStep] = useState<1 | 2>(1);
   const [name, setName] = useState("");
   const [storeType, setStoreType] = useState<StoreType>("physical");
+  const [industry, setIndustry] = useState<string>("");
   const courier = "vanex";
   const [codEnabled, setCodEnabled] = useState(true);
   const [walletEnabled, setWalletEnabled] = useState(true);
@@ -79,6 +81,7 @@ export default function OnboardingPage() {
         walletProvider: storeType === "showcase" ? null : walletEnabled ? "anis" : null,
         templateId: selectedTemplateId,
         type: storeType,
+        industry: industry || null,
       });
       router.push(`/onboarding/customize?storeId=${store.id}`);
     } catch (err) {
@@ -156,6 +159,23 @@ export default function OnboardingPage() {
                   </button>
                 ))}
               </div>
+            </div>
+
+            <div className="rounded-2xl border border-harbor/10 bg-white p-4">
+              <h2 className="mb-1.5 text-lg font-bold text-harbor">مجال نشاط متجرك</h2>
+              <p className="mb-4 text-xs text-rope">اختياري — يساعدنا على اقتراح الأنسب لمتجرك لاحقًا.</p>
+              <select
+                value={industry}
+                onChange={(e) => setIndustry(e.target.value)}
+                className="input"
+              >
+                <option value="">اختر المجال (اختياري)</option>
+                {STORE_INDUSTRIES.map((i) => (
+                  <option key={i.value} value={i.value}>
+                    {i.label}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div className="rounded-2xl border border-harbor/10 bg-white p-4">

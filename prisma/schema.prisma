@@ -343,6 +343,15 @@ model Store {
   type           String   @default("physical")
   walletProvider String?  @map("wallet_provider") // e.g. 'anis' (DPay aggregator merchant)
 
+  // Industry/niche tag (fashion, perfumes, bakeries, pets, ...) — a separate
+  // axis from `type` above: `type` drives checkout/business-model logic,
+  // `industry` is purely a merchant-chosen label for later template
+  // recommendations (see src/lib/store-industries.ts for the fixed list).
+  // Optional and unused by any logic today — nullable, no default, no
+  // backfill; existing stores just show "not set" until a merchant visits
+  // settings and picks one.
+  industry       String?
+
   // Booking-only (store.type === "booking"): a store-wide (not per-product)
   // appointment grid. bookingWorkingHours is a weekly schedule keyed by
   // day-of-week as a string "0" (Sunday) through "6" (Saturday), e.g.

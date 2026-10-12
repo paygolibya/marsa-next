@@ -41,6 +41,7 @@ export function makeTestStore(customizationOverrides: Partial<StoreCustomization
     courier: "vanex",
     codEnabled: true,
     type: "physical",
+    industry: null,
     bookingSlotMinutes: null,
     bookingWorkingHours: null,
     walletProvider: null,

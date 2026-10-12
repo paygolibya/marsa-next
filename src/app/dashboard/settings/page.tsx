@@ -7,6 +7,7 @@ import { api, ApiError, type StoreType, type Template } from "@/lib/api";
 import DomainSettings from "@/components/store/DomainSettings";
 import TemplateSwitcher from "@/components/store/TemplateSwitcher";
 import { Button } from "@/components/ui";
+import { STORE_INDUSTRIES } from "@/lib/store-industries";
 
 const STORE_TYPES: { value: StoreType; label: string; description: string }[] = [
   { value: "physical", label: "منتجات فعلية", description: "شحن عبر Vanex، دفع عند الاستلام أو إلكتروني" },
@@ -41,6 +42,7 @@ export default function DashboardSettingsPage() {
   const [shippingPolicy, setShippingPolicy] = useState("");
   const [businessHours, setBusinessHours] = useState("");
   const [storeType, setStoreType] = useState<StoreType>("physical");
+  const [industry, setIndustry] = useState<string>("");
   const [slotMinutes, setSlotMinutes] = useState(60);
   const [workingHours, setWorkingHours] = useState<Record<string, DayHours>>({});
   const [language, setLanguage] = useState<"ar" | "en">("ar");
@@ -65,6 +67,7 @@ export default function DashboardSettingsPage() {
     setShippingPolicy(store.shippingPolicy ?? "");
     setBusinessHours(store.businessHours ?? "");
     setStoreType(store.type);
+    setIndustry(store.industry ?? "");
     setSlotMinutes(store.bookingSlotMinutes ?? 60);
     setWorkingHours(store.bookingWorkingHours ?? {});
     setLanguage(store.language === "en" ? "en" : "ar");
@@ -100,6 +103,7 @@ export default function DashboardSettingsPage() {
         shippingPolicy: shippingPolicy || null,
         businessHours: businessHours || null,
         type: storeType,
+        industry: industry || null,
         bookingSlotMinutes: storeType === "booking" ? slotMinutes : null,
         bookingWorkingHours: storeType === "booking" ? workingHours : null,
         language,
@@ -142,6 +146,18 @@ export default function DashboardSettingsPage() {
               </button>
             ))}
           </div>
+        </div>
+
+        <div>
+          <span className="block text-sm font-bold text-harbor mb-2">مجال نشاط المتجر</span>
+          <select value={industry} onChange={(e) => setIndustry(e.target.value)} className="input">
+            <option value="">غير محدد</option>
+            {STORE_INDUSTRIES.map((i) => (
+              <option key={i.value} value={i.value}>
+                {i.label}
+              </option>
+            ))}
+          </select>
         </div>
 
         {availableTemplates.length > 0 && (

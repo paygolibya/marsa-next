@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { normalizeLibyanPhone } from "@/lib/integrations/sms";
+import { STORE_INDUSTRY_VALUES } from "@/lib/store-industries";
 
 export const registerSchema = z.object({
   name: z.string().min(1, "الاسم مطلوب"),
@@ -23,6 +24,7 @@ export const createStoreSchema = z.object({
   walletProvider: z.string().optional().nullable(),
   templateId: z.string().optional().nullable(),
   type: z.enum(["physical", "digital", "booking", "rental", "showcase"]).optional(),
+  industry: z.enum(STORE_INDUSTRY_VALUES).optional().nullable(),
 });
 
 // Up to 8 photos per product — enough for a real gallery without inviting
@@ -128,6 +130,7 @@ export const updateStoreSettingsSchema = z.object({
   shippingPolicy: z.string().optional().nullable(),
   businessHours: z.string().optional().nullable(),
   type: z.enum(["physical", "digital", "booking", "rental", "showcase"]).optional(),
+  industry: z.enum(STORE_INDUSTRY_VALUES).optional().nullable(),
   bookingSlotMinutes: z.number().int().positive().max(24 * 60).optional().nullable(),
   bookingWorkingHours: bookingWorkingHoursSchema.optional().nullable(),
   language: languageSchema.optional(),
