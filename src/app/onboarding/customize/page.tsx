@@ -45,10 +45,10 @@ function CustomizePageContent() {
   return (
     <ToastProvider>
       <div className="min-h-screen">
-        {/* Used to send new merchants to /subscription to pick a paid plan
-            before finishing setup — now that signup grants a 90-day trial
-            with full access immediately (see /api/auth/register), there's
-            nothing to pay for yet, so straight to the dashboard instead. */}
+        {/* Straight to /dashboard, not /subscription — a merchant who hasn't
+            paid yet lands on the dashboard's own "inactive" paywall screen
+            with a direct link to /subscription (dashboard/layout.tsx), so
+            there's no need to detour through it here too. */}
         <SectionEditor storeId={storeId} onSaved={() => router.push("/dashboard")} />
       </div>
     </ToastProvider>
