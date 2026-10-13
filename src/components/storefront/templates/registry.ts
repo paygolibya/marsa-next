@@ -10,6 +10,7 @@ import PlayfulTemplate from "./PlayfulTemplate";
 import ArtisanTemplate from "./ArtisanTemplate";
 import TrustTemplate from "./TrustTemplate";
 import TechTemplate from "./TechTemplate";
+import ReaderTemplate from "./ReaderTemplate";
 import type { StorefrontTemplateProps } from "./types";
 
 // The one place a template slug maps to its real component — shared by
@@ -37,4 +38,5 @@ export const STOREFRONT_TEMPLATES: Record<string, (props: StorefrontTemplateProp
   artisan: ArtisanTemplate,
   trust: TrustTemplate,
   tech: TechTemplate,
+  reader: ReaderTemplate,
 };

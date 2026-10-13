@@ -287,6 +287,30 @@ export const templatesData = [
     featured: false,
     componentPath: "free/tech",
   },
+  {
+    id: "template-reader",
+    name: "Reader",
+    nameAr: "القارئ",
+    slug: "reader",
+    description: "Warm, cozy design for book and stationery stores",
+    descriptionAr: "تصميم دافئ لمتاجر الكتب والقرطاسية",
+    price: 0,
+    billingType: "free",
+    category: "all",
+    thumbnail: "/templates/reader-thumb.svg",
+    previewUrl: "/preview/reader",
+    features: ["Book-Cover Imagery", "Warm Sepia Palette", "Understated CTAs"],
+    defaultColors: {
+      primaryColor: "#92400e",
+      secondaryColor: "#fdf8ee",
+    },
+    usageCount: 0,
+    rating: 4.5,
+    reviews: 0,
+    isNew: true,
+    featured: false,
+    componentPath: "free/reader",
+  },
 ] as const;
 
 export type TemplateSeed = (typeof templatesData)[number];

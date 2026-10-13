@@ -64,6 +64,9 @@
   "tech.heroHeading": "The latest technology, within reach",
   "tech.heroSubtext": "A curated selection of devices and electronics",
 
+  "reader.heroHeading": "A world of books, within reach",
+  "reader.heroSubtext": "Browse our collection of books and stationery",
+
   "bundles.heading": "Bundles",
   "bundles.itemsCount": "{count} products in one bundle",
   "bundles.addToCart": "Add bundle to cart",

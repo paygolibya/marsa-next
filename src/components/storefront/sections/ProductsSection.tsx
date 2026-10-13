@@ -583,6 +583,73 @@ export function ProductsSection({
     );
   }
 
+  if (variant === "reader") {
+    return (
+      <div>
+        <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
+          {settings.title && (
+            <h2 className="font-display text-2xl font-bold text-harbor" style={{ color: colors.text }}>
+              {settings.title}
+            </h2>
+          )}
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={t("products.searchPlaceholder")}
+            className="input max-w-xs !rounded-none !border-0 !border-b-2 !bg-transparent px-1"
+            style={{ borderColor: `${colors.primary}50` }}
+          />
+        </div>
+        {filtered.length === 0 ? (
+          empty
+        ) : (
+          <div className="grid sm:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-10">
+            {filtered.map((product) => (
+              <div key={product.id} className="flex flex-col">
+                <Link href={`/store/${slug}/product/${product.id}`} className="aspect-[2/3] flex items-center justify-center overflow-hidden group shadow-md" style={{ backgroundColor: "#f0e4cc" }}>
+                  {product.imageUrl ? (
+                    <Image
+                      src={product.imageUrl}
+                      alt={productName(product)}
+                      width={640}
+                      height={960}
+                      unoptimized
+                      className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  ) : (
+                    <ProductImagePlaceholder label={t("common.noImage")} />
+                  )}
+                </Link>
+                <div className="pt-3">
+                  <Link href={`/store/${slug}/product/${product.id}`} className="font-display text-sm font-bold text-harbor hover:underline" style={{ color: colors.text }}>
+                    {productName(product)}
+                  </Link>
+                  <p className="text-sm mt-1 font-bold" style={{ color: colors.primary }}>
+                    {formatLYD(product.priceCents, language)}
+                  </p>
+                  {isShowcase ? (
+                    <button onClick={() => setInquiryProduct(product)} className="mt-2 text-xs font-bold underline" style={{ color: colors.accent }}>
+                      {t("common.inquire")}
+                    </button>
+                  ) : product.variantOptions?.length ? (
+                    <Link href={`/store/${slug}/product/${product.id}`} className="mt-2 inline-block text-xs font-bold underline" style={{ color: colors.accent }}>
+                      {t("common.chooseOptions")}
+                    </Link>
+                  ) : (
+                    <button onClick={() => onAddToCart(product)} className="mt-2 text-xs font-bold underline" style={{ color: colors.accent }}>
+                      {t("common.addToCart")}
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        {inquiryModal}
+      </div>
+    );
+  }
+
   if (variant === "marketplace") {
     return (
       <div>

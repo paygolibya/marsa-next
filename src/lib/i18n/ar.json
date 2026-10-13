@@ -64,6 +64,9 @@
   "tech.heroHeading": "أحدث التقنيات بين يديك",
   "tech.heroSubtext": "تشكيلة مختارة من الأجهزة والإلكترونيات",
 
+  "reader.heroHeading": "عالم من الكتب بين يديك",
+  "reader.heroSubtext": "تصفح مجموعتنا من الكتب والقرطاسية",
+
   "bundles.heading": "الباقات",
   "bundles.itemsCount": "{count} منتجات في باقة واحدة",
   "bundles.addToCart": "أضف الباقة للسلة",
