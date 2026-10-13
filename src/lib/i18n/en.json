@@ -61,6 +61,9 @@
   "trust.heroHeading": "Trusted products for your health and comfort",
   "trust.heroSubtext": "Shop with confidence from our carefully chosen selection",
 
+  "tech.heroHeading": "The latest technology, within reach",
+  "tech.heroSubtext": "A curated selection of devices and electronics",
+
   "bundles.heading": "Bundles",
   "bundles.itemsCount": "{count} products in one bundle",
   "bundles.addToCart": "Add bundle to cart",

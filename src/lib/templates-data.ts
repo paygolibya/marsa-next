@@ -263,6 +263,30 @@ export const templatesData = [
     featured: false,
     componentPath: "free/trust",
   },
+  {
+    id: "template-tech",
+    name: "Tech",
+    nameAr: "التقنية",
+    slug: "tech",
+    description: "Dark, precision-focused design for electronics stores",
+    descriptionAr: "تصميم داكن ودقيق لمتاجر الإلكترونيات والأجهزة",
+    price: 0,
+    billingType: "free",
+    category: "all",
+    thumbnail: "/templates/tech-thumb.svg",
+    previewUrl: "/preview/tech",
+    features: ["Dark Product Cards", "Sharp Minimal Chrome", "Monospace Pricing"],
+    defaultColors: {
+      primaryColor: "#2563eb",
+      secondaryColor: "#f1f5f9",
+    },
+    usageCount: 0,
+    rating: 4.5,
+    reviews: 0,
+    isNew: true,
+    featured: false,
+    componentPath: "free/tech",
+  },
 ] as const;
 
 export type TemplateSeed = (typeof templatesData)[number];

@@ -36,7 +36,10 @@ export type TemplateVariant =
   | "boutique"
   | "playful"
   | "artisan"
-  | "trust";
+  | "trust"
+  | "tech"
+  | "reader"
+  | "sport";
 
 // Colors every section needs, resolved once by the calling template from
 // store.customization (with the same fallbacks used everywhere else, e.g.
