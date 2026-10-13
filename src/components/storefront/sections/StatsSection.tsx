@@ -60,12 +60,12 @@ export function StatsSection({ variant, colors, stats, settings: rawSettings, st
   return (
     <div className="flex flex-wrap gap-3 mb-6">
       {stats.deliveredOrderCount > 0 && (
-        <span className="rounded-full bg-white px-4 py-1.5 text-sm font-bold border border-harbor/10" style={{ color: colors.accent }}>
+        <span className="rounded-full bg-white px-4 py-1.5 text-sm font-bold border border-harbor/10 shadow-sm" style={{ color: colors.accent }}>
           {t("stats.deliveredCombined", { count: stats.deliveredOrderCount })}
         </span>
       )}
       {showRating && (
-        <span className="rounded-full bg-white px-4 py-1.5 text-sm font-bold border border-harbor/10" style={{ color: colors.accent }}>
+        <span className="rounded-full bg-white px-4 py-1.5 text-sm font-bold border border-harbor/10 shadow-sm" style={{ color: colors.accent }}>
           {t("stats.ratingWithCount", { rating: stats.averageRating!.toFixed(1), count: stats.reviewCount })}
         </span>
       )}

@@ -56,3 +56,9 @@ test("the hero falls back to showcase-specific copy when the store has no custom
   const html = renderToStaticMarkup(<ShowcaseTemplate {...baseTemplateProps} store={store} products={[]} filtered={[]} sections={[]} />);
   assert.match(html, /استعرض مجموعتنا/);
 });
+
+test("heroEnabled=false hides the hero band entirely", () => {
+  const store = { ...makeTestStore({ heroEnabled: false }), type: "showcase" as const };
+  const html = renderToStaticMarkup(<ShowcaseTemplate {...baseTemplateProps} store={store} products={[]} filtered={[]} sections={[]} />);
+  assert.doesNotMatch(html, /استعرض مجموعتنا/);
+});

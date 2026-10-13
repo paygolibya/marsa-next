@@ -49,6 +49,7 @@ export default function ShowcaseTemplate({
   const logoPx = resolveLogoSizePx(store.customization?.logoSize);
   const textColor = store.customization?.textColor || undefined;
   const textSize = resolveTextSizeClass(store.customization?.textSize);
+  const heroEnabled = store.customization?.heroEnabled !== false;
   const colors = { primary, secondary, accent, text: textColor };
   const language = isSupportedLanguage(store.language) ? store.language : "ar";
   const t = (key: string) => translate(language, key);
@@ -120,14 +121,22 @@ export default function ShowcaseTemplate({
 
       <StorefrontNavRow navMenuItems={navMenuItems} primaryColor={primary} />
 
-      <div className="px-6 py-14 text-center">
-        <h1 className="font-display text-3xl font-extrabold text-harbor" style={{ color: colors.text }}>
-          {store.customization?.tagline || t("showcase.heroHeading")}
-        </h1>
-        <p className={`mt-3 max-w-xl mx-auto text-harbor/70 ${textSize.body}`}>
-          {store.customization?.description || t("showcase.heroSubtext")}
-        </p>
-      </div>
+      {/* A gallery-placard band — a faint tint plus top/bottom rules, never
+          a saturated color block (this template deliberately carries no
+          strong color opinion, see the component doc comment). Previously
+          this was plain text directly on the page background with no
+          separation at all, and didn't respect the heroEnabled toggle every
+          other template already honors. */}
+      {heroEnabled && (
+        <div className="px-6 py-14 text-center border-y border-harbor/10" style={{ backgroundColor: `${primary}06` }}>
+          <h1 className="font-display text-3xl font-extrabold text-harbor" style={{ color: colors.text }}>
+            {store.customization?.tagline || t("showcase.heroHeading")}
+          </h1>
+          <p className={`mt-3 max-w-xl mx-auto text-harbor/70 ${textSize.body}`}>
+            {store.customization?.description || t("showcase.heroSubtext")}
+          </p>
+        </div>
+      )}
 
       <main className="mx-auto max-w-6xl px-6 py-10">{orderedSections}</main>
     </div>
