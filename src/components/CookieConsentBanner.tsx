@@ -47,7 +47,14 @@ export default function CookieConsentBanner() {
   }
 
   return (
-    <div dir={dir} className="fixed inset-x-0 bottom-0 z-[60] bg-harbor text-canvas px-4 py-4 sm:px-6 shadow-[0_-4px_20px_rgba(0,0,0,0.15)]">
+    // z-30 — deliberately BELOW every interactive overlay in the app
+    // (cart-drawer.tsx's backdrop/panel at z-40/z-50, SupportChatWidget at
+    // z-40, the shared dashboard Modal at z-[60], ToastProvider at z-[80]):
+    // confirmed live that a higher z-index here lets this full-width bottom
+    // bar intercept clicks on the cart drawer's own checkout button,
+    // breaking checkout for any visitor who hasn't yet dismissed it. Still
+    // above ordinary page content.
+    <div dir={dir} className="fixed inset-x-0 bottom-0 z-30 bg-harbor text-canvas px-4 py-4 sm:px-6 shadow-[0_-4px_20px_rgba(0,0,0,0.15)]">
       <div className="mx-auto flex max-w-4xl flex-col sm:flex-row items-center gap-3 sm:gap-6">
         <p className="text-sm flex-1 text-canvas/90">
           {t.message}{" "}
