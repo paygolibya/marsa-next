@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { createShipment } from "@/lib/integrations/couriers";
 import { sendOrderConfirmationEmail } from "@/lib/integrations/email";
 import { sendNewOrderSms } from "@/lib/integrations/sms";
+import { notifyMerchantNewOrder } from "@/lib/notifications/notify";
 
 export type FinalizeWalletOrderResult = {
   updated: boolean; // false = already finalized by a concurrent call (the notification + client-relayed complete callback racing, or a duplicate notification delivery) — a safe no-op, not an error
@@ -34,7 +35,7 @@ export async function finalizeWalletOrder(orderId: string, outcome: "paid" | "fa
     where: { id: orderId },
     include: {
       items: { select: { quantity: true } },
-      store: { select: { slug: true, courier: true, type: true, merchant: { select: { phone: true } } } },
+      store: { select: { slug: true, courier: true, type: true, merchant: { select: { id: true, phone: true, email: true, name: true } } } },
       vanexArea: { select: { vanexId: true, city: { select: { vanexId: true } } } },
     },
   });
@@ -59,6 +60,7 @@ export async function finalizeWalletOrder(orderId: string, outcome: "paid" | "fa
         storeSlug: order.store.slug,
       });
       await sendNewOrderSms(order.store.merchant.phone, order.id, order.buyerName);
+      await notifyMerchantNewOrder(order.store.merchant, { id: order.id, buyerName: order.buyerName, totalCents: order.totalCents, storeId: order.storeId });
       return { updated: true };
     }
 
@@ -83,6 +85,7 @@ export async function finalizeWalletOrder(orderId: string, outcome: "paid" | "fa
       storeSlug: order.store.slug,
     });
     await sendNewOrderSms(order.store.merchant.phone, order.id, order.buyerName);
+    await notifyMerchantNewOrder(order.store.merchant, { id: order.id, buyerName: order.buyerName, totalCents: order.totalCents, storeId: order.storeId });
     return { updated: true, trackingId: shipment.trackingId, courier: order.store.courier };
   } catch (error) {
     console.error(`finalizeWalletOrder: shipment/notification failed for order ${orderId} (payment already recorded as paid):`, error);

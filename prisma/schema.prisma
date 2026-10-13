@@ -144,6 +144,13 @@ model Merchant {
   name                   String
   phone                  String    @unique
   passwordHash           String    @map("password_hash")
+  // Optional — no signup step collects this (phone is the sole identifier/
+  // login credential). Set by the merchant themselves from the
+  // notifications panel; only used as an email-notification recipient
+  // (new order, low stock) when present, a silent no-op otherwise, same
+  // "no-op if unset" convention as every other email in
+  // src/lib/integrations/email.ts.
+  email                  String?
   createdAt              DateTime  @default(now()) @map("created_at")
   subscriptionTier       String?   @default("basic") @map("subscription_tier")
   subscriptionStatus     String    @default("inactive") @map("subscription_status")
@@ -191,8 +198,31 @@ model Merchant {
   supportConversations SupportConversation[]
   bugReports BugReport[]
   impersonationSessions ImpersonationSession[]
+  notifications Notification[]
 
   @@map("merchants")
+}
+
+// In-app merchant alerts (new order, low stock) — see src/lib/notifications/
+// notify.ts, the one place these get created. `link` is a relative dashboard
+// path (e.g. /dashboard/orders?id=...) the bell's dropdown navigates to on
+// click; storeId is optional since a merchant can have multiple stores and
+// not every notification type is store-scoped.
+model Notification {
+  id        String   @id @default(cuid())
+  merchantId String  @map("merchant_id")
+  storeId   String?  @map("store_id")
+  type      String
+  title     String
+  body      String
+  link      String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  merchant Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+
+  @@index([merchantId, read])
+  @@map("notifications")
 }
 
 // Failed login attempts only, by IP — the DB-backed rate-limit counter for

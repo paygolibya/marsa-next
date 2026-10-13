@@ -86,6 +86,33 @@ export async function sendOrderStatusEmail(order: EmailOrder, newStatus: string)
   await sendEmail(order.buyerEmail, "تحديث على طلبك", lines.join("\n"));
 }
 
+// Alerts the MERCHANT (not the buyer) of a new order — see
+// src/lib/notifications/notify.ts, the one caller. No-op when the merchant
+// hasn't set an email (Merchant.email is optional, nothing collects it at
+// signup), same convention as every other recipient check in this file.
+export async function sendMerchantNewOrderEmail(merchant: { email: string | null; name: string }, order: { id: string; buyerName: string; totalCents: number }): Promise<void> {
+  if (!merchant.email) return;
+  const lines = [
+    `مرحبًا ${merchant.name}،`,
+    `لديك طلب جديد رقم ${order.id} من ${order.buyerName}.`,
+    `الإجمالي: ${formatLYD(order.totalCents)}`,
+    `عرض الطلب: /dashboard/orders`,
+  ];
+  await sendEmail(merchant.email, "لديك طلب جديد", lines.join("\n"));
+}
+
+// Alerts the merchant that a product just crossed its low-stock threshold.
+// Same no-op-if-unset convention as sendMerchantNewOrderEmail above.
+export async function sendMerchantLowStockEmail(merchant: { email: string | null; name: string }, product: { id: string; name: string; stockQty: number }): Promise<void> {
+  if (!merchant.email) return;
+  const lines = [
+    `مرحبًا ${merchant.name}،`,
+    `الكمية المتبقية من "${product.name}" أصبحت منخفضة (${product.stockQty} متبقية).`,
+    `عرض المنتج: /dashboard/products`,
+  ];
+  await sendEmail(merchant.email, "تنبيه: كمية منخفضة", lines.join("\n"));
+}
+
 // A merchant-support conversation escalated a real platform issue (see
 // src/lib/support/tools.ts's escalate_to_developer) — notifies the
 // platform owner, same best-effort/never-throws convention as every other

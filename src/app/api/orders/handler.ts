@@ -96,7 +96,7 @@ export type OrdersDb = {
       type: string;
       bookingSlotMinutes: number | null;
       bookingWorkingHours: unknown;
-      merchant: { phone: string } & Record<string, unknown>;
+      merchant: { id: string; phone: string; email: string | null; name: string } & Record<string, unknown>;
     } | null>;
   };
   vanexArea: {
@@ -138,6 +138,10 @@ export type OrdersDeps = {
     storeSlug?: string;
   }) => Promise<void>;
   sendNewOrderSms: (phone: string, orderId: string, buyerName: string) => Promise<unknown>;
+  notifyMerchantNewOrder: (
+    merchant: { id: string; email: string | null; name: string },
+    order: { id: string; buyerName: string; totalCents: number; storeId: string }
+  ) => Promise<void>;
 };
 
 // POST /api/orders — a buyer places an order from the storefront's
@@ -519,6 +523,7 @@ export async function handleCreateOrder(deps: OrdersDeps, req: Request): Promise
         storeSlug: store.slug,
       });
       await deps.sendNewOrderSms(store.merchant.phone, order.id, order.buyerName);
+      await deps.notifyMerchantNewOrder(store.merchant, { id: order.id, buyerName: order.buyerName, totalCents, storeId: store.id });
 
       return NextResponse.json({ orderId: order.id, totalCents, shippingCents, discountCents, paymentStatus: "pending" }, { status: 201 });
     }
@@ -542,6 +547,7 @@ export async function handleCreateOrder(deps: OrdersDeps, req: Request): Promise
       storeSlug: store.slug,
     });
     await deps.sendNewOrderSms(store.merchant.phone, order.id, order.buyerName);
+    await deps.notifyMerchantNewOrder(store.merchant, { id: order.id, buyerName: order.buyerName, totalCents, storeId: store.id });
 
     return NextResponse.json(
       { orderId: order.id, totalCents, shippingCents, discountCents, trackingId: shipment.trackingId, courier: store.courier, paymentStatus: "pending" },

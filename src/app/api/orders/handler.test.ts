@@ -16,7 +16,7 @@ const STORE: {
   type: string;
   bookingSlotMinutes: number | null;
   bookingWorkingHours: unknown;
-  merchant: { phone: string } & Record<string, unknown>;
+  merchant: { id: string; phone: string; email: string | null; name: string } & Record<string, unknown>;
 } = {
   id: "store-1",
   slug: "test-store",
@@ -26,7 +26,7 @@ const STORE: {
   type: "physical",
   bookingSlotMinutes: null,
   bookingWorkingHours: null,
-  merchant: { phone: "0900000000", subscriptionTier: "advanced" },
+  merchant: { id: "merchant-1", phone: "0900000000", email: null, name: "Test Merchant", subscriptionTier: "advanced" },
 };
 
 const PRODUCT = { id: "p1", name: "Test Product", priceCents: 5000, stockQty: 10, trackInventory: true };
@@ -87,6 +87,7 @@ function makeFakeDeps(
     shipment?: Any;
     email?: Any;
     sms?: Any;
+    notify?: Any;
   } = {
     productUpdateMany: [],
   };
@@ -163,6 +164,9 @@ function makeFakeDeps(
     },
     sendNewOrderSms: async (phone, orderId, buyerName) => {
       calls.sms = { phone, orderId, buyerName };
+    },
+    notifyMerchantNewOrder: async (merchant, order) => {
+      calls.notify = { merchant, order };
     },
   };
 
@@ -310,6 +314,8 @@ test("COD order: dispatches a real shipment, updates the order with the tracking
   assert.equal(calls.orderUpdate.data.status, "confirmed");
   assert.ok(calls.email);
   assert.ok(calls.sms);
+  assert.equal(calls.notify.merchant.id, "merchant-1");
+  assert.equal(calls.notify.order.storeId, "store-1");
 });
 
 // The actual feature this covers: a real merchant selling digital goods
@@ -328,6 +334,7 @@ test("COD order on a digital store: confirms immediately without dispatching a s
   assert.equal(calls.orderUpdate.data.courierTrackingId, undefined);
   assert.ok(calls.email);
   assert.ok(calls.sms);
+  assert.ok(calls.notify);
 });
 
 test("rental order: total is daily rate × days × quantity (never trusting a client-sent total), confirms immediately with no shipment", async () => {
@@ -455,6 +462,7 @@ test("wallet order: returns a signed LightBox config and 201, WITHOUT dispatchin
   assert.equal(calls.shipment, undefined);
   assert.equal(calls.email, undefined);
   assert.equal(calls.sms, undefined);
+  assert.equal(calls.notify, undefined);
 });
 
 test("an invalid coupon code returns 400 and never creates the order", async () => {
