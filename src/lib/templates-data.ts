@@ -311,6 +311,30 @@ export const templatesData = [
     featured: false,
     componentPath: "free/reader",
   },
+  {
+    id: "template-sport",
+    name: "Sport",
+    nameAr: "الرياضي",
+    slug: "sport",
+    description: "High-energy, diagonal-accented design for sports and fitness stores",
+    descriptionAr: "تصميم نشيط بلمسات قطرية لمتاجر الرياضة واللياقة",
+    price: 0,
+    billingType: "free",
+    category: "all",
+    thumbnail: "/templates/sport-thumb.svg",
+    previewUrl: "/preview/sport",
+    features: ["Diagonal-Cut Cards", "Skewed Bold CTAs", "Angled Hero Band"],
+    defaultColors: {
+      primaryColor: "#16a34a",
+      secondaryColor: "#f0fdf4",
+    },
+    usageCount: 0,
+    rating: 4.5,
+    reviews: 0,
+    isNew: true,
+    featured: false,
+    componentPath: "free/sport",
+  },
 ] as const;
 
 export type TemplateSeed = (typeof templatesData)[number];
