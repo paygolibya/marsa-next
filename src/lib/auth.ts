@@ -100,6 +100,7 @@ export function toMerchantDTO(merchant: {
   id: string;
   name: string;
   phone: string;
+  email?: string | null;
   subscriptionTier: string | null;
   subscriptionStatus: string;
   phoneVerified: boolean;
@@ -110,6 +111,7 @@ export function toMerchantDTO(merchant: {
     id: merchant.id,
     name: merchant.name,
     phone: merchant.phone,
+    email: merchant.email ?? null,
     subscriptionTier: merchant.subscriptionTier,
     subscriptionStatus: merchant.subscriptionStatus,
     phoneVerified: merchant.phoneVerified,

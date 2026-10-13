@@ -1,0 +1,141 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useAuth } from "@/lib/auth-context";
+import { api, type Notification } from "@/lib/api";
+
+const POLL_MS = 30000;
+
+function timeAgo(iso: string): string {
+  const diffMs = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diffMs / 60000);
+  if (mins < 1) return "الآن";
+  if (mins < 60) return `قبل ${mins} د`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `قبل ${hours} س`;
+  return `قبل ${Math.floor(hours / 24)} ي`;
+}
+
+// Bell icon + unread badge, mounted in both dashboard header spots
+// (sidebar header and the mobile top bar, src/app/dashboard/layout.tsx) —
+// same className-driven styling pattern ThemeToggle already uses so it
+// adapts to either placement. Polls GET /api/notifications every 30s (the
+// first interval-based polling in this codebase — kept simple on purpose,
+// see the project plan's own reasoning: no WebSockets/SSE for "a merchant
+// glances at their dashboard").
+export default function NotificationBell({ className = "" }: { className?: string }) {
+  const { token, merchant, refreshMerchant } = useAuth();
+  const [open, setOpen] = useState(false);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [emailDraft, setEmailDraft] = useState("");
+  const [savingEmail, setSavingEmail] = useState(false);
+
+  useEffect(() => {
+    if (!token) return;
+    let cancelled = false;
+    async function load() {
+      const { notifications, unreadCount } = await api.listNotifications(token!);
+      if (!cancelled) {
+        setNotifications(notifications);
+        setUnreadCount(unreadCount);
+      }
+    }
+    load();
+    const interval = setInterval(load, POLL_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [token]);
+
+  async function handleOpen() {
+    setOpen(true);
+    if (unreadCount > 0 && token) {
+      setUnreadCount(0);
+      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+      await api.markAllNotificationsRead(token);
+    }
+  }
+
+  async function handleSaveEmail(e: React.FormEvent) {
+    e.preventDefault();
+    if (!token || !emailDraft.trim()) return;
+    setSavingEmail(true);
+    try {
+      await api.updateMerchantProfile(token, { email: emailDraft.trim() });
+      await refreshMerchant();
+    } finally {
+      setSavingEmail(false);
+    }
+  }
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => (open ? setOpen(false) : handleOpen())}
+        aria-label="الإشعارات"
+        className={`relative ${className}`}
+      >
+        🔔
+        {unreadCount > 0 && (
+          <span className="absolute -top-1 -left-1 h-4 min-w-4 px-1 rounded-full bg-signal text-[10px] font-bold text-white flex items-center justify-center">
+            {unreadCount > 9 ? "9+" : unreadCount}
+          </span>
+        )}
+      </button>
+
+      {open && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} aria-hidden />
+          <div
+            dir="rtl"
+            className="absolute left-0 top-full mt-2 w-80 max-w-[90vw] rounded-xl border border-harbor/10 bg-white shadow-2xl z-50 overflow-hidden text-right"
+          >
+            <div className="px-4 py-3 border-b border-harbor/10 font-bold text-harbor text-sm">الإشعارات</div>
+
+            {!merchant?.email && (
+              <form onSubmit={handleSaveEmail} className="px-4 py-3 border-b border-harbor/10 bg-canvas/50 flex gap-2">
+                <input
+                  type="email"
+                  value={emailDraft}
+                  onChange={(e) => setEmailDraft(e.target.value)}
+                  placeholder="بريدك الإلكتروني للتنبيهات"
+                  className="input !py-1.5 text-xs flex-1"
+                />
+                <button
+                  type="submit"
+                  disabled={savingEmail || !emailDraft.trim()}
+                  className="rounded-lg bg-harbor px-3 py-1.5 text-xs font-bold text-canvas disabled:opacity-50 hover:bg-harbor-deep transition-colors"
+                >
+                  حفظ
+                </button>
+              </form>
+            )}
+
+            <div className="max-h-80 overflow-y-auto">
+              {notifications.length === 0 ? (
+                <p className="px-4 py-8 text-center text-sm text-rope">لا توجد إشعارات بعد</p>
+              ) : (
+                notifications.map((n) => (
+                  <Link
+                    key={n.id}
+                    href={n.link ?? "#"}
+                    onClick={() => setOpen(false)}
+                    className={`block px-4 py-3 border-b border-harbor/5 hover:bg-canvas/50 transition-colors ${!n.read ? "bg-signal/5" : ""}`}
+                  >
+                    <p className="font-bold text-sm text-harbor">{n.title}</p>
+                    <p className="text-xs text-rope mt-0.5">{n.body}</p>
+                    <p className="text-[11px] text-rope/70 mt-1">{timeAgo(n.createdAt)}</p>
+                  </Link>
+                ))
+              )}
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}

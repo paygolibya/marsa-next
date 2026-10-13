@@ -124,6 +124,17 @@ export const bookingWorkingHoursSchema = z.record(z.string(), bookingDaySchema.n
 // it entirely.
 const languageSchema = z.enum(["ar", "en"]);
 
+// Email is purely a notification recipient (Merchant.email) -- an empty
+// string clears it (treated the same as null, via the preprocess below),
+// matching how an optional text input naturally submits when a merchant
+// deletes what they typed.
+export const updateMerchantProfileSchema = z.object({
+  email: z.preprocess(
+    (v) => (v === "" ? null : v),
+    z.string().trim().email("بريد إلكتروني غير صالح").nullable().optional()
+  ),
+});
+
 export const updateStoreSettingsSchema = z.object({
   aboutText: z.string().optional().nullable(),
   returnPolicy: z.string().optional().nullable(),

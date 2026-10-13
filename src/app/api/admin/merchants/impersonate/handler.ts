@@ -6,6 +6,7 @@ type MerchantRow = {
   id: string;
   name: string;
   phone: string;
+  email: string | null;
   subscriptionTier: string | null;
   subscriptionStatus: string;
   phoneVerified: boolean;

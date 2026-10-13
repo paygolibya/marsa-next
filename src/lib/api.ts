@@ -39,11 +39,21 @@ export type Merchant = {
   id: string;
   name: string;
   phone: string;
+  email: string | null;
   subscriptionTier: string | null;
   subscriptionStatus: string;
   phoneVerified: boolean;
   subscriptionEndDate: string | null;
   trialEndsAt: string | null;
+};
+export type Notification = {
+  id: string;
+  type: string;
+  title: string;
+  body: string;
+  link: string | null;
+  read: boolean;
+  createdAt: string;
 };
 export type StoreCustomization = {
   primaryColor: string;
@@ -771,6 +781,19 @@ export const api = {
 
   merchantPayouts: (token: string) =>
     request<MerchantPayoutSummary>("/api/merchant/payouts", { headers: authHeaders(token) }),
+
+  listNotifications: (token: string) =>
+    request<{ notifications: Notification[]; unreadCount: number }>("/api/notifications", { headers: authHeaders(token) }),
+
+  markAllNotificationsRead: (token: string) =>
+    request<{ ok: boolean }>("/api/notifications/mark-all-read", { method: "PATCH", headers: authHeaders(token) }),
+
+  updateMerchantProfile: (token: string, body: { email: string | null }) =>
+    request<{ email: string | null }>("/api/merchant/profile", {
+      method: "PATCH",
+      headers: authHeaders(token),
+      body: JSON.stringify(body),
+    }),
 
   supportChat: (token: string, body: { conversationId?: string | null; message: string }) =>
     request<{ conversationId: string; reply: string }>("/api/support/chat", {

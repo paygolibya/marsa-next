@@ -8,6 +8,7 @@ type Merchant = {
   id: string;
   name: string;
   phone: string;
+  email: string | null;
   passwordHash: string;
   subscriptionTier: string | null;
   subscriptionStatus: string;

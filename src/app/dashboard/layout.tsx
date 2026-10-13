@@ -9,6 +9,7 @@ import { isAdminMerchant } from "@/lib/is-admin";
 import { useCurrentStore } from "@/lib/use-current-store";
 import { getImpersonationFlag, exitImpersonation } from "@/lib/impersonation";
 import ThemeToggle from "@/components/layout/ThemeToggle";
+import NotificationBell from "@/components/dashboard/NotificationBell";
 import { ToastProvider } from "@/components/ui";
 import { SupportChatWidget } from "@/components/support/SupportChatWidget";
 
@@ -191,6 +192,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           رفقة <span className="text-canvas/50 font-normal text-sm">من مرسى</span>
         </Link>
         <div className="flex items-center gap-1">
+          <NotificationBell className="text-canvas/70 hover:text-canvas transition-colors p-1" />
           <ThemeToggle className="text-canvas/70 hover:text-canvas transition-colors p-1" />
           <button
             type="button"
@@ -258,7 +260,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </svg>
           </button>
           <span className="font-display font-extrabold text-sm truncate">{store?.name ?? "رفقة"}</span>
-          <ThemeToggle className="text-canvas/70 hover:text-canvas p-1.5" />
+          <div className="flex items-center gap-1">
+            <NotificationBell className="text-canvas/70 hover:text-canvas p-1.5" />
+            <ThemeToggle className="text-canvas/70 hover:text-canvas p-1.5" />
+          </div>
         </div>
 
         {sidebarOpen && (

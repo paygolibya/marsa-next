@@ -9,6 +9,7 @@ const MERCHANT = {
   id: "merchant-1",
   name: "Test Merchant",
   phone: "0911111111",
+  email: null,
   passwordHash: "hashed-password",
   subscriptionTier: "advanced",
   subscriptionStatus: "active",

@@ -22,6 +22,7 @@ const targetMerchant = {
   id: "merchant-1",
   name: "Test Merchant",
   phone: "0912345678",
+  email: null,
   subscriptionTier: "basic",
   subscriptionStatus: "pending",
   phoneVerified: false,
