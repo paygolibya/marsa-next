@@ -5,6 +5,7 @@ import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
 import { ThemeProvider, THEME_INIT_SCRIPT } from "@/lib/theme-context";
 import ChatWidget from "@/components/layout/ChatWidget";
+import CookieConsentBanner from "@/components/CookieConsentBanner";
 
 // One Arabic font (Almarai) for the whole site now, loaded into both CSS
 // variable slots tailwind.config.ts already expects (font-display and
@@ -58,6 +59,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ThemeProvider>
           <AuthProvider>{children}</AuthProvider>
           <ChatWidget />
+          <CookieConsentBanner />
         </ThemeProvider>
         <Analytics />
       </body>

@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { hasAnalyticsConsent, onCookieConsentChange } from "@/lib/cookie-consent";
 
 declare global {
   interface Window {
@@ -14,13 +15,21 @@ declare global {
  * mock-fallback convention for third-party integrations (Vanex, SendGrid,
  * Resala): absent NEXT_PUBLIC_CRISP_WEBSITE_ID, this renders nothing at
  * all rather than loading a broken widget — safe to ship before a real
- * Crisp account exists.
+ * Crisp account exists. Also gated on cookie consent (Crisp sets its own
+ * cookies once loaded) — loads immediately if the visitor already
+ * accepted, or the moment they do via CookieConsentBanner, never before.
  */
 export default function ChatWidget() {
   const websiteId = process.env.NEXT_PUBLIC_CRISP_WEBSITE_ID;
+  const [consented, setConsented] = useState(false);
 
   useEffect(() => {
-    if (!websiteId || document.getElementById("crisp-chat-script")) return;
+    setConsented(hasAnalyticsConsent());
+    return onCookieConsentChange((choice) => setConsented(choice === "accepted"));
+  }, []);
+
+  useEffect(() => {
+    if (!websiteId || !consented || document.getElementById("crisp-chat-script")) return;
 
     window.$crisp = [];
     window.CRISP_WEBSITE_ID = websiteId;
@@ -30,7 +39,7 @@ export default function ChatWidget() {
     script.src = "https://client.crisp.chat/l.js";
     script.async = true;
     document.head.appendChild(script);
-  }, [websiteId]);
+  }, [websiteId, consented]);
 
   return null;
 }
