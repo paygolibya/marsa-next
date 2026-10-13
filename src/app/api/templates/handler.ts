@@ -19,6 +19,7 @@ type TemplateRow = {
   isNew: boolean;
   featured: boolean;
   storeTypes: string[];
+  industries: string[];
 };
 
 export type ListTemplatesDb = {
@@ -44,6 +45,7 @@ export type ListTemplatesDb = {
         isNew: true;
         featured: true;
         storeTypes: true;
+        industries: true;
       };
     }) => Promise<TemplateRow[]>;
   };
@@ -52,8 +54,12 @@ export type ListTemplatesDb = {
 // GET /api/templates — public: lists templates available for the storefront
 // editor/onboarding picker. An optional ?storeType= narrows the list to
 // templates built for that store type (see Template.storeTypes) — omitted
-// entirely returns every active template, unfiltered.
-export async function handleListTemplates(db: ListTemplatesDb, storeType?: string | null): Promise<Response> {
+// entirely returns every active template, unfiltered. An optional
+// ?industry= is a SOFT priority, not a filter: templates built for that
+// industry (Template.industries) are sorted first (still respecting the
+// existing featured/usageCount order within each group), everything else
+// still follows — so no industry can ever produce an empty picker.
+export async function handleListTemplates(db: ListTemplatesDb, storeType?: string | null, industry?: string | null): Promise<Response> {
   try {
     const templates = await db.template.findMany({
       where: { active: true, ...(storeType ? { storeTypes: { has: storeType } } : {}) },
@@ -76,10 +82,15 @@ export async function handleListTemplates(db: ListTemplatesDb, storeType?: strin
         isNew: true,
         featured: true,
         storeTypes: true,
+        industries: true,
       },
     });
 
-    return NextResponse.json({ templates });
+    const ordered = industry
+      ? [...templates].sort((a, b) => Number(b.industries.includes(industry)) - Number(a.industries.includes(industry)))
+      : templates;
+
+    return NextResponse.json({ templates: ordered });
   } catch (error) {
     console.error("Error fetching templates:", error);
     Sentry.captureException(error);

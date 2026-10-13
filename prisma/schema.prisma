@@ -29,6 +29,11 @@ model Template {
   // each get their own dedicated template(s). Drives the ?storeType=
   // filter on GET /api/templates and the onboarding/dashboard pickers.
   storeTypes    String[] @default(["physical", "digital"]) @map("store_types")
+  // Which of src/lib/store-industries.ts's STORE_INDUSTRIES values this
+  // template is built for — a soft-priority recommendation signal for the
+  // picker (?industry= on GET /api/templates sorts these first, never a
+  // hard filter), not a hard requirement. Empty = general-purpose.
+  industries    String[] @default([]) @map("industries")
   price         Int      @default(0)
   currency      String   @default("LYD")
   billingType   String   @default("free")

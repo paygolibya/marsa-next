@@ -277,14 +277,22 @@ export type Template = {
   isNew: boolean;
   featured: boolean;
   storeTypes: string[];
+  industries: string[];
 };
 
 export const api = {
   // Public — no auth. An omitted storeType returns every active template;
   // a given one narrows to templates built for that store type (see
-  // Template.storeTypes).
-  listTemplates: (storeType?: StoreType | null) =>
-    request<{ templates: Template[] }>(`/api/templates${storeType ? `?storeType=${storeType}` : ""}`),
+  // Template.storeTypes). An omitted industry leaves ordering untouched; a
+  // given one sorts industry-matching templates first (Template.industries)
+  // without excluding anything else — see GET /api/templates.
+  listTemplates: (storeType?: StoreType | null, industry?: string | null) => {
+    const params = new URLSearchParams();
+    if (storeType) params.set("storeType", storeType);
+    if (industry) params.set("industry", industry);
+    const qs = params.toString();
+    return request<{ templates: Template[] }>(`/api/templates${qs ? `?${qs}` : ""}`);
+  },
 
   register: (body: { name: string; phone: string; password: string }) =>
     request<{ token: string; merchant: Merchant; otpSendFailed: boolean }>("/api/auth/register", {

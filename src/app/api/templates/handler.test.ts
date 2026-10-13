@@ -20,6 +20,7 @@ const fullTemplate = {
   isNew: false,
   featured: true,
   storeTypes: ["physical", "digital"],
+  industries: [],
 };
 
 test("filters to active templates, ordered featured-first then by usage", async () => {
@@ -62,4 +63,25 @@ test("returns a 500 if the query fails, not an unhandled exception", async () =>
   const db: ListTemplatesDb = { template: { findMany: async () => { throw new Error("db down"); } } };
   const res = await handleListTemplates(db);
   assert.equal(res.status, 500);
+});
+
+test("with an industry given, sorts industry-matching templates first but keeps everyone", async () => {
+  const unmatched1 = { ...fullTemplate, id: "t-unmatched-1", industries: [], featured: true, usageCount: 999 };
+  const matched = { ...fullTemplate, id: "t-matched", industries: ["fashion"], featured: false, usageCount: 1 };
+  const unmatched2 = { ...fullTemplate, id: "t-unmatched-2", industries: ["pets"], featured: false, usageCount: 0 };
+  const db: ListTemplatesDb = {
+    template: { findMany: async () => [unmatched1, matched, unmatched2] },
+  };
+  const res = await handleListTemplates(db, null, "fashion");
+  const body = await res.json();
+  assert.deepEqual(body.templates.map((t: { id: string }) => t.id), ["t-matched", "t-unmatched-1", "t-unmatched-2"]);
+});
+
+test("with no industry given, leaves the DB's own featured/usageCount order untouched", async () => {
+  const db: ListTemplatesDb = {
+    template: { findMany: async () => [fullTemplate, { ...fullTemplate, id: "t2", industries: ["fashion"] }] },
+  };
+  const res = await handleListTemplates(db, null, null);
+  const body = await res.json();
+  assert.deepEqual(body.templates.map((t: { id: string }) => t.id), ["t1", "t2"]);
 });
