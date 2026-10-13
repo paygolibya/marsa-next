@@ -53,6 +53,7 @@ export default function ModernTemplate({
   const logoPx = resolveLogoSizePx(store.customization?.logoSize);
   const textColor = store.customization?.textColor || undefined;
   const textSize = resolveTextSizeClass(store.customization?.textSize);
+  const heroEnabled = store.customization?.heroEnabled !== false;
   const colors = { primary, secondary, accent, text: textColor };
   const language = isSupportedLanguage(store.language) ? store.language : "ar";
   const t = (key: string) => translate(language, key);
@@ -143,10 +144,28 @@ export default function ModernTemplate({
         </div>
       )}
 
-      <main className="mx-auto max-w-6xl px-6 py-10">
-        {store.customization?.description && <p className={`text-harbor/80 mb-6 max-w-2xl ${textSize.body}`} style={{ color: colors.text }}>{store.customization.description}</p>}
-        {orderedSections}
-      </main>
+      {/* A tagline/description-driven hero band — previously this template
+          had no real hero at all, just the small header subtitle, which
+          left the baseline (and most commonly used) template looking
+          unfinished next to Bold/Booking/Rental's own hero treatments.
+          Only renders when there's real content to show, and can be
+          turned off via the same heroEnabled toggle Bold already uses. */}
+      {heroEnabled && (store.customization?.tagline || store.customization?.description) && (
+        <div className="px-6 py-14 text-center" style={{ backgroundColor: `${primary}0d` }}>
+          {store.customization?.tagline && (
+            <h2 className="font-display text-2xl md:text-3xl font-extrabold text-harbor" style={{ color: colors.text }}>
+              {store.customization.tagline}
+            </h2>
+          )}
+          {store.customization?.description && (
+            <p className={`mt-3 max-w-xl mx-auto text-harbor/70 ${textSize.body}`} style={{ color: colors.text }}>
+              {store.customization.description}
+            </p>
+          )}
+        </div>
+      )}
+
+      <main className="mx-auto max-w-6xl px-6 py-10">{orderedSections}</main>
     </div>
   );
 }

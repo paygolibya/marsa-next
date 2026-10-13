@@ -124,7 +124,7 @@ export function NewsletterSection({
 
   // modern
   return (
-    <div className="rounded-2xl border border-dashed border-harbor/20 p-8 text-center max-w-lg mx-auto">
+    <div className="rounded-2xl p-8 text-center max-w-lg mx-auto shadow-sm" style={{ backgroundColor: `${colors.primary}0d` }}>
       <h3 className="font-display font-bold text-harbor mb-2" style={{ color: colors.text }}>{heading || t("newsletter.headingDefault")}</h3>
       <p className="text-sm text-rope mb-4">{body}</p>
       {newsletterState === "done" ? (

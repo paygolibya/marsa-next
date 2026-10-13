@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { formatLYD } from "@/lib/api";
 import { translate, isSupportedLanguage } from "@/lib/i18n";
+import { ProductImagePlaceholder } from "./ProductImagePlaceholder";
 import { safeParseSettings, bundlesSettingsSchema } from "./schemas";
 import type { SectionRenderProps } from "./types";
 
@@ -30,12 +31,22 @@ export function BundlesSection({ colors, store, bundles, onAddBundleToCart, sett
       )}
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {bundles.map((bundle) => (
-          <div key={bundle.id} className="rounded-2xl border border-harbor/10 bg-white overflow-hidden flex flex-col">
-            <Link href={`/store/${store.slug}/bundle/${bundle.id}`} className="aspect-square bg-harbor/5 flex items-center justify-center text-rope text-sm">
+          <div
+            key={bundle.id}
+            className="rounded-2xl border border-harbor/10 bg-white overflow-hidden flex flex-col transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5"
+          >
+            <Link href={`/store/${store.slug}/bundle/${bundle.id}`} className="aspect-square bg-harbor/5 flex items-center justify-center text-rope text-sm overflow-hidden group">
               {bundle.imageUrl ? (
-                <Image src={bundle.imageUrl} alt={bundle.name} width={800} height={800} unoptimized className="h-full w-full object-cover" />
+                <Image
+                  src={bundle.imageUrl}
+                  alt={bundle.name}
+                  width={800}
+                  height={800}
+                  unoptimized
+                  className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
+                />
               ) : (
-                t("common.noImage")
+                <ProductImagePlaceholder label={t("common.noImage")} />
               )}
             </Link>
             <div className="p-4 flex flex-col flex-1">

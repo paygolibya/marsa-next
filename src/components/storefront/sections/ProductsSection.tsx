@@ -4,6 +4,7 @@ import Link from "next/link";
 import { formatLYD, type Product } from "@/lib/api";
 import { InquiryModal } from "@/components/storefront/InquiryModal";
 import { translate, resolveProductTranslation, isSupportedLanguage } from "@/lib/i18n";
+import { ProductImagePlaceholder } from "./ProductImagePlaceholder";
 import { safeParseSettings, productsSettingsSchema } from "./schemas";
 import type { SectionRenderProps } from "./types";
 
@@ -63,7 +64,7 @@ export function ProductsSection({
                       className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                   ) : (
-                    t("common.noImage")
+                    <ProductImagePlaceholder label={t("common.noImage")} />
                   )}
                 </Link>
                 <div className="p-5 flex flex-col flex-1">
@@ -129,13 +130,20 @@ export function ProductsSection({
               <div key={product.id} className="flex flex-col">
                 <Link
                   href={`/store/${slug}/product/${product.id}`}
-                  className="aspect-[4/3] flex items-center justify-center text-white/40 text-sm border"
+                  className="aspect-[4/3] flex items-center justify-center text-white/40 text-sm border overflow-hidden group"
                   style={{ borderColor: `${colors.accent}30` }}
                 >
                   {product.imageUrl ? (
-                    <Image src={product.imageUrl} alt={productName(product)} width={900} height={675} unoptimized className="h-full w-full object-cover" />
+                    <Image
+                      src={product.imageUrl}
+                      alt={productName(product)}
+                      width={900}
+                      height={675}
+                      unoptimized
+                      className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
                   ) : (
-                    t("common.noImage")
+                    <ProductImagePlaceholder label={t("common.noImage")} tone="dark" />
                   )}
                 </Link>
                 <div className="pt-4 text-center">
@@ -189,12 +197,19 @@ export function ProductsSection({
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             {filtered.map((product) => (
-              <div key={product.id} className="rounded-lg border border-harbor/10 bg-white overflow-hidden flex flex-col">
-                <Link href={`/store/${slug}/product/${product.id}`} className="relative aspect-square bg-harbor/5 flex items-center justify-center text-rope text-xs">
+              <div key={product.id} className="rounded-lg border border-harbor/10 bg-white overflow-hidden flex flex-col transition-shadow hover:shadow-md">
+                <Link href={`/store/${slug}/product/${product.id}`} className="relative aspect-square bg-harbor/5 flex items-center justify-center text-rope text-xs overflow-hidden group">
                   {product.imageUrl ? (
-                    <Image src={product.imageUrl} alt={productName(product)} width={600} height={600} unoptimized className="h-full w-full object-cover" />
+                    <Image
+                      src={product.imageUrl}
+                      alt={productName(product)}
+                      width={600}
+                      height={600}
+                      unoptimized
+                      className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
                   ) : (
-                    t("common.noImage")
+                    <ProductImagePlaceholder label={t("common.noImage")} />
                   )}
                   {stats?.averageRating != null && stats.reviewCount > 0 && (
                     <span className="absolute top-1.5 right-1.5 rounded bg-black/70 text-white text-[10px] font-bold px-1.5 py-0.5">
@@ -253,12 +268,22 @@ export function ProductsSection({
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filtered.map((product) => (
-              <div key={product.id} className="rounded-2xl border border-harbor/10 bg-white overflow-hidden flex flex-col">
-                <Link href={`/store/${slug}/product/${product.id}`} className="aspect-[4/3] bg-harbor/5 flex items-center justify-center text-rope text-sm relative">
+              <div
+                key={product.id}
+                className="rounded-2xl border border-harbor/10 bg-white overflow-hidden flex flex-col transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5"
+              >
+                <Link href={`/store/${slug}/product/${product.id}`} className="aspect-[4/3] bg-harbor/5 flex items-center justify-center text-rope text-sm relative overflow-hidden group">
                   {product.imageUrl ? (
-                    <Image src={product.imageUrl} alt={productName(product)} width={800} height={600} unoptimized className="h-full w-full object-cover" />
+                    <Image
+                      src={product.imageUrl}
+                      alt={productName(product)}
+                      width={800}
+                      height={600}
+                      unoptimized
+                      className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
                   ) : (
-                    t("common.noImage")
+                    <ProductImagePlaceholder label={t("common.noImage")} />
                   )}
                   {store.bookingSlotMinutes && (
                     <span className="absolute top-2 right-2 rounded-full px-3 py-1 text-xs font-bold text-white" style={{ backgroundColor: colors.accent }}>
@@ -298,12 +323,22 @@ export function ProductsSection({
         ) : (
           <div className="grid sm:grid-cols-2 gap-8">
             {filtered.map((product) => (
-              <div key={product.id} className="rounded-2xl border border-harbor/10 bg-white overflow-hidden flex flex-col">
-                <Link href={`/store/${slug}/product/${product.id}`} className="aspect-[4/3] bg-harbor/5 flex items-center justify-center text-rope text-sm">
+              <div
+                key={product.id}
+                className="rounded-2xl border border-harbor/10 bg-white overflow-hidden flex flex-col transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5"
+              >
+                <Link href={`/store/${slug}/product/${product.id}`} className="aspect-[4/3] bg-harbor/5 flex items-center justify-center text-rope text-sm overflow-hidden group">
                   {product.imageUrl ? (
-                    <Image src={product.imageUrl} alt={productName(product)} width={900} height={675} unoptimized className="h-full w-full object-cover" />
+                    <Image
+                      src={product.imageUrl}
+                      alt={productName(product)}
+                      width={900}
+                      height={675}
+                      unoptimized
+                      className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
                   ) : (
-                    t("common.noImage")
+                    <ProductImagePlaceholder label={t("common.noImage")} />
                   )}
                 </Link>
                 <div className="p-5 flex flex-col flex-1">
@@ -338,12 +373,22 @@ export function ProductsSection({
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filtered.map((product) => (
-              <div key={product.id} className="rounded-2xl border border-harbor/10 bg-white overflow-hidden flex flex-col">
-                <Link href={`/store/${slug}/product/${product.id}`} className="aspect-square bg-harbor/5 flex items-center justify-center text-rope text-sm">
+              <div
+                key={product.id}
+                className="rounded-2xl border border-harbor/10 bg-white overflow-hidden flex flex-col transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5"
+              >
+                <Link href={`/store/${slug}/product/${product.id}`} className="aspect-square bg-harbor/5 flex items-center justify-center text-rope text-sm overflow-hidden group">
                   {product.imageUrl ? (
-                    <Image src={product.imageUrl} alt={productName(product)} width={800} height={800} unoptimized className="h-full w-full object-cover" />
+                    <Image
+                      src={product.imageUrl}
+                      alt={productName(product)}
+                      width={800}
+                      height={800}
+                      unoptimized
+                      className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
                   ) : (
-                    t("common.noImage")
+                    <ProductImagePlaceholder label={t("common.noImage")} />
                   )}
                 </Link>
                 <div className="p-4 flex flex-col flex-1">
@@ -377,12 +422,22 @@ export function ProductsSection({
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {filtered.map((product) => (
-            <div key={product.id} className="rounded-2xl border border-harbor/10 bg-white overflow-hidden flex flex-col">
-              <Link href={`/store/${slug}/product/${product.id}`} className="aspect-square bg-harbor/5 flex items-center justify-center text-rope text-sm">
+            <div
+              key={product.id}
+              className="rounded-2xl border border-harbor/10 bg-white overflow-hidden flex flex-col transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5"
+            >
+              <Link href={`/store/${slug}/product/${product.id}`} className="aspect-square bg-harbor/5 flex items-center justify-center text-rope text-sm overflow-hidden group">
                 {product.imageUrl ? (
-                  <Image src={product.imageUrl} alt={productName(product)} width={800} height={800} unoptimized className="h-full w-full object-cover" />
+                  <Image
+                    src={product.imageUrl}
+                    alt={productName(product)}
+                    width={800}
+                    height={800}
+                    unoptimized
+                    className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
                 ) : (
-                  t("common.noImage")
+                  <ProductImagePlaceholder label={t("common.noImage")} />
                 )}
               </Link>
               <div className="p-4 flex flex-col flex-1">

@@ -61,7 +61,7 @@ export function TestimonialsSection({ variant, colors, settings: rawSettings, te
         <h2 className="font-display text-lg font-extrabold text-harbor mb-4" style={{ color: colors.text }}>{settings.title || t("testimonials.titleMarketplace")}</h2>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {items.map((item, i) => (
-            <div key={i} className="rounded-lg border border-harbor/10 bg-white p-3">
+            <div key={i} className="rounded-lg border border-harbor/10 bg-white p-3 transition-shadow hover:shadow-md">
               <p className="text-xs mb-1" style={{ color: colors.accent }}>
                 {"★".repeat(item.rating)}
                 {"☆".repeat(5 - item.rating)}
@@ -83,7 +83,7 @@ export function TestimonialsSection({ variant, colors, settings: rawSettings, te
       <h2 className="font-display text-xl font-extrabold text-harbor mb-6" style={{ color: colors.text }}>{settings.title || t("testimonials.titleDefault")}</h2>
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {items.map((item, i) => (
-          <div key={i} className="rounded-2xl border border-harbor/10 bg-white p-5">
+          <div key={i} className="rounded-2xl border border-harbor/10 bg-white p-5 transition-shadow hover:shadow-md">
             <p className="font-bold mb-2" style={{ color: colors.accent }}>
               {"★".repeat(item.rating)}
               {"☆".repeat(5 - item.rating)}
