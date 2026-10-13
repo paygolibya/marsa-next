@@ -215,6 +215,30 @@ export const templatesData = [
     featured: false,
     componentPath: "free/playful",
   },
+  {
+    id: "template-artisan",
+    name: "Artisan",
+    nameAr: "الحِرفي",
+    slug: "artisan",
+    description: "Warm, handcrafted-feel design for home decor, gifts, and bakery stores",
+    descriptionAr: "تصميم دافئ بطابع حِرفي لمتاجر الديكور والهدايا والمخابز",
+    price: 0,
+    billingType: "free",
+    category: "all",
+    thumbnail: "/templates/artisan-thumb.svg",
+    previewUrl: "/preview/artisan",
+    features: ["Terracotta Palette", "Handmade Badge", "Textured Cards"],
+    defaultColors: {
+      primaryColor: "#9a3412",
+      secondaryColor: "#fef3e8",
+    },
+    usageCount: 0,
+    rating: 4.5,
+    reviews: 0,
+    isNew: true,
+    featured: false,
+    componentPath: "free/artisan",
+  },
 ] as const;
 
 export type TemplateSeed = (typeof templatesData)[number];

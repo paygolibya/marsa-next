@@ -347,6 +347,91 @@ export function ProductsSection({
     );
   }
 
+  if (variant === "artisan") {
+    return (
+      <div>
+        <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
+          {settings.title && (
+            <h2 className="font-display text-2xl font-bold text-harbor" style={{ color: colors.text }}>
+              {settings.title}
+            </h2>
+          )}
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={t("products.searchPlaceholder")}
+            className="input max-w-xs"
+          />
+        </div>
+        {filtered.length === 0 ? (
+          empty
+        ) : (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filtered.map((product) => (
+              <div
+                key={product.id}
+                className="rounded-2xl overflow-hidden flex flex-col border transition-shadow hover:shadow-lg"
+                style={{ backgroundColor: "#fffaf3", borderColor: "#e8d5bd" }}
+              >
+                <Link href={`/store/${slug}/product/${product.id}`} className="aspect-[4/3] flex items-center justify-center overflow-hidden group" style={{ background: "linear-gradient(135deg, #f3e3cf, #ede0cb)" }}>
+                  {product.imageUrl ? (
+                    <Image
+                      src={product.imageUrl}
+                      alt={productName(product)}
+                      width={800}
+                      height={600}
+                      unoptimized
+                      className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  ) : (
+                    <ProductImagePlaceholder label={t("common.noImage")} />
+                  )}
+                </Link>
+                <div className="p-5 flex flex-col flex-1">
+                  <span className="text-[11px] font-bold tracking-wide mb-1" style={{ color: colors.accent }}>
+                    {t("artisan.handmadeBadge")}
+                  </span>
+                  <Link href={`/store/${slug}/product/${product.id}`} className="font-display font-bold text-harbor hover:underline" style={{ color: colors.text }}>
+                    {productName(product)}
+                  </Link>
+                  <p className="font-bold text-sm mt-1" style={{ color: colors.primary }}>
+                    {formatLYD(product.priceCents, language)}{store.type === "rental" && t("common.perDay")}
+                  </p>
+                  {isShowcase ? (
+                    <button
+                      onClick={() => setInquiryProduct(product)}
+                      style={{ backgroundColor: colors.primary }}
+                      className="mt-4 rounded-lg text-white py-2.5 font-bold text-sm hover:opacity-90 transition-opacity"
+                    >
+                      {t("common.inquire")}
+                    </button>
+                  ) : product.variantOptions?.length ? (
+                    <Link
+                      href={`/store/${slug}/product/${product.id}`}
+                      style={{ backgroundColor: colors.primary }}
+                      className="mt-4 rounded-lg text-white py-2.5 font-bold text-sm text-center hover:opacity-90 transition-opacity"
+                    >
+                      {t("common.chooseOptions")}
+                    </Link>
+                  ) : (
+                    <button
+                      onClick={() => onAddToCart(product)}
+                      style={{ backgroundColor: colors.primary }}
+                      className="mt-4 rounded-lg text-white py-2.5 font-bold text-sm hover:opacity-90 transition-opacity"
+                    >
+                      {t("common.addToCart")}
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        {inquiryModal}
+      </div>
+    );
+  }
+
   if (variant === "marketplace") {
     return (
       <div>

@@ -54,6 +54,10 @@
   "playful.heroHeading": "Everything your little ones need",
   "playful.heroSubtext": "A collection picked with love, to brighten their every day",
 
+  "artisan.heroHeading": "Crafted with care, for you",
+  "artisan.heroSubtext": "Pieces picked with love from our store",
+  "artisan.handmadeBadge": "Handmade",
+
   "bundles.heading": "Bundles",
   "bundles.itemsCount": "{count} products in one bundle",
   "bundles.addToCart": "Add bundle to cart",
