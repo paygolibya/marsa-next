@@ -58,6 +58,9 @@
   "artisan.heroSubtext": "قطع مختارة بحب من متجرنا",
   "artisan.handmadeBadge": "صنع يدوي",
 
+  "trust.heroHeading": "منتجات موثوقة لصحتك وراحتك",
+  "trust.heroSubtext": "تسوّق بثقة من مجموعتنا المختارة بعناية",
+
   "bundles.heading": "الباقات",
   "bundles.itemsCount": "{count} منتجات في باقة واحدة",
   "bundles.addToCart": "أضف الباقة للسلة",

@@ -239,6 +239,30 @@ export const templatesData = [
     featured: false,
     componentPath: "free/artisan",
   },
+  {
+    id: "template-trust",
+    name: "Trust",
+    nameAr: "الثقة",
+    slug: "trust",
+    description: "Clean clinical design for pharmacy, medical, and cleaning supply stores",
+    descriptionAr: "تصميم نظيف وواضح لمتاجر الصيدليات والمستلزمات الطبية ومواد التنظيف",
+    price: 0,
+    billingType: "free",
+    category: "all",
+    thumbnail: "/templates/trust-thumb.svg",
+    previewUrl: "/preview/trust",
+    features: ["Real-Stats Trust Strip", "Clinical Palette", "High-Contrast Cards"],
+    defaultColors: {
+      primaryColor: "#0369a1",
+      secondaryColor: "#f0f9ff",
+    },
+    usageCount: 0,
+    rating: 4.5,
+    reviews: 0,
+    isNew: true,
+    featured: false,
+    componentPath: "free/trust",
+  },
 ] as const;
 
 export type TemplateSeed = (typeof templatesData)[number];

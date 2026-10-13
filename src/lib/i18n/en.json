@@ -58,6 +58,9 @@
   "artisan.heroSubtext": "Pieces picked with love from our store",
   "artisan.handmadeBadge": "Handmade",
 
+  "trust.heroHeading": "Trusted products for your health and comfort",
+  "trust.heroSubtext": "Shop with confidence from our carefully chosen selection",
+
   "bundles.heading": "Bundles",
   "bundles.itemsCount": "{count} products in one bundle",
   "bundles.addToCart": "Add bundle to cart",
