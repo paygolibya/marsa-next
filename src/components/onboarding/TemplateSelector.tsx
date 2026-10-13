@@ -20,17 +20,23 @@ interface Template {
   reviews: number;
   isNew: boolean;
   featured: boolean;
+  industries?: readonly string[];
 }
 
 interface TemplateSelectorProps {
   templates: readonly Template[];
   onSelect: (template: Template) => void;
   selectedId?: string | null;
+  // The merchant's chosen industry (src/lib/store-industries.ts) — when
+  // set, a template built for it (Template.industries) gets a "recommended"
+  // badge. Purely visual; GET /api/templates already sorted these first.
+  industry?: string | null;
 }
 
-export default function TemplateSelector({ templates, onSelect, selectedId }: TemplateSelectorProps) {
+export default function TemplateSelector({ templates, onSelect, selectedId, industry }: TemplateSelectorProps) {
   const freeTemplates = templates.filter((t) => t.price === 0);
   const paidTemplates = templates.filter((t) => t.price > 0);
+  const isRecommended = (t: Template) => Boolean(industry) && (t.industries?.includes(industry!) ?? false);
 
   return (
     <div className="space-y-12 py-8">
@@ -47,7 +53,7 @@ export default function TemplateSelector({ templates, onSelect, selectedId }: Te
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {freeTemplates.map((template) => (
-            <TemplateCard key={template.id} template={template} isSelected={selectedId === template.id} onSelect={onSelect} />
+            <TemplateCard key={template.id} template={template} isSelected={selectedId === template.id} onSelect={onSelect} recommended={isRecommended(template)} />
           ))}
         </div>
       </div>
@@ -61,7 +67,7 @@ export default function TemplateSelector({ templates, onSelect, selectedId }: Te
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {paidTemplates.map((template) => (
-              <TemplateCard key={template.id} template={template} isSelected={selectedId === template.id} onSelect={onSelect} isPaid />
+              <TemplateCard key={template.id} template={template} isSelected={selectedId === template.id} onSelect={onSelect} isPaid recommended={isRecommended(template)} />
             ))}
           </div>
         </div>
@@ -75,11 +81,13 @@ function TemplateCard({
   isSelected,
   onSelect,
   isPaid = false,
+  recommended = false,
 }: {
   template: Template;
   isSelected: boolean;
   onSelect: (template: Template) => void;
   isPaid?: boolean;
+  recommended?: boolean;
 }) {
   const renderStars = (rating: number) => {
     const stars = [];
@@ -122,6 +130,11 @@ function TemplateCard({
       </div>
 
       <div className="p-4 space-y-3">
+        {recommended && (
+          <span className="inline-block bg-purple-100 text-purple-700 px-2.5 py-1 rounded-full text-xs font-bold">
+            ✨ موصى به لمجالك
+          </span>
+        )}
         <h3 className="text-lg font-bold text-gray-900">{template.nameAr}</h3>
         <p className="text-sm text-gray-600 line-clamp-2">{template.descriptionAr}</p>
 

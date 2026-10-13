@@ -43,17 +43,20 @@ export default function OnboardingPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // Re-fetched whenever the chosen store type changes — a rental/booking/
-  // showcase merchant should only ever see templates built for that type
-  // (see Template.storeTypes), not the generic shop ones. The previously
-  // selected template may not exist in the new list, so default back to
-  // the first option every time the type changes.
+  // Re-fetched whenever the chosen store type OR industry changes — type
+  // narrows the list (a rental/booking/showcase merchant should only ever
+  // see templates built for that type, see Template.storeTypes); industry
+  // only reorders it (templates built for that industry, see
+  // Template.industries, sort first — see ?industry= on GET /api/templates,
+  // never a hard filter). The previously selected template may not exist
+  // in the new list, so default back to the first option every time either
+  // changes.
   useEffect(() => {
-    api.listTemplates(storeType).then(({ templates }) => {
+    api.listTemplates(storeType, industry || null).then(({ templates }) => {
       setTemplates(templates);
       setSelectedTemplateId(templates[0]?.id ?? null);
     });
-  }, [storeType]);
+  }, [storeType, industry]);
 
   useEffect(() => {
     if (ready && !token) router.replace("/login");
@@ -184,6 +187,7 @@ export default function OnboardingPage() {
                 templates={templates.map((t) => ({ ...t, previewUrl: t.previewUrl ?? "", features: (t.features as string[]) ?? [] }))}
                 selectedId={selectedTemplateId}
                 onSelect={(template) => setSelectedTemplateId(template.id)}
+                industry={industry || null}
               />
             </div>
 

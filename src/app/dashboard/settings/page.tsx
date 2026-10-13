@@ -57,7 +57,7 @@ export default function DashboardSettingsPage() {
   // exists today, not an unsaved in-progress type change.
   useEffect(() => {
     if (!store) return;
-    api.listTemplates(store.type).then(({ templates }) => setAvailableTemplates(templates));
+    api.listTemplates(store.type, store.industry).then(({ templates }) => setAvailableTemplates(templates));
   }, [store]);
 
   useEffect(() => {
