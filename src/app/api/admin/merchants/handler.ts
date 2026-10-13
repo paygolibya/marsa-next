@@ -2,12 +2,32 @@ import { NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import { getAuthMerchantId, isAdminMerchantId } from "@/lib/auth";
 
-type MerchantRow = { id: string; createdAt: Date; stores: unknown[] };
+type MerchantRow = {
+  id: string;
+  name: string;
+  phone: string;
+  subscriptionTier: string | null;
+  subscriptionStatus: string;
+  subscriptionEndDate: Date | null;
+  trialEndsAt: Date | null;
+  createdAt: Date;
+  stores: { id: string; name: string; slug: string }[];
+};
 
 export type ListMerchantsDb = {
   merchant: {
     findMany: (args: {
-      include: { stores: true };
+      select: {
+        id: true;
+        name: true;
+        phone: true;
+        subscriptionTier: true;
+        subscriptionStatus: true;
+        subscriptionEndDate: true;
+        trialEndsAt: true;
+        createdAt: true;
+        stores: { select: { id: true; name: true; slug: true } };
+      };
       orderBy: { createdAt: "desc" };
       take: number;
       cursor?: { id: string };
@@ -31,8 +51,22 @@ export async function handleListMerchants(db: ListMerchantsDb, req: Request): Pr
     const url = new URL(req.url);
     const cursor = url.searchParams.get("cursor");
 
+    // Explicit select, never include/no-select — this endpoint used to
+    // return every raw merchant column (passwordHash, otpCodeHash
+    // included) straight to the client. Found live: a full password-hash
+    // dump of every merchant on the platform via this one endpoint.
     const merchants = await db.merchant.findMany({
-      include: { stores: true },
+      select: {
+        id: true,
+        name: true,
+        phone: true,
+        subscriptionTier: true,
+        subscriptionStatus: true,
+        subscriptionEndDate: true,
+        trialEndsAt: true,
+        createdAt: true,
+        stores: { select: { id: true, name: true, slug: true } },
+      },
       orderBy: { createdAt: "desc" },
       take: PAGE_SIZE,
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),

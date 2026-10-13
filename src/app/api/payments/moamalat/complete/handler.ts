@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { verifyMoamalatResponseHash } from "@/lib/payment/moamalat-client";
+import { verifyMoamalatResponseHash, moamalatAmountToCents } from "@/lib/payment/moamalat-client";
 
 export type MoamalatCompleteDeps = {
   db: {
@@ -8,7 +8,8 @@ export type MoamalatCompleteDeps = {
   };
   finalizeByMerchantReference: (
     ref: string,
-    outcome: "paid" | "failed"
+    outcome: "paid" | "failed",
+    gatewayAmountCents: number
   ) => Promise<
     | { kind: "order"; id: string; result: { trackingId?: string; courier?: string } }
     | { kind: "subscription"; id: string; result: unknown }
@@ -58,7 +59,12 @@ export async function handleMoamalatComplete(deps: MoamalatCompleteDeps, req: Re
     return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
   }
 
-  const outcome = await deps.finalizeByMerchantReference(MerchantReference, "paid");
+  const Amount = rest.Amount;
+  if (!Amount) {
+    return NextResponse.json({ error: "Missing Amount" }, { status: 400 });
+  }
+
+  const outcome = await deps.finalizeByMerchantReference(MerchantReference, "paid", moamalatAmountToCents(Number(Amount)));
   if (!outcome) {
     return NextResponse.json({ error: "Unknown MerchantReference" }, { status: 404 });
   }

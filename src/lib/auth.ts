@@ -3,7 +3,16 @@ import { prisma } from "@/lib/prisma";
 
 // Same secret/env convention as the original Express middleware
 // (src/middleware/auth.js) — falls back to a dev secret only outside prod.
+// The fallback is a SECURITY BOUNDARY, not a convenience: it's a public
+// string baked into this file, so if it's ever actually used to sign a
+// real token, anyone can forge a token for any merchantId (including an
+// admin one). Hard-fail at import time in production rather than silently
+// running on it — found live: production had no JWT_SECRET configured at
+// all and was doing exactly that until this check was added.
 const JWT_SECRET = process.env.JWT_SECRET || "dev_secret_change_me";
+if (process.env.NODE_ENV === "production" && !process.env.JWT_SECRET) {
+  throw new Error("JWT_SECRET must be set in production — refusing to start on the public fallback secret.");
+}
 
 function splitEnvList(value: string | undefined) {
   return (value || "")
@@ -24,11 +33,17 @@ function getAllowedAdminValues() {
   // merchants shown" symptom this was written to fix, caught by testing
   // the real endpoint with a real admin token and seeing it worked, which
   // meant the bug had to be in which phones the server actually trusted.
+  // No hardcoded fallback phone here (there used to be one, "0910000000" —
+  // a real security hole: it's a public string in source, and
+  // POST /api/auth/register returns a valid signed token immediately, with
+  // no OTP check, so anyone who self-registered with that exact phone
+  // before the real admin claimed it would have gotten full admin. Admin
+  // access must come entirely from env vars now — see .env's own comment
+  // for the production value this maps to.
   const phones = [
     ...splitEnvList(process.env.ADMIN_MERCHANT_PHONES),
     ...splitEnvList(process.env.ADMIN_MERCHANT_PHONE),
     ...splitEnvList(process.env.NEXT_PUBLIC_ADMIN_MERCHANT_PHONES),
-    "0910000000",
   ];
 
   return { ids, phones: Array.from(new Set(phones)) };

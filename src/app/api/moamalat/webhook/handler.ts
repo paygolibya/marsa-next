@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
-import { verifyMoamalatResponseHash } from "@/lib/payment/moamalat-client";
+import { verifyMoamalatResponseHash, moamalatAmountToCents } from "@/lib/payment/moamalat-client";
 
 // See docs.moamalat.net/notification.html for the field list — the hash
 // covers exactly DateTimeLocalTrxn, MerchantId, TerminalId, Amount,
@@ -27,7 +27,8 @@ export type MoamalatWebhookDeps = {
   };
   finalizeByMerchantReference: (
     ref: string,
-    outcome: "paid" | "failed"
+    outcome: "paid" | "failed",
+    gatewayAmountCents: number
   ) => Promise<{ kind: "order" | "subscription"; id: string; result: unknown } | null>;
 };
 
@@ -66,7 +67,7 @@ export async function handleMoamalatWebhook(deps: MoamalatWebhookDeps, req: Requ
   }
 
   try {
-    const outcome = await deps.finalizeByMerchantReference(MerchantReference, "paid");
+    const outcome = await deps.finalizeByMerchantReference(MerchantReference, "paid", moamalatAmountToCents(Number(Amount)));
     if (outcome && SystemReference) {
       if (outcome.kind === "order") {
         await deps.db.order.update({ where: { id: outcome.id }, data: { moamalatSystemReference: SystemReference, moamalatNetworkReference: NetworkReference ?? null } });

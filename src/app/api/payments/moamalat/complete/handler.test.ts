@@ -69,8 +69,8 @@ function makeFakeDeps(finalizeResult: Awaited<ReturnType<MoamalatCompleteDeps["f
         },
       },
     },
-    finalizeByMerchantReference: async (ref, outcome) => {
-      calls.finalizeArgs = { ref, outcome };
+    finalizeByMerchantReference: async (ref, outcome, gatewayAmountCents) => {
+      calls.finalizeArgs = { ref, outcome, gatewayAmountCents };
       return finalizeResult;
     },
   };
@@ -105,7 +105,8 @@ test("a valid order-payment callback finalizes as 'paid' and records both Moamal
   assert.equal(body.status, "paid");
   assert.equal(body.kind, "order");
   assert.equal(body.trackingId, "TRACK-1");
-  assert.deepEqual(calls.finalizeArgs, { ref: "order:order-1", outcome: "paid" });
+  // base Amount is "100000" in Moamalat's units (cents x10) -> 10000 cents
+  assert.deepEqual(calls.finalizeArgs, { ref: "order:order-1", outcome: "paid", gatewayAmountCents: 10000 });
   const orderUpdate = calls.orderUpdate as { where: { id: string }; data: { moamalatSystemReference: string; moamalatNetworkReference: string } };
   assert.equal(orderUpdate.where.id, "order-1");
   assert.equal(orderUpdate.data.moamalatSystemReference, "SYS-1");
@@ -121,6 +122,14 @@ test("a valid subscription-payment callback updates the Payment row, not an Orde
   const paymentUpdate = calls.paymentUpdate as { where: { id: string } };
   assert.equal(paymentUpdate.where.id, "payment-1");
   assert.equal(calls.orderUpdate, undefined);
+});
+
+test("rejects a validly-signed callback missing Amount with 400, before finalizing anything", async () => {
+  const { deps, calls } = makeFakeDeps();
+  const callback = makeValidCallback({ Amount: undefined });
+  const res = await handleMoamalatComplete(deps, req(callback));
+  assert.equal(res.status, 400);
+  assert.equal(calls.finalizeArgs, undefined);
 });
 
 test("an unknown/stale MerchantReference returns 404, not a silent success", async () => {

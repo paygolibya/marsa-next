@@ -51,7 +51,7 @@ export default function LoginPage() {
                 onChange={(e) => setPhone(e.target.value)}
                 className="input"
                 dir="ltr"
-                placeholder="0910000000"
+                placeholder="0912345678"
               />
             </label>
             <label className="block">

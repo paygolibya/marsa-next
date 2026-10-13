@@ -50,8 +50,8 @@ function makeFakeDeps(finalizeResult: Awaited<ReturnType<MoamalatWebhookDeps["fi
         },
       },
     },
-    finalizeByMerchantReference: async (ref, outcome) => {
-      calls.finalizeArgs = { ref, outcome };
+    finalizeByMerchantReference: async (ref, outcome, gatewayAmountCents) => {
+      calls.finalizeArgs = { ref, outcome, gatewayAmountCents };
       return finalizeResult;
     },
   };
@@ -94,7 +94,8 @@ test("a valid order-payment notification finalizes as 'paid' and records both Mo
   const { deps, calls } = makeFakeDeps({ kind: "order", id: "order-1", result: { updated: true } });
   const res = await handleMoamalatWebhook(deps, req(makeValidNotification()));
   assert.equal(res.status, 200);
-  assert.deepEqual(calls.finalizeArgs, { ref: "order:order-1", outcome: "paid" });
+  // base Amount is "100000" in Moamalat's units (cents x10) -> 10000 cents
+  assert.deepEqual(calls.finalizeArgs, { ref: "order:order-1", outcome: "paid", gatewayAmountCents: 10000 });
   const orderUpdate = calls.orderUpdate as { where: { id: string }; data: { moamalatSystemReference: string; moamalatNetworkReference: string } };
   assert.equal(orderUpdate.where.id, "order-1");
   assert.equal(orderUpdate.data.moamalatSystemReference, "SYS-1");

@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/nextjs";
 import { prisma } from "@/lib/prisma";
 import { getPlanFeatureFlags } from "@/lib/checkout-features";
 import { addMonths } from "@/lib/subscription/period";
@@ -17,8 +18,23 @@ export type FinalizeSubscriptionPaymentResult = { updated: boolean };
  * Mirrors exactly what an admin's manual approval already does
  * (/api/admin/payments/[id]/approve) — this is the same activation,
  * just automatic instead of requiring a human to click a button.
+ *
+ * gatewayAmountCents — see finalizeWalletOrder's own comment for why this
+ * is required and checked before activating anything. Payment.amount is
+ * stored in whole LYD (an existing, separate convention on this one
+ * model), hence the ×100 below to compare in cents like everything else.
  */
-export async function finalizeSubscriptionPayment(paymentId: string, outcome: "paid" | "failed"): Promise<FinalizeSubscriptionPaymentResult> {
+export async function finalizeSubscriptionPayment(paymentId: string, outcome: "paid" | "failed", gatewayAmountCents: number): Promise<FinalizeSubscriptionPaymentResult> {
+  if (outcome === "paid") {
+    const expected = await prisma.payment.findUnique({ where: { id: paymentId }, select: { amount: true } });
+    if (!expected) return { updated: false };
+    if (expected.amount * 100 !== gatewayAmountCents) {
+      console.error(`finalizeSubscriptionPayment: amount mismatch for payment ${paymentId} — gateway reported ${gatewayAmountCents}, payment amount is ${expected.amount} LYD. Refusing to approve.`);
+      Sentry.captureMessage(`Moamalat amount mismatch for payment ${paymentId}: gateway=${gatewayAmountCents} payment=${expected.amount * 100}`, "error");
+      return { updated: false };
+    }
+  }
+
   const guarded = await prisma.payment.updateMany({
     where: { id: paymentId, method: "moamalat", status: "pending" },
     data: {

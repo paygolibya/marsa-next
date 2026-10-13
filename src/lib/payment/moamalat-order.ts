@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/nextjs";
 import { prisma } from "@/lib/prisma";
 import { createShipment } from "@/lib/integrations/couriers";
 import { sendOrderConfirmationEmail } from "@/lib/integrations/email";
@@ -22,8 +23,28 @@ export type FinalizeWalletOrderResult = {
  *
  * Unchanged from the DPay era (this function never referenced DPay
  * directly — it only ever cared that paymentMethod is "wallet").
+ *
+ * gatewayAmountCents is Moamalat's own reported Amount for this
+ * transaction (converted to cents) — required and checked against the
+ * order's own totalCents before ever marking it paid. Found live: the
+ * webhook path's SecureHash covers Amount but NOT MerchantReference,
+ * so without this check a genuine notification for a small real payment
+ * could in principle be replayed with a different MerchantReference to
+ * mark an unrelated, larger order "paid" for free. Skipped for a
+ * "failed" outcome — that direction never moves money, so there's
+ * nothing to verify.
  */
-export async function finalizeWalletOrder(orderId: string, outcome: "paid" | "failed"): Promise<FinalizeWalletOrderResult> {
+export async function finalizeWalletOrder(orderId: string, outcome: "paid" | "failed", gatewayAmountCents: number): Promise<FinalizeWalletOrderResult> {
+  if (outcome === "paid") {
+    const expected = await prisma.order.findUnique({ where: { id: orderId }, select: { totalCents: true } });
+    if (!expected) return { updated: false };
+    if (expected.totalCents !== gatewayAmountCents) {
+      console.error(`finalizeWalletOrder: amount mismatch for order ${orderId} — gateway reported ${gatewayAmountCents}, order total is ${expected.totalCents}. Refusing to mark as paid.`);
+      Sentry.captureMessage(`Moamalat amount mismatch for order ${orderId}: gateway=${gatewayAmountCents} order=${expected.totalCents}`, "error");
+      return { updated: false };
+    }
+  }
+
   const guarded = await prisma.order.updateMany({
     where: { id: orderId, paymentMethod: "wallet", paymentStatus: "pending" },
     data: { paymentStatus: outcome },

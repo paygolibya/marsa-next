@@ -55,7 +55,7 @@ export default function RegisterPage() {
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               className="input"
-              placeholder="0910000000"
+              placeholder="0912345678"
               dir="ltr"
             />
           </Field>
