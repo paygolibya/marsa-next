@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
-import { getAuthMerchantId } from "@/lib/auth";
+import { getAuthPayload } from "@/lib/auth";
 import { updateMerchantProfileSchema } from "@/lib/validation";
 
 export type MerchantProfileDb = {
@@ -13,9 +13,19 @@ export type MerchantProfileDb = {
 // currently the only self-editable profile field — set from
 // NotificationBell.tsx's panel, the sole place that collects it (no
 // signup step asks for an email at all, phone is the sole identifier).
+// Blocked during an admin impersonation session (signImpersonationToken's
+// impersonatedBy claim, see auth.ts) — an admin helping a merchant from
+// inside their dashboard has no legitimate reason to change where that
+// merchant's own order/stock alerts get sent, and this is the only
+// self-service profile field that exists today for an impersonator to
+// touch (there's no password-change endpoint anywhere in this app).
 export async function handleUpdateMerchantProfile(db: MerchantProfileDb, req: Request): Promise<Response> {
-  const merchantId = getAuthMerchantId(req);
-  if (!merchantId) return NextResponse.json({ error: "Missing or invalid token" }, { status: 401 });
+  const payload = getAuthPayload(req);
+  if (!payload) return NextResponse.json({ error: "Missing or invalid token" }, { status: 401 });
+  if (payload.impersonatedBy) {
+    return NextResponse.json({ error: "لا يمكن تعديل بيانات الحساب أثناء جلسة انتحال الهوية" }, { status: 403 });
+  }
+  const merchantId = payload.merchantId;
 
   try {
     const body = await req.json();

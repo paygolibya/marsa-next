@@ -17,6 +17,14 @@ function noTokenReq() {
   return new Request("http://localhost/api/merchant/profile", { method: "PATCH", body: "{}" });
 }
 
+function impersonationReq(body: unknown, merchantId = "merchant-1", adminId = "admin-1") {
+  return new Request("http://localhost/api/merchant/profile", {
+    method: "PATCH",
+    headers: { Authorization: `Bearer ${jwt.sign({ merchantId, impersonatedBy: adminId }, process.env.JWT_SECRET!)}` },
+    body: JSON.stringify(body),
+  });
+}
+
 function makeFakeDb() {
   const calls: { updateArgs?: unknown } = {};
   const db: MerchantProfileDb = {
@@ -55,4 +63,11 @@ test("an empty string clears the email (treated as null), not rejected as invali
   const res = await handleUpdateMerchantProfile(db, req({ email: "" }));
   assert.equal(res.status, 200);
   assert.deepEqual((calls.updateArgs as { data: { email: string | null } }).data, { email: null });
+});
+
+test("rejects an impersonated session with 403, never touching the database", async () => {
+  const { db, calls } = makeFakeDb();
+  const res = await handleUpdateMerchantProfile(db, impersonationReq({ email: "attacker@example.com" }));
+  assert.equal(res.status, 403);
+  assert.equal(calls.updateArgs, undefined);
 });
