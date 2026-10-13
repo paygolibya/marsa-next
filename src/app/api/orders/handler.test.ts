@@ -29,15 +29,15 @@ const STORE: {
   merchant: { id: "merchant-1", phone: "0900000000", email: null, name: "Test Merchant", subscriptionTier: "advanced" },
 };
 
-const PRODUCT = { id: "p1", name: "Test Product", priceCents: 5000, stockQty: 10, trackInventory: true };
+const PRODUCT = { id: "p1", name: "Test Product", priceCents: 5000, stockQty: 10, trackInventory: true, lowStockThreshold: 5 };
 
 const BUNDLE = {
   id: "bundle-1",
   name: "Test Bundle",
   priceCents: 8000,
   items: [
-    { productId: "comp-1", quantity: 2, product: { name: "Component A", stockQty: 10, trackInventory: true } },
-    { productId: "comp-2", quantity: 1, product: { name: "Component B", stockQty: 10, trackInventory: true } },
+    { productId: "comp-1", quantity: 2, product: { name: "Component A", stockQty: 10, trackInventory: true, lowStockThreshold: 5 } },
+    { productId: "comp-2", quantity: 1, product: { name: "Component B", stockQty: 10, trackInventory: true, lowStockThreshold: 5 } },
   ],
 };
 
@@ -88,6 +88,7 @@ function makeFakeDeps(
     email?: Any;
     sms?: Any;
     notify?: Any;
+    lowStockNotify?: Any[];
   } = {
     productUpdateMany: [],
   };
@@ -167,6 +168,10 @@ function makeFakeDeps(
     },
     notifyMerchantNewOrder: async (merchant, order) => {
       calls.notify = { merchant, order };
+    },
+    notifyMerchantLowStock: async (merchant, product) => {
+      calls.lowStockNotify = calls.lowStockNotify ?? [];
+      calls.lowStockNotify.push({ merchant, product });
     },
   };
 
@@ -316,6 +321,28 @@ test("COD order: dispatches a real shipment, updates the order with the tracking
   assert.ok(calls.sms);
   assert.equal(calls.notify.merchant.id, "merchant-1");
   assert.equal(calls.notify.order.storeId, "store-1");
+});
+
+test("low-stock alert fires exactly once, on the order that crosses the threshold", async () => {
+  // stockBefore=7, threshold=5, ordering 3 leaves stockQty=4 — crosses.
+  const { deps, calls } = makeFakeDeps({ product: { ...PRODUCT, stockQty: 7, lowStockThreshold: 5 } });
+  await handleCreateOrder(deps, req(baseBody({ items: [{ productId: "p1", quantity: 3 }] })));
+  assert.equal(calls.lowStockNotify?.length, 1);
+  assert.equal(calls.lowStockNotify[0].product.id, "p1");
+  assert.equal(calls.lowStockNotify[0].product.stockQty, 4);
+});
+
+test("low-stock alert does NOT fire again once a product is already below the threshold", async () => {
+  // stockBefore=4 is already <= threshold=5 — already-low, not crossing.
+  const { deps, calls } = makeFakeDeps({ product: { ...PRODUCT, stockQty: 4, lowStockThreshold: 5 } });
+  await handleCreateOrder(deps, req(baseBody({ items: [{ productId: "p1", quantity: 1 }] })));
+  assert.equal(calls.lowStockNotify, undefined);
+});
+
+test("low-stock alert does not fire when the remaining stock is still above the threshold", async () => {
+  const { deps, calls } = makeFakeDeps({ product: { ...PRODUCT, stockQty: 10, lowStockThreshold: 5 } });
+  await handleCreateOrder(deps, req(baseBody({ items: [{ productId: "p1", quantity: 1 }] })));
+  assert.equal(calls.lowStockNotify, undefined);
 });
 
 // The actual feature this covers: a real merchant selling digital goods
@@ -533,7 +560,7 @@ test("a bundle order: decrements stock for every component, scaled by (component
 
 test("a bundle order: insufficient stock on one component returns 409 without creating the order", async () => {
   const { deps, calls } = makeFakeDeps({
-    bundle: { ...BUNDLE, items: [{ productId: "comp-1", quantity: 5, product: { name: "Component A", stockQty: 3, trackInventory: true } }] },
+    bundle: { ...BUNDLE, items: [{ productId: "comp-1", quantity: 5, product: { name: "Component A", stockQty: 3, trackInventory: true, lowStockThreshold: 5 } }] },
   });
   const res = await handleCreateOrder(deps, req(baseBody({ items: [{ bundleId: "bundle-1", quantity: 1 }] })));
   assert.equal(res.status, 409);

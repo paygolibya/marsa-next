@@ -15,9 +15,9 @@ class OutOfStockError extends Error {
 class ProductNotFoundError extends Error {}
 class InvalidCouponError extends Error {}
 
-type Product = { id: string; name: string; priceCents: number; stockQty: number; trackInventory: boolean };
+type Product = { id: string; name: string; priceCents: number; stockQty: number; trackInventory: boolean; lowStockThreshold: number };
 type Variant = { id: string; stockQty: number; priceCents: number | null; options: Record<string, string> };
-type BundleComponent = { productId: string; quantity: number; product: { name: string; stockQty: number; trackInventory: boolean } };
+type BundleComponent = { productId: string; quantity: number; product: { name: string; stockQty: number; trackInventory: boolean; lowStockThreshold: number } };
 type Bundle = { id: string; name: string; priceCents: number; items: BundleComponent[] };
 
 // What becomes one OrderItem row. A bundle line is recorded as a single
@@ -37,7 +37,7 @@ type ResolvedItem = {
   bundleItemsSnapshot: { productName: string; quantity: number }[] | null;
 };
 type StockDecrement =
-  | { kind: "product"; productId: string; quantity: number; trackInventory: boolean; name: string }
+  | { kind: "product"; productId: string; quantity: number; trackInventory: boolean; name: string; stockBefore: number; lowStockThreshold: number }
   | { kind: "variant"; variantId: string; quantity: number; name: string };
 type Coupon = {
   id: string;
@@ -141,6 +141,10 @@ export type OrdersDeps = {
   notifyMerchantNewOrder: (
     merchant: { id: string; email: string | null; name: string },
     order: { id: string; buyerName: string; totalCents: number; storeId: string }
+  ) => Promise<void>;
+  notifyMerchantLowStock: (
+    merchant: { id: string; email: string | null; name: string },
+    product: { id: string; name: string; stockQty: number; storeId: string }
   ) => Promise<void>;
 };
 
@@ -261,6 +265,12 @@ export async function handleCreateOrder(deps: OrdersDeps, req: Request): Promise
       vanexShipping = { cityId: city.vanexId };
     }
 
+    // Populated inside the transaction's stock-decrement loop below, read
+    // after the transaction commits (outside it — see that loop's own
+    // comment for why notifications never fire from inside the transaction
+    // itself).
+    const lowStockCrossed: { productId: string; name: string; stockQty: number }[] = [];
+
     let order: OrderRow;
     try {
       order = await db.$transaction(
@@ -287,6 +297,8 @@ export async function handleCreateOrder(deps: OrdersDeps, req: Request): Promise
                   quantity: neededQty,
                   trackInventory: component.product.trackInventory,
                   name: component.product.name,
+                  stockBefore: component.product.stockQty,
+                  lowStockThreshold: component.product.lowStockThreshold,
                 });
               }
 
@@ -330,7 +342,15 @@ export async function handleCreateOrder(deps: OrdersDeps, req: Request): Promise
             stockDecrements.push(
               variant
                 ? { kind: "variant", variantId: variant.id, quantity, name: product.name }
-                : { kind: "product", productId: product.id, quantity, trackInventory: product.trackInventory, name: product.name }
+                : {
+                    kind: "product",
+                    productId: product.id,
+                    quantity,
+                    trackInventory: product.trackInventory,
+                    name: product.name,
+                    stockBefore: product.stockQty,
+                    lowStockThreshold: product.lowStockThreshold,
+                  }
             );
           }
 
@@ -444,6 +464,21 @@ export async function handleCreateOrder(deps: OrdersDeps, req: Request): Promise
             });
             if (decremented.count === 0) throw new OutOfStockError(d.name);
             await tx.product.updateMany({ where: { id: d.productId, stockQty: { lte: 0 } }, data: { active: false } });
+
+            // Low-stock alert — fires once, on the order that actually
+            // crosses the threshold (stockBefore was still above it, the
+            // new stock isn't), never on every subsequent order once a
+            // product is already low. stockBefore comes from the same read
+            // used for the OutOfStock check above (not a fresh query), so
+            // two components of the same bundle — or a product ordered
+            // both directly and via a bundle in one cart — could in theory
+            // double-count against a stale "before" value; a rare enough
+            // edge case that the OutOfStock check itself already lives
+            // with the same approximation.
+            const stockAfter = d.stockBefore - d.quantity;
+            if (stockAfter <= d.lowStockThreshold && d.stockBefore > d.lowStockThreshold) {
+              lowStockCrossed.push({ productId: d.productId, name: d.name, stockQty: stockAfter });
+            }
           }
 
           // The merchant's buyer list — upserted in this same transaction
@@ -493,6 +528,13 @@ export async function handleCreateOrder(deps: OrdersDeps, req: Request): Promise
         return NextResponse.json({ error: "هذا الموعد محجوز بالفعل، اختر موعدًا آخر" }, { status: 409 });
       }
       throw err;
+    }
+
+    // Fires regardless of payment method — stock is already decremented in
+    // the transaction that just committed either way (wallet orders only
+    // defer shipment/buyer-notification until payment confirms, not stock).
+    for (const p of lowStockCrossed) {
+      await deps.notifyMerchantLowStock(store.merchant, { id: p.productId, name: p.name, stockQty: p.stockQty, storeId: store.id });
     }
 
     const totalCents = order.totalCents;
