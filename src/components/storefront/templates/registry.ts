@@ -6,6 +6,7 @@ import BookingTemplate from "./BookingTemplate";
 import RentalTemplate from "./RentalTemplate";
 import ShowcaseTemplate from "./ShowcaseTemplate";
 import BoutiqueTemplate from "./BoutiqueTemplate";
+import PlayfulTemplate from "./PlayfulTemplate";
 import type { StorefrontTemplateProps } from "./types";
 
 // The one place a template slug maps to its real component — shared by
@@ -29,4 +30,5 @@ export const STOREFRONT_TEMPLATES: Record<string, (props: StorefrontTemplateProp
   rental: RentalTemplate,
   showcase: ShowcaseTemplate,
   boutique: BoutiqueTemplate,
+  playful: PlayfulTemplate,
 };

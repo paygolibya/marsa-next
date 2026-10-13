@@ -191,6 +191,30 @@ export const templatesData = [
     featured: false,
     componentPath: "free/boutique",
   },
+  {
+    id: "template-playful",
+    name: "Playful",
+    nameAr: "المرح",
+    slug: "playful",
+    description: "Soft, rounded design for baby/kids and pet supply stores",
+    descriptionAr: "تصميم ناعم ومستدير لمتاجر مستلزمات الأطفال والحيوانات الأليفة",
+    price: 0,
+    billingType: "free",
+    category: "all",
+    thumbnail: "/templates/playful-thumb.svg",
+    previewUrl: "/preview/playful",
+    features: ["Gradient Hero", "Bubbly Rounded Cards", "Tilt-on-Hover"],
+    defaultColors: {
+      primaryColor: "#ec4899",
+      secondaryColor: "#fdf2f8",
+    },
+    usageCount: 0,
+    rating: 4.5,
+    reviews: 0,
+    isNew: true,
+    featured: false,
+    componentPath: "free/playful",
+  },
 ] as const;
 
 export type TemplateSeed = (typeof templatesData)[number];
