@@ -167,6 +167,30 @@ export const templatesData = [
     featured: false,
     componentPath: "free/showcase",
   },
+  {
+    id: "template-boutique",
+    name: "Boutique",
+    nameAr: "البوتيك",
+    slug: "boutique",
+    description: "Light, editorial design for fashion, beauty, and accessories stores",
+    descriptionAr: "تصميم أنيق مفتوح للأزياء ومستحضرات التجميل والإكسسوارات",
+    price: 0,
+    billingType: "free",
+    category: "all",
+    thumbnail: "/templates/boutique-thumb.svg",
+    previewUrl: "/preview/boutique",
+    features: ["Portrait Product Imagery", "Editorial Hero", "Minimal Chrome"],
+    defaultColors: {
+      primaryColor: "#b45309",
+      secondaryColor: "#fdf6ec",
+    },
+    usageCount: 0,
+    rating: 4.5,
+    reviews: 0,
+    isNew: true,
+    featured: false,
+    componentPath: "free/boutique",
+  },
 ] as const;
 
 export type TemplateSeed = (typeof templatesData)[number];
