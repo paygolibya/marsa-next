@@ -107,6 +107,20 @@ test("POST update path: an invalid enum value is dropped (undefined), not persis
   assert.equal(calls.upsert.update.textSize, "lg");
 });
 
+test("POST saves social links on create, and leaves them untouched on update when omitted", async () => {
+  const { db: db1, calls: calls1 } = makeFakeDb(true);
+  await handleCustomizePost(db1, req({ instagramUrl: "https://instagram.com/store", facebookUrl: "https://facebook.com/store", tiktokUrl: "https://tiktok.com/@store" }, "merchant-1"), "store-1");
+  assert.equal(calls1.upsert.create.instagramUrl, "https://instagram.com/store");
+  assert.equal(calls1.upsert.create.facebookUrl, "https://facebook.com/store");
+  assert.equal(calls1.upsert.create.tiktokUrl, "https://tiktok.com/@store");
+
+  const { db: db2, calls: calls2 } = makeFakeDb(true);
+  await handleCustomizePost(db2, req({ tagline: "unrelated edit" }, "merchant-1"), "store-1");
+  assert.equal(calls2.upsert.update.instagramUrl, undefined);
+  assert.equal(calls2.upsert.update.facebookUrl, undefined);
+  assert.equal(calls2.upsert.update.tiktokUrl, undefined);
+});
+
 test("POST only touches sections when the payload includes them", async () => {
   const { db: db1, calls: calls1 } = makeFakeDb(true);
   await handleCustomizePost(db1, req({}, "merchant-1"), "store-1"); // no `sections` key at all

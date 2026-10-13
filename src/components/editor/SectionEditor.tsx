@@ -32,6 +32,9 @@ type DraftCustomization = {
   heroEnabled: boolean;
   heroSize: string;
   cartPosition: string;
+  instagramUrl: string;
+  facebookUrl: string;
+  tiktokUrl: string;
 };
 
 const DEFAULT_DRAFT: DraftCustomization = {
@@ -54,6 +57,9 @@ const DEFAULT_DRAFT: DraftCustomization = {
   heroEnabled: true,
   heroSize: "md",
   cartPosition: "left",
+  instagramUrl: "",
+  facebookUrl: "",
+  tiktokUrl: "",
 };
 
 const LOGO_SIZE_OPTIONS: { value: string; label: string }[] = [
@@ -157,6 +163,9 @@ export function SectionEditor({ storeId, onSaved }: { storeId: string; onSaved?:
             heroEnabled: customization.heroEnabled,
             heroSize: customization.heroSize,
             cartPosition: customization.cartPosition,
+            instagramUrl: customization.instagramUrl ?? "",
+            facebookUrl: customization.facebookUrl ?? "",
+            tiktokUrl: customization.tiktokUrl ?? "",
           });
           setSections(customizationResult.sections.map((s) => ({ id: s.id ?? makeLocalId(), type: s.type, enabled: s.enabled, settings: s.settings })));
         } else {
@@ -253,6 +262,9 @@ export function SectionEditor({ storeId, onSaved }: { storeId: string; onSaved?:
         heroEnabled: draft.heroEnabled,
         heroSize: draft.heroSize,
         cartPosition: draft.cartPosition,
+        instagramUrl: draft.instagramUrl || null,
+        facebookUrl: draft.facebookUrl || null,
+        tiktokUrl: draft.tiktokUrl || null,
         sections: sections.map((s, position) => ({ type: s.type, position, enabled: s.enabled, settings: s.settings })),
       });
       show("تم حفظ التخصيصات", "success");
@@ -303,6 +315,9 @@ export function SectionEditor({ storeId, onSaved }: { storeId: string; onSaved?:
         heroEnabled: draft.heroEnabled,
         heroSize: draft.heroSize,
         cartPosition: draft.cartPosition,
+        instagramUrl: draft.instagramUrl || null,
+        facebookUrl: draft.facebookUrl || null,
+        tiktokUrl: draft.tiktokUrl || null,
       },
     };
   }, [store, draft]);
@@ -551,6 +566,46 @@ export function SectionEditor({ storeId, onSaved }: { storeId: string; onSaved?:
               </label>
             </div>
           )}
+        </Card>
+
+        <Card className="p-6">
+          <h2 className="font-display text-lg font-bold text-harbor mb-1">وسائل التواصل الاجتماعي</h2>
+          <p className="text-sm text-rope mb-4">تظهر كأيقونات في تذييل متجرك — اتركها فارغة لإخفائها.</p>
+          <div className="grid sm:grid-cols-3 gap-4">
+            <label className="block">
+              <span className="block text-sm font-bold text-harbor mb-1.5">إنستغرام</span>
+              <input
+                type="url"
+                dir="ltr"
+                value={draft.instagramUrl}
+                onChange={(e) => setField("instagramUrl", e.target.value)}
+                className="input"
+                placeholder="https://instagram.com/yourstore"
+              />
+            </label>
+            <label className="block">
+              <span className="block text-sm font-bold text-harbor mb-1.5">فيسبوك</span>
+              <input
+                type="url"
+                dir="ltr"
+                value={draft.facebookUrl}
+                onChange={(e) => setField("facebookUrl", e.target.value)}
+                className="input"
+                placeholder="https://facebook.com/yourstore"
+              />
+            </label>
+            <label className="block">
+              <span className="block text-sm font-bold text-harbor mb-1.5">تيك توك</span>
+              <input
+                type="url"
+                dir="ltr"
+                value={draft.tiktokUrl}
+                onChange={(e) => setField("tiktokUrl", e.target.value)}
+                className="input"
+                placeholder="https://tiktok.com/@yourstore"
+              />
+            </label>
+          </div>
         </Card>
 
         <Card className="p-6">

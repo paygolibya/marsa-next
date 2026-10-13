@@ -117,7 +117,15 @@ export default function StorefrontPage() {
         sections={store.sections ?? []}
       />
 
-      <SiteFooter store={footerBranded ? { name: store.name, tagline: store.customization?.tagline, logo: store.customization?.logo } : undefined} language={language} />
+      <SiteFooter
+        store={footerBranded ? { name: store.name, tagline: store.customization?.tagline, logo: store.customization?.logo } : undefined}
+        socialLinks={{
+          instagramUrl: store.customization?.instagramUrl,
+          facebookUrl: store.customization?.facebookUrl,
+          tiktokUrl: store.customization?.tiktokUrl,
+        }}
+        language={language}
+      />
 
       {/* Showcase stores have no checkout at all — every template already
           hides the cart BUTTON for them, but the drawer itself was still

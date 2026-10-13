@@ -72,6 +72,9 @@ export async function handleCustomizePost(db: CustomizeDb, req: Request, storeId
       showReviews,
       showTestimonials,
       showSocialProof,
+      instagramUrl,
+      facebookUrl,
+      tiktokUrl,
       sectionOrder,
       sections,
     } = body;
@@ -112,6 +115,9 @@ export async function handleCustomizePost(db: CustomizeDb, req: Request, storeId
         showReviews: showReviews !== false,
         showTestimonials: showTestimonials === true,
         showSocialProof: showSocialProof !== false,
+        instagramUrl,
+        facebookUrl,
+        tiktokUrl,
         sectionOrder: normalizedSectionOrder ?? undefined,
       },
       update: {
@@ -138,6 +144,9 @@ export async function handleCustomizePost(db: CustomizeDb, req: Request, storeId
         showReviews: showReviews !== undefined ? showReviews : undefined,
         showTestimonials: showTestimonials !== undefined ? showTestimonials : undefined,
         showSocialProof: showSocialProof !== undefined ? showSocialProof : undefined,
+        instagramUrl,
+        facebookUrl,
+        tiktokUrl,
         sectionOrder: normalizedSectionOrder,
       },
     });

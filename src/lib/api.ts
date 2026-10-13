@@ -79,6 +79,9 @@ export type StoreCustomization = {
   showReviews: boolean;
   showTestimonials: boolean;
   showSocialProof: boolean;
+  instagramUrl: string | null;
+  facebookUrl: string | null;
+  tiktokUrl: string | null;
   sectionOrder?: string[];
   template?: { slug: string; nameAr: string } | null;
 };

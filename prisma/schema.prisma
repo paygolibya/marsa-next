@@ -106,6 +106,15 @@ model TemplateCustomization {
   showReviews      Boolean @default(true) @map("show_reviews")
   showTestimonials Boolean @default(false) @map("show_testimonials")
   showSocialProof  Boolean @default(true) @map("show_social_proof")
+  // Merchant's own social profiles, shown as icon links in the storefront
+  // footer (SiteFooter, rendered once by store/[slug]/page.tsx — not
+  // per-template, so every template picks these up automatically). Full
+  // URLs, not just handles — simplest to store and render, matches how
+  // every other link field on this model already works (logo, coverImage).
+  // Icons only render when set; none of the three implies the others.
+  instagramUrl     String? @map("instagram_url")
+  facebookUrl      String? @map("facebook_url")
+  tiktokUrl        String? @map("tiktok_url")
   // Deprecated in favor of StoreSection (see that model's comment) — kept,
   // not dropped, as the fallback source when a store has no StoreSection
   // rows yet (backfill not run / a store created in the gap). New code

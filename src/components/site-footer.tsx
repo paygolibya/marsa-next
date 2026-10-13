@@ -11,12 +11,62 @@ import { translate, type Language } from "@/lib/i18n";
 // their own solid dark footer regardless of what Rifqa's own marketing
 // site looks like — so it defaults to false and only Rifqa's own pages
 // (currently just the homepage) opt in explicitly.
+type SocialLinks = { instagramUrl?: string | null; facebookUrl?: string | null; tiktokUrl?: string | null };
+
+// Minimal inline glyphs (no icon library in this codebase) — just enough
+// to be recognizable at 20px, matching the footer's own understated style.
+function InstagramIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <rect x="3" y="3" width="18" height="18" rx="5" />
+      <circle cx="12" cy="12" r="4" />
+      <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+function FacebookIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M13.5 21v-7.5H16l.4-3H13.5V8.5c0-.9.25-1.5 1.6-1.5H16.5V4.3c-.3-.04-1.1-.1-2.1-.1-2.1 0-3.5 1.3-3.5 3.6V10.5H8.5v3H10.9V21h2.6Z" />
+    </svg>
+  );
+}
+function TikTokIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M16.5 3c.3 2 1.7 3.5 4 3.8v2.7c-1.4 0-2.8-.4-4-1.2v6.2c0 3.1-2.5 5.5-5.6 5.5S5.3 17.6 5.3 14.5c0-3 2.4-5.4 5.3-5.5v2.8a2.7 2.7 0 1 0 2.7 2.7V3h3.2Z" />
+    </svg>
+  );
+}
+
+// storeSlug name links out to the merchant's own profile, not Rifqa's —
+// opens in a new tab since following it means leaving the storefront.
+function SocialLinksRow({ links }: { links: SocialLinks }) {
+  const items: { href: string; label: string; Icon: () => React.ReactElement }[] = [];
+  if (links.instagramUrl) items.push({ href: links.instagramUrl, label: "Instagram", Icon: InstagramIcon });
+  if (links.facebookUrl) items.push({ href: links.facebookUrl, label: "Facebook", Icon: FacebookIcon });
+  if (links.tiktokUrl) items.push({ href: links.tiktokUrl, label: "TikTok", Icon: TikTokIcon });
+  if (items.length === 0) return null;
+
+  return (
+    <div className="flex items-center gap-3">
+      {items.map(({ href, label, Icon }) => (
+        <a key={label} href={href} target="_blank" rel="noopener noreferrer" aria-label={label} className="opacity-80 hover:opacity-100 transition-opacity">
+          <Icon />
+        </a>
+      ))}
+    </div>
+  );
+}
+
 export function SiteFooter({
   store,
+  socialLinks,
   transparent = false,
   language = "ar",
 }: {
   store?: { name: string; tagline?: string | null; logo?: string | null };
+  socialLinks?: SocialLinks;
   transparent?: boolean;
   language?: Language;
 } = {}) {
@@ -35,6 +85,7 @@ export function SiteFooter({
             )}
             <p className="font-display text-lg font-extrabold text-canvas">{store.name}</p>
             {store.tagline && <p className="text-sm mt-1">{store.tagline}</p>}
+            {socialLinks && <div className="mt-2"><SocialLinksRow links={socialLinks} /></div>}
           </div>
         )}
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-sm">
@@ -48,6 +99,12 @@ export function SiteFooter({
             <Image src="/logo.png" alt={t("footer.alt")} width={24} height={28} className="h-7 w-auto object-contain" />
             <span>{t("footer.brand")}</span>
           </div>
+          {/* Shown here (not just inside the branded block above) so a
+              merchant on "standard" footerStyle — the default, not
+              "branded" — still gets their social links, since those are
+              the merchant's own business links, unrelated to whether the
+              footer also shows their name/logo. */}
+          {!store && socialLinks && <SocialLinksRow links={socialLinks} />}
           <p>{t("footer.madeIn", { year: new Date().getFullYear() })}</p>
         </div>
       </div>
