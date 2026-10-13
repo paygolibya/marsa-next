@@ -135,6 +135,21 @@ export const updateMerchantProfileSchema = z.object({
   ),
 });
 
+// Matches the shape PushSubscription.toJSON() produces in the browser
+// (NotificationBell.tsx's subscribe flow) — endpoint + the two base64url
+// keys from getKey("p256dh")/getKey("auth").
+export const pushSubscribeSchema = z.object({
+  endpoint: z.string().url(),
+  keys: z.object({
+    p256dh: z.string().min(1),
+    auth: z.string().min(1),
+  }),
+});
+
+export const pushUnsubscribeSchema = z.object({
+  endpoint: z.string().url(),
+});
+
 export const updateStoreSettingsSchema = z.object({
   aboutText: z.string().optional().nullable(),
   returnPolicy: z.string().optional().nullable(),

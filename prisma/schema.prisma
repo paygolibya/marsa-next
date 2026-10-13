@@ -199,8 +199,27 @@ model Merchant {
   bugReports BugReport[]
   impersonationSessions ImpersonationSession[]
   notifications Notification[]
+  pushSubscriptions PushSubscription[]
 
   @@map("merchants")
+}
+
+// One row per browser/device a merchant has enabled push notifications on
+// (src/components/dashboard/NotificationBell.tsx's "enable notifications"
+// button) — a merchant can have several. sendPushToMerchant
+// (src/lib/integrations/push.ts) deletes a row the moment its endpoint
+// comes back expired/revoked (404/410) from the push service.
+model PushSubscription {
+  id        String   @id @default(cuid())
+  merchantId String  @map("merchant_id")
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  merchant Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+
+  @@map("push_subscriptions")
 }
 
 // In-app merchant alerts (new order, low stock) — see src/lib/notifications/

@@ -795,6 +795,20 @@ export const api = {
       body: JSON.stringify(body),
     }),
 
+  subscribePush: (token: string, subscription: { endpoint: string; keys: { p256dh: string; auth: string } }) =>
+    request<{ ok: boolean }>("/api/push/subscribe", {
+      method: "POST",
+      headers: authHeaders(token),
+      body: JSON.stringify(subscription),
+    }),
+
+  unsubscribePush: (token: string, endpoint: string) =>
+    request<{ ok: boolean }>("/api/push/unsubscribe", {
+      method: "POST",
+      headers: authHeaders(token),
+      body: JSON.stringify({ endpoint }),
+    }),
+
   supportChat: (token: string, body: { conversationId?: string | null; message: string }) =>
     request<{ conversationId: string; reply: string }>("/api/support/chat", {
       method: "POST",

@@ -6,6 +6,17 @@ import { useAuth } from "@/lib/auth-context";
 import { api, type Notification } from "@/lib/api";
 
 const POLL_MS = 30000;
+const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+
+// Push subscription endpoints are base64url; PushManager.subscribe wants
+// its applicationServerKey as a raw Uint8Array — this is the standard
+// conversion (no library needed for one function).
+function urlBase64ToUint8Array(base64: string): Uint8Array {
+  const padding = "=".repeat((4 - (base64.length % 4)) % 4);
+  const base64Safe = (base64 + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const raw = atob(base64Safe);
+  return Uint8Array.from([...raw].map((c) => c.charCodeAt(0)));
+}
 
 function timeAgo(iso: string): string {
   const diffMs = Date.now() - new Date(iso).getTime();
@@ -31,6 +42,56 @@ export default function NotificationBell({ className = "" }: { className?: strin
   const [unreadCount, setUnreadCount] = useState(0);
   const [emailDraft, setEmailDraft] = useState("");
   const [savingEmail, setSavingEmail] = useState(false);
+  const [pushSubscribed, setPushSubscribed] = useState(false);
+  const [pushBusy, setPushBusy] = useState(false);
+  const pushSupported = typeof window !== "undefined" && "serviceWorker" in navigator && "PushManager" in window && Boolean(VAPID_PUBLIC_KEY);
+
+  useEffect(() => {
+    if (!pushSupported) return;
+    navigator.serviceWorker.getRegistration("/sw.js").then(async (registration) => {
+      const sub = await registration?.pushManager.getSubscription();
+      setPushSubscribed(Boolean(sub));
+    });
+    // pushSupported is derived from constants that never change within a
+    // mount — safe to run once.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function handleEnablePush() {
+    if (!token || !VAPID_PUBLIC_KEY) return;
+    setPushBusy(true);
+    try {
+      const registration = await navigator.serviceWorker.register("/sw.js");
+      await navigator.serviceWorker.ready;
+      const subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY) as BufferSource,
+      });
+      const json = subscription.toJSON() as { endpoint: string; keys: { p256dh: string; auth: string } };
+      await api.subscribePush(token, { endpoint: json.endpoint, keys: json.keys });
+      setPushSubscribed(true);
+    } catch (error) {
+      console.error("Failed to enable push notifications:", error);
+    } finally {
+      setPushBusy(false);
+    }
+  }
+
+  async function handleDisablePush() {
+    if (!token) return;
+    setPushBusy(true);
+    try {
+      const registration = await navigator.serviceWorker.getRegistration("/sw.js");
+      const sub = await registration?.pushManager.getSubscription();
+      if (sub) {
+        await api.unsubscribePush(token, sub.endpoint);
+        await sub.unsubscribe();
+      }
+      setPushSubscribed(false);
+    } finally {
+      setPushBusy(false);
+    }
+  }
 
   useEffect(() => {
     if (!token) return;
@@ -94,7 +155,19 @@ export default function NotificationBell({ className = "" }: { className?: strin
             dir="rtl"
             className="absolute left-0 top-full mt-2 w-80 max-w-[90vw] rounded-xl border border-harbor/10 bg-white shadow-2xl z-50 overflow-hidden text-right"
           >
-            <div className="px-4 py-3 border-b border-harbor/10 font-bold text-harbor text-sm">الإشعارات</div>
+            <div className="px-4 py-3 border-b border-harbor/10 flex items-center justify-between">
+              <span className="font-bold text-harbor text-sm">الإشعارات</span>
+              {pushSupported && (
+                <button
+                  type="button"
+                  onClick={() => (pushSubscribed ? handleDisablePush() : handleEnablePush())}
+                  disabled={pushBusy}
+                  className="text-xs font-bold text-signal hover:underline disabled:opacity-50"
+                >
+                  {pushSubscribed ? "إيقاف إشعارات المتصفح" : "فعّل إشعارات المتصفح"}
+                </button>
+              )}
+            </div>
 
             {!merchant?.email && (
               <form onSubmit={handleSaveEmail} className="px-4 py-3 border-b border-harbor/10 bg-canvas/50 flex gap-2">
