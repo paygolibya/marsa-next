@@ -30,7 +30,15 @@ function baseStore(overrides: Partial<{ customization: any; sections: any[] }> =
   };
 }
 
-function makeFakeDb(opts: { store?: ReturnType<typeof baseStore> | null; products?: any[]; categories?: any[]; bundles?: any[]; upsells?: any[]; navMenuItems?: any[] }) {
+function makeFakeDb(opts: {
+  store?: ReturnType<typeof baseStore> | null;
+  products?: any[];
+  categories?: any[];
+  bundles?: any[];
+  upsells?: any[];
+  navMenuItems?: any[];
+  soldCounts?: { productId: string; quantity: number }[];
+}) {
   const calls: Record<string, unknown> = {};
   const db: PublicStoreDb = {
     store: { findUnique: async () => opts.store ?? null },
@@ -64,6 +72,10 @@ function makeFakeDb(opts: { store?: ReturnType<typeof baseStore> | null; product
         calls.testimonialsFindManyCalled = true;
         return [{ buyerName: "Buyer", rating: 5, reviewText: "great", product: { name: "Widget" } }];
       },
+    },
+    queryBestSellerSales: async () => {
+      calls.queryBestSellerSalesCalled = true;
+      return opts.soldCounts ?? [];
     },
   };
   return { db, calls };
@@ -167,6 +179,38 @@ test("returns the store's active upsells as lightweight trigger/offered pairs", 
   const res = await handleGetPublicStore(db, "my-store");
   const body = await res.json();
   assert.deepEqual(body.upsells, upsells);
+});
+
+test("skips the best-sellers sales query entirely when the section isn't enabled (the default)", async () => {
+  const { db, calls } = makeFakeDb({ store: baseStore() });
+  const res = await handleGetPublicStore(db, "my-store");
+  const body = await res.json();
+  assert.equal(calls.queryBestSellerSalesCalled, undefined);
+  assert.deepEqual(body.bestSellers, []);
+});
+
+test("computes bestSellers (pinned first, then auto-ranked by sales) when the section is enabled", async () => {
+  const products = [
+    { id: "p1", name: "Pinned Widget", isBestSeller: true },
+    { id: "p2", name: "Popular Widget", isBestSeller: false },
+    { id: "p3", name: "Slow Widget", isBestSeller: false },
+  ];
+  const soldCounts = [
+    { productId: "p2", quantity: 50 },
+    { productId: "p3", quantity: 5 },
+  ];
+  const { db, calls } = makeFakeDb({
+    store: baseStore({ sections: [{ id: "s1", type: "bestSellers", position: 0, enabled: true, settings: {} }] }),
+    products,
+    soldCounts,
+  });
+  const res = await handleGetPublicStore(db, "my-store");
+  const body = await res.json();
+  assert.ok(calls.queryBestSellerSalesCalled);
+  assert.deepEqual(
+    body.bestSellers.map((p: any) => p.id),
+    ["p1", "p2", "p3"]
+  );
 });
 
 test("returns the store's nav menu items in position order", async () => {

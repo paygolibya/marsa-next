@@ -1,13 +1,15 @@
 import type { Bundle, Category, Product, Store, StoreStats, StoreTestimonial } from "@/lib/api";
 
-export const SECTION_TYPES = ["stats", "products", "categories", "bundles", "testimonials", "newsletter"] as const;
+export const SECTION_TYPES = ["stats", "products", "categories", "categoryShowcase", "bundles", "bestSellers", "testimonials", "newsletter"] as const;
 export type SectionType = (typeof SECTION_TYPES)[number];
 
 export const SECTION_TYPE_LABELS: Record<SectionType, string> = {
   stats: "شارات الثقة",
   products: "المنتجات",
   categories: "تصفية حسب التصنيف",
+  categoryShowcase: "تسوّق حسب التصنيف",
   bundles: "الباقات",
+  bestSellers: "الأكثر مبيعًا",
   testimonials: "آراء العملاء",
   newsletter: "النشرة البريدية",
 };
@@ -71,6 +73,7 @@ export type SectionRenderProps = {
   bundles: Bundle[];
   stats: StoreStats | null;
   testimonials: StoreTestimonial[];
+  bestSellers: Product[];
   onAddToCart: (product: Product) => void;
   onAddBundleToCart: (bundle: Bundle) => void;
   newsletterEmail: string;

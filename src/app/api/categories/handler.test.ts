@@ -24,11 +24,11 @@ function makeFakeDb(opts: { ownedStoreId?: string; existingSlugs?: string[] } = 
       findUnique: async (args) => {
         calls.categoryFindUnique = args;
         const slug = args.where.storeId_slug.slug;
-        return (opts.existingSlugs ?? []).includes(slug) ? { id: "clash", storeId: "store-1", name: "x", slug, position: 0 } : null;
+        return (opts.existingSlugs ?? []).includes(slug) ? { id: "clash", storeId: "store-1", name: "x", slug, position: 0, imageUrl: null } : null;
       },
       create: async (args) => {
         calls.categoryCreate = args;
-        return { id: "category-1", storeId: args.data.storeId, name: args.data.name, slug: args.data.slug, position: 0 };
+        return { id: "category-1", storeId: args.data.storeId, name: args.data.name, slug: args.data.slug, position: 0, imageUrl: args.data.imageUrl };
       },
       findMany: async (args) => {
         calls.categoryFindMany = args;
@@ -67,6 +67,17 @@ test("POST derives a real slug from the name and creates the category", async ()
   assert.equal(res.status, 201);
   const create = calls.categoryCreate as { data: { slug: string } };
   assert.equal(create.data.slug, "shoes");
+});
+
+test("POST passes an imageUrl through to the created category when provided", async () => {
+  const { db, calls } = makeFakeDb({ ownedStoreId: "store-1" });
+  const res = await handleCreateCategory(
+    db,
+    authReq("http://localhost/api/categories", { method: "POST", body: JSON.stringify({ storeId: "store-1", name: "Shoes", imageUrl: "https://example.com/shoes.jpg" }) })
+  );
+  assert.equal(res.status, 201);
+  const body = await res.json();
+  assert.equal(body.imageUrl, "https://example.com/shoes.jpg");
 });
 
 test("POST appends a digits-only suffix when the slug already exists for this store", async () => {

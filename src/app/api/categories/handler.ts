@@ -12,13 +12,13 @@ import { createCategorySchema } from "@/lib/validation";
 // but digits keep the slug visually clean either way.
 const numericSuffix = customAlphabet("0123456789", 4);
 
-type CategoryRow = { id: string; storeId: string; name: string; slug: string; position: number };
+type CategoryRow = { id: string; storeId: string; name: string; slug: string; position: number; imageUrl: string | null };
 
 export type CategoriesDb = {
   store: { findFirst: (args: { where: { id: string; merchantId: string } }) => Promise<{ id: string } | null> };
   category: {
     findUnique: (args: { where: { storeId_slug: { storeId: string; slug: string } } }) => Promise<CategoryRow | null>;
-    create: (args: { data: { storeId: string; name: string; slug: string } }) => Promise<CategoryRow>;
+    create: (args: { data: { storeId: string; name: string; slug: string; imageUrl: string | null } }) => Promise<CategoryRow>;
     findMany: (args: { where: { storeId: string }; orderBy: { position: "asc" } }) => Promise<CategoryRow[]>;
   };
 };
@@ -34,7 +34,7 @@ export async function handleCreateCategory(db: CategoriesDb, req: Request): Prom
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "بيانات غير صالحة" }, { status: 400 });
     }
-    const { storeId, name } = parsed.data;
+    const { storeId, name, imageUrl } = parsed.data;
 
     const store = await db.store.findFirst({ where: { id: storeId, merchantId } });
     if (!store) return NextResponse.json({ error: "You do not own this store" }, { status: 403 });
@@ -43,7 +43,7 @@ export async function handleCreateCategory(db: CategoriesDb, req: Request): Prom
     const clash = await db.category.findUnique({ where: { storeId_slug: { storeId, slug } } });
     if (clash) slug = `${slug}-${numericSuffix()}`;
 
-    const category = await db.category.create({ data: { storeId, name, slug } });
+    const category = await db.category.create({ data: { storeId, name, slug, imageUrl: imageUrl || null } });
     return NextResponse.json(category, { status: 201 });
   } catch (err) {
     console.error(err);

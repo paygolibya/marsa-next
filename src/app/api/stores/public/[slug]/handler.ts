@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import { getSubscriptionState, getCheckoutPaymentMethods } from "@/lib/checkout-features";
 import { normalizeToSections } from "@/components/storefront/sections/normalize";
+import { rankBestSellers, type SoldCount } from "@/lib/best-sellers";
+import { safeParseSettings, bestSellersSettingsSchema } from "@/components/storefront/sections/schemas";
 
 type StoredSection = { id: string; type: string; position: number; enabled: boolean; settings: unknown };
 
@@ -30,8 +32,8 @@ type StoreRow = {
   [key: string]: unknown;
 };
 
-type ProductRow = { id: string; name: string; description: string | null; priceCents: number; categoryId: string | null; translations: unknown };
-type CategoryRow = { id: string; name: string; slug: string };
+type ProductRow = { id: string; name: string; description: string | null; priceCents: number; categoryId: string | null; translations: unknown; isBestSeller: boolean };
+type CategoryRow = { id: string; name: string; slug: string; imageUrl: string | null };
 type BundleRow = {
   id: string;
   storeId: string;
@@ -63,6 +65,7 @@ export type PublicStoreDb = {
         variantOptions: true;
         categoryId: true;
         translations: true;
+        isBestSeller: true;
         variants: { where: { active: true }; select: { id: true; options: true; priceCents: true; stockQty: true } };
       };
     }) => Promise<ProductRow[]>;
@@ -99,6 +102,12 @@ export type PublicStoreDb = {
       select: { buyerName: true; rating: true; reviewText: true; product: { select: { name: true } } };
     }) => Promise<{ buyerName: string; rating: number; reviewText: string | null; product: { name: string } }[]>;
   };
+  // Raw aggregate (GROUP BY in Postgres, same rationale as queryTopProducts
+  // in the analytics route — see src/lib/analytics.ts) of units sold per
+  // product, all-time, excluding cancelled/refunded orders. Only the
+  // top `limit` rows — the final pinned-vs-auto merge happens in
+  // src/lib/best-sellers.ts.
+  queryBestSellerSales: (storeId: string, limit: number) => Promise<SoldCount[]>;
 };
 
 // GET /api/stores/public/:slug — public: fetch a store by its public slug
@@ -122,6 +131,8 @@ export async function handleGetPublicStore(db: PublicStoreDb, slug: string): Pro
     });
     const statsEnabled = sections.find((s) => s.type === "stats")?.enabled ?? true;
     const testimonialsEnabled = sections.find((s) => s.type === "testimonials")?.enabled ?? false;
+    const bestSellersSection = sections.find((s) => s.type === "bestSellers");
+    const bestSellersEnabled = bestSellersSection?.enabled ?? false;
 
     const [products, categories, bundles, upsells, navMenuItems] = await Promise.all([
       db.product.findMany({
@@ -136,6 +147,7 @@ export async function handleGetPublicStore(db: PublicStoreDb, slug: string): Pro
           variantOptions: true,
           categoryId: true,
           translations: true,
+          isBestSeller: true,
           variants: { where: { active: true }, select: { id: true, options: true, priceCents: true, stockQty: true } },
         },
       }),
@@ -180,7 +192,18 @@ export async function handleGetPublicStore(db: PublicStoreDb, slug: string): Pro
       testimonials = reviews.map((r) => ({ buyerName: r.buyerName, rating: r.rating, reviewText: r.reviewText, productName: r.product.name }));
     }
 
-    return NextResponse.json({ store: { ...publicStore, dpayAvailable, sections }, products, categories, bundles, upsells, navMenuItems, stats, testimonials });
+    // Pinned products are already in hand (part of the main products
+    // query above) even when bestSellersEnabled is false, but the sales
+    // aggregate is its own query — only run it when the section is
+    // actually on, same gating as stats/testimonials above.
+    let bestSellers: ProductRow[] = [];
+    if (bestSellersEnabled) {
+      const { limit } = safeParseSettings(bestSellersSettingsSchema, bestSellersSection?.settings);
+      const soldCounts = await db.queryBestSellerSales(store.id, limit);
+      bestSellers = rankBestSellers(products, soldCounts, limit);
+    }
+
+    return NextResponse.json({ store: { ...publicStore, dpayAvailable, sections }, products, categories, bundles, upsells, navMenuItems, stats, testimonials, bestSellers });
   } catch (err) {
     console.error(err);
     Sentry.captureException(err);

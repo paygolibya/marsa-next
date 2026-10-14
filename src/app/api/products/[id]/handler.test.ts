@@ -68,6 +68,13 @@ test("PATCH leaves imageUrl untouched when images isn't part of the request", as
   assert.ok(!("imageUrl" in update.data));
 });
 
+test("PATCH passes isBestSeller through to the update", async () => {
+  const { db, calls } = makeFakeDb({ product: { id: "product-1", storeId: "store-1" }, ownedStoreId: "store-1" });
+  await handleUpdateProduct(db, authReq("http://localhost/x", { method: "PATCH", body: JSON.stringify({ isBestSeller: true }) }), "product-1");
+  const update = calls.update as { data: { isBestSeller: boolean } };
+  assert.equal(update.data.isBestSeller, true);
+});
+
 test("PATCH rejects a categoryId that doesn't belong to this product's store with 400", async () => {
   const { db, calls } = makeFakeDb({ product: { id: "product-1", storeId: "store-1" }, ownedStoreId: "store-1", existingCategoryId: "some-other-category" });
   const res = await handleUpdateProduct(db, authReq("http://localhost/x", { method: "PATCH", body: JSON.stringify({ categoryId: "category-1" }) }), "product-1");

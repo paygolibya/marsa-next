@@ -15,8 +15,15 @@ export const productsSettingsSchema = z.object({
 export const categoriesSettingsSchema = z.object({
   title: z.string().max(60).optional(),
 });
+export const categoryShowcaseSettingsSchema = z.object({
+  title: z.string().max(60).optional(),
+});
 export const bundlesSettingsSchema = z.object({
   title: z.string().max(60).optional(),
+});
+export const bestSellersSettingsSchema = z.object({
+  title: z.string().max(60).optional(),
+  limit: z.number().int().min(1).max(12).default(8),
 });
 export const testimonialsSettingsSchema = z.object({
   title: z.string().max(60).optional(),
@@ -31,7 +38,9 @@ export const SECTION_SCHEMAS = {
   stats: statsSettingsSchema,
   products: productsSettingsSchema,
   categories: categoriesSettingsSchema,
+  categoryShowcase: categoryShowcaseSettingsSchema,
   bundles: bundlesSettingsSchema,
+  bestSellers: bestSellersSettingsSchema,
   testimonials: testimonialsSettingsSchema,
   newsletter: newsletterSettingsSchema,
 } as const;
@@ -39,7 +48,9 @@ export const SECTION_SCHEMAS = {
 export type StatsSettings = z.infer<typeof statsSettingsSchema>;
 export type ProductsSettings = z.infer<typeof productsSettingsSchema>;
 export type CategoriesSettings = z.infer<typeof categoriesSettingsSchema>;
+export type CategoryShowcaseSettings = z.infer<typeof categoryShowcaseSettingsSchema>;
 export type BundlesSettings = z.infer<typeof bundlesSettingsSchema>;
+export type BestSellersSettings = z.infer<typeof bestSellersSettingsSchema>;
 export type TestimonialsSettings = z.infer<typeof testimonialsSettingsSchema>;
 export type NewsletterSettings = z.infer<typeof newsletterSettingsSchema>;
 

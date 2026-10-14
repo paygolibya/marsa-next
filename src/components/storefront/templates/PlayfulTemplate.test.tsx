@@ -25,6 +25,7 @@ const PRODUCT: Product = {
   metaTitle: null,
   metaDescription: null,
   costPriceCents: null,
+  isBestSeller: false,
 };
 
 const PRODUCTS_SECTION: SectionData = { id: "s1", type: "products", position: 0, enabled: true, settings: {} };

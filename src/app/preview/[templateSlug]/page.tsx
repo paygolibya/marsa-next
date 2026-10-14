@@ -39,9 +39,10 @@ const MOCK_STATS: StoreStats = { deliveredOrderCount: 312, averageRating: 4.8, r
 // default-off toggle.
 const MOCK_SECTIONS: SectionData[] = [
   { type: "stats", position: 0, enabled: true, settings: {} },
-  { type: "products", position: 1, enabled: true, settings: {} },
-  { type: "testimonials", position: 2, enabled: true, settings: {} },
-  { type: "newsletter", position: 3, enabled: true, settings: {} },
+  { type: "bestSellers", position: 1, enabled: true, settings: {} },
+  { type: "products", position: 2, enabled: true, settings: {} },
+  { type: "testimonials", position: 3, enabled: true, settings: {} },
+  { type: "newsletter", position: 4, enabled: true, settings: {} },
 ];
 
 export default function TemplatePreviewPage() {
@@ -75,9 +76,15 @@ export default function TemplatePreviewPage() {
         metaTitle: null,
         metaDescription: null,
         costPriceCents: null,
+        isBestSeller: false,
       })),
     []
   );
+
+  // First 3 mock products stand in for the bestSellers section — same
+  // "nothing hidden behind a default-off toggle" reasoning as the other
+  // mock data above.
+  const bestSellers = useMemo(() => products.slice(0, 3), [products]);
 
   const store = useMemo<Store | null>(() => {
     if (!template) return null;
@@ -174,6 +181,7 @@ export default function TemplatePreviewPage() {
         navMenuItems={[]}
         stats={MOCK_STATS}
         testimonials={MOCK_TESTIMONIALS}
+        bestSellers={bestSellers}
         cartTotalItems={cartTotalItems}
         onOpenCart={() => {}}
         onAddToCart={() => setCartTotalItems((n) => n + 1)}

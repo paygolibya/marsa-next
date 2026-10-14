@@ -1,7 +1,9 @@
 export { StatsSection } from "./StatsSection";
 export { ProductsSection } from "./ProductsSection";
 export { CategoriesSection } from "./CategoriesSection";
+export { CategoryShowcaseSection } from "./CategoryShowcaseSection";
 export { BundlesSection } from "./BundlesSection";
+export { BestSellersSection } from "./BestSellersSection";
 export { TestimonialsSection } from "./TestimonialsSection";
 export { NewsletterSection } from "./NewsletterSection";
 export { normalizeToSections } from "./normalize";

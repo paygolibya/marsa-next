@@ -289,6 +289,9 @@ export default function DashboardProductsPage() {
                     <div className="min-w-0">
                       <p className="font-bold text-harbor flex flex-wrap items-center gap-2">
                         <span className="truncate">{p.name}</span>
+                        {p.isBestSeller && (
+                          <span className="rounded-full bg-brass/15 px-2 py-0.5 text-[11px] font-bold text-brass">الأكثر مبيعًا</span>
+                        )}
                         {p.trackInventory && p.stockQty <= p.lowStockThreshold && (
                           <span className="stamp h-6 px-2 border-signal text-signal text-[11px] font-bold">مخزون منخفض</span>
                         )}
@@ -342,6 +345,7 @@ function ProductEditRow({
   const [categoryId, setCategoryId] = useState(product.categoryId ?? "");
   const [price, setPrice] = useState(String(product.priceCents / 100));
   const [images, setImages] = useState<string[]>(product.images ?? []);
+  const [isBestSeller, setIsBestSeller] = useState(product.isBestSeller);
   const [trackInventory, setTrackInventory] = useState(product.trackInventory);
   const [stockQty, setStockQty] = useState(String(product.stockQty));
   const [lowStockThreshold, setLowStockThreshold] = useState(String(product.lowStockThreshold));
@@ -365,6 +369,7 @@ function ProductEditRow({
         categoryId: categoryId || null,
         priceCents: Math.round(parseFloat(price) * 100),
         images,
+        isBestSeller,
         trackInventory,
         stockQty: Number(stockQty) || 0,
         lowStockThreshold: Number(lowStockThreshold) || 0,
@@ -409,6 +414,15 @@ function ProductEditRow({
         placeholder="السعر"
       />
       <ProductGalleryUpload images={images} onChange={setImages} />
+      <div className="flex items-center justify-between rounded-lg border border-harbor/15 px-3 py-2">
+        <span className="text-sm font-bold text-harbor">تحديد كمنتج "الأكثر مبيعًا"</span>
+        <input
+          type="checkbox"
+          checked={isBestSeller}
+          onChange={(e) => setIsBestSeller(e.target.checked)}
+          className="h-5 w-5 accent-brass"
+        />
+      </div>
       <div className="flex items-center justify-between rounded-lg border border-harbor/15 px-3 py-2">
         <span className="text-sm font-bold text-harbor">تتبع المخزون</span>
         <input

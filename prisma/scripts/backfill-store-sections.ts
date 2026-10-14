@@ -30,7 +30,9 @@ async function main() {
         stats: c.showSocialProof,
         products: true,
         categories: false,
+        categoryShowcase: false,
         bundles: false,
+        bestSellers: false,
         testimonials: c.showTestimonials,
         newsletter: c.showNewsletter,
       };

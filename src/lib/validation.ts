@@ -85,6 +85,9 @@ export const updateProductSchema = z.object({
   metaDescription: metaDescriptionSchema,
   costPriceCents: costPriceCentsSchema,
   translations: productTranslationsSchema,
+  // Merchant-pinned "best seller" badge — independent of actual sales, see
+  // src/lib/best-sellers.ts for how it's merged with the auto-ranked list.
+  isBestSeller: z.boolean().optional(),
 });
 
 // Capped at 2 option types (e.g. "الحجم" + "اللون") — enough for the
@@ -331,11 +334,13 @@ export const updateCouponSchema = z.object({
 export const createCategorySchema = z.object({
   storeId: z.string().min(1),
   name: z.string().min(1, "اسم التصنيف مطلوب").max(60),
+  imageUrl: z.string().url().optional().nullable(),
 });
 
 export const updateCategorySchema = z.object({
   name: z.string().min(1, "اسم التصنيف مطلوب").max(60).optional(),
   position: z.number().int().min(0).optional(),
+  imageUrl: z.string().url().optional().nullable(),
 });
 
 export const createReviewSchema = z.object({

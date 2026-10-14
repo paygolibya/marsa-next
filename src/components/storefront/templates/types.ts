@@ -21,6 +21,7 @@ export type StorefrontTemplateProps = {
   navMenuItems: { id: string; label: string; url: string }[];
   stats: StoreStats | null;
   testimonials: StoreTestimonial[];
+  bestSellers: Product[];
   cartTotalItems: number;
   onOpenCart: () => void;
   onAddToCart: (product: Product) => void;

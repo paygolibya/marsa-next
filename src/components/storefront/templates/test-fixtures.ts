@@ -77,6 +77,7 @@ export const baseTemplateProps = {
   navMenuItems: [],
   stats: null,
   testimonials: [],
+  bestSellers: [],
   cartTotalItems: 0,
   onOpenCart: () => {},
   onAddToCart: () => {},

@@ -1,4 +1,4 @@
-import { ProductsSection, CategoriesSection, TestimonialsSection } from "@/components/storefront/sections";
+import { ProductsSection, CategoriesSection, CategoryShowcaseSection, TestimonialsSection } from "@/components/storefront/sections";
 import type { SectionRenderProps, SectionType } from "@/components/storefront/sections/types";
 import { translate, isSupportedLanguage } from "@/lib/i18n";
 import { StorefrontHeaderRow } from "./StorefrontHeaderRow";
@@ -6,12 +6,16 @@ import { StorefrontNavRow } from "./StorefrontNavRow";
 import { resolveLogoSizePx, resolveTextSizeClass, type StorefrontTemplateProps } from "./types";
 
 // "stats" (delivered-order counts don't apply — showcase stores have no
-// checkout at all), "bundles" (nothing to buy together), and "newsletter"
-// (a portfolio-feel page, not a shop collecting marketing signups) are all
+// checkout at all), "bundles" (nothing to buy together), "bestSellers"
+// (same reason as stats — a showcase store never creates real Order rows,
+// so "sold units" is always zero; only the merchant-pinned half would ever
+// apply, not worth a bespoke exception here), and "newsletter" (a
+// portfolio-feel page, not a shop collecting marketing signups) are all
 // omitted — only the sections that actually fit a catalog-to-inquire flow.
 const SECTION_COMPONENTS: Partial<Record<SectionType, (props: SectionRenderProps) => React.ReactNode>> = {
   products: ProductsSection,
   categories: CategoriesSection,
+  categoryShowcase: CategoryShowcaseSection,
   testimonials: TestimonialsSection,
 };
 
@@ -35,6 +39,7 @@ export default function ShowcaseTemplate({
   navMenuItems,
   stats,
   testimonials,
+  bestSellers,
   newsletterEmail,
   setNewsletterEmail,
   newsletterState,
@@ -71,6 +76,7 @@ export default function ShowcaseTemplate({
     bundles,
     stats,
     testimonials,
+    bestSellers,
     onAddToCart: () => {},
     onAddBundleToCart: () => {},
     newsletterEmail,

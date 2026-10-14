@@ -1,4 +1,4 @@
-import { StatsSection, ProductsSection, CategoriesSection, BundlesSection, TestimonialsSection, NewsletterSection } from "@/components/storefront/sections";
+import { StatsSection, ProductsSection, CategoriesSection, CategoryShowcaseSection, BundlesSection, BestSellersSection, TestimonialsSection, NewsletterSection } from "@/components/storefront/sections";
 import type { SectionRenderProps, SectionType } from "@/components/storefront/sections/types";
 import { translate, isSupportedLanguage } from "@/lib/i18n";
 import { StorefrontHeaderRow } from "./StorefrontHeaderRow";
@@ -9,7 +9,9 @@ const SECTION_COMPONENTS: Record<SectionType, (props: SectionRenderProps) => Rea
   stats: StatsSection,
   products: ProductsSection,
   categories: CategoriesSection,
+  categoryShowcase: CategoryShowcaseSection,
   bundles: BundlesSection,
+  bestSellers: BestSellersSection,
   testimonials: TestimonialsSection,
   newsletter: NewsletterSection,
 };
@@ -35,6 +37,7 @@ export default function PlayfulTemplate({
   navMenuItems,
   stats,
   testimonials,
+  bestSellers,
   cartTotalItems,
   onOpenCart,
   onAddToCart,
@@ -71,6 +74,7 @@ export default function PlayfulTemplate({
     bundles,
     stats,
     testimonials,
+    bestSellers,
     onAddToCart,
     onAddBundleToCart,
     newsletterEmail,

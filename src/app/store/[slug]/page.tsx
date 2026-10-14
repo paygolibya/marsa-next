@@ -26,6 +26,7 @@ export default function StorefrontPage() {
   const [navMenuItems, setNavMenuItems] = useState<{ id: string; label: string; url: string }[]>([]);
   const [stats, setStats] = useState<StoreStats | null>(null);
   const [testimonials, setTestimonials] = useState<StoreTestimonial[]>([]);
+  const [bestSellers, setBestSellers] = useState<Product[]>([]);
   const [query, setQuery] = useState("");
   const [notFound, setNotFound] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
@@ -43,7 +44,7 @@ export default function StorefrontPage() {
   useEffect(() => {
     api
       .publicStore(slug)
-      .then(({ store, products, categories, bundles, upsells, navMenuItems, stats, testimonials }) => {
+      .then(({ store, products, categories, bundles, upsells, navMenuItems, stats, testimonials, bestSellers }) => {
         setStore(store);
         setProducts(products);
         setCategories(categories);
@@ -52,6 +53,7 @@ export default function StorefrontPage() {
         setNavMenuItems(navMenuItems);
         setStats(stats);
         setTestimonials(testimonials);
+        setBestSellers(bestSellers);
       })
       .catch(() => setNotFound(true));
   }, [slug]);
@@ -100,6 +102,7 @@ export default function StorefrontPage() {
         navMenuItems={navMenuItems}
         stats={stats}
         testimonials={testimonials}
+        bestSellers={bestSellers}
         cartTotalItems={cart.totalItems}
         onOpenCart={() => setCartOpen(true)}
         onAddToCart={(product) => {

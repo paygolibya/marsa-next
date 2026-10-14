@@ -73,6 +73,11 @@
   "bundles.heading": "الباقات",
   "bundles.itemsCount": "{count} منتجات في باقة واحدة",
   "bundles.addToCart": "أضف الباقة للسلة",
+
+  "bestSellers.heading": "الأكثر مبيعًا",
+  "bestSellers.badge": "الأكثر مبيعًا",
+
+  "categoryShowcase.heading": "تسوّق حسب التصنيف",
   "bundles.savings": "وفّر {amount} عند شراء هذه الباقة مجمّعة",
   "bundles.contains": "تحتوي هذه الباقة على",
   "bundles.quantityPrefix": "× {count}",

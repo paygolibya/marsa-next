@@ -537,6 +537,10 @@ model Category {
   name      String
   slug      String
   position  Int      @default(0)
+  // Optional — powers the storefront's "shop by category" visual card
+  // grid (categoryShowcase section); the existing pill-filter row never
+  // needed an image, so most categories can stay without one.
+  imageUrl  String?  @map("image_url")
   createdAt DateTime @default(now()) @map("created_at")
 
   store    Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
@@ -603,6 +607,12 @@ model Product {
   // never exposed on the storefront or to buyers, only on the merchant's
   // own product form/list.
   costPriceCents  Int?    @map("cost_price_cents")
+
+  // Merchant-pinned "best seller" flag — independent of actual sales
+  // volume, shown alongside (and always ranked ahead of) the
+  // auto-computed-from-order-history ranking in the storefront's
+  // bestSellers section. See src/lib/best-sellers.ts for the merge.
+  isBestSeller Boolean @default(false) @map("is_best_seller")
 
   // Optional per-language overrides, e.g. {"en": {"name": "...",
   // "description": "...", "metaTitle": "...", "metaDescription": "..."}}

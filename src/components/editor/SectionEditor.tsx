@@ -94,6 +94,7 @@ export function SectionEditor({ storeId, onSaved }: { storeId: string; onSaved?:
   const [navMenuItems, setNavMenuItems] = useState<{ id: string; label: string; url: string }[]>([]);
   const [stats, setStats] = useState<StoreStats | null>(null);
   const [testimonials, setTestimonials] = useState<StoreTestimonial[]>([]);
+  const [bestSellers, setBestSellers] = useState<Product[]>([]);
 
   const [draft, setDraft] = useState<DraftCustomization>(DEFAULT_DRAFT);
   const [sections, setSections] = useState<EditableSection[]>([]);
@@ -178,6 +179,7 @@ export function SectionEditor({ storeId, onSaved }: { storeId: string; onSaved?:
         setNavMenuItems(publicData.navMenuItems);
         setStats(publicData.stats);
         setTestimonials(publicData.testimonials);
+        setBestSellers(publicData.bestSellers);
         setLoaded(true);
       } catch {
         if (!cancelled) setError("تعذّر تحميل بيانات المتجر");
@@ -658,6 +660,7 @@ export function SectionEditor({ storeId, onSaved }: { storeId: string; onSaved?:
               navMenuItems={navMenuItems}
               stats={stats}
               testimonials={testimonials}
+              bestSellers={bestSellers}
               cartTotalItems={0}
               onOpenCart={() => show("معاينة فقط — لا يمكن فتح السلة هنا", "info")}
               onAddToCart={() => show("معاينة فقط — لا يمكن الإضافة للسلة هنا", "info")}

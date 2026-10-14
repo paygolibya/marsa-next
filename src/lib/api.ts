@@ -124,7 +124,7 @@ export type ProductVariant = {
   sku?: string | null;
   active?: boolean;
 };
-export type Category = { id: string; name: string; slug: string; position: number };
+export type Category = { id: string; name: string; slug: string; position: number; imageUrl: string | null };
 
 export type Upsell = { id: string; storeId: string; triggerProductId: string; offeredProductId: string; active: boolean; triggerProduct: { name: string }; offeredProduct: { name: string } };
 
@@ -188,6 +188,7 @@ export type Product = {
   metaDescription: string | null;
   costPriceCents: number | null;
   translations?: Record<string, { name?: string; description?: string; metaTitle?: string; metaDescription?: string }> | null;
+  isBestSeller: boolean;
 };
 export type OrderItem = {
   id: string;
@@ -366,6 +367,7 @@ export const api = {
       navMenuItems: { id: string; label: string; url: string }[];
       stats: StoreStats | null;
       testimonials: StoreTestimonial[];
+      bestSellers: Product[];
     }>(`/api/stores/public/${slug}`),
 
   publicPage: (storeSlug: string, pageSlug: string) =>
@@ -474,6 +476,7 @@ export const api = {
       metaDescription: string | null;
       costPriceCents: number | null;
       translations: Record<string, { name?: string; description?: string; metaTitle?: string; metaDescription?: string }> | null;
+      isBestSeller: boolean;
     }>
   ) =>
     request<Product>(`/api/products/${id}`, {
@@ -640,13 +643,13 @@ export const api = {
   deleteCoupon: (token: string, id: string) =>
     request<{ ok: boolean }>(`/api/coupons/${id}`, { method: "DELETE", headers: authHeaders(token) }),
 
-  createCategory: (token: string, body: { storeId: string; name: string }) =>
+  createCategory: (token: string, body: { storeId: string; name: string; imageUrl?: string | null }) =>
     request<Category>("/api/categories", { method: "POST", headers: authHeaders(token), body: JSON.stringify(body) }),
 
   listCategories: (token: string, storeId: string) =>
     request<Category[]>(`/api/categories?storeId=${storeId}`, { headers: authHeaders(token) }),
 
-  updateCategory: (token: string, id: string, body: Partial<{ name: string; position: number }>) =>
+  updateCategory: (token: string, id: string, body: Partial<{ name: string; position: number; imageUrl: string | null }>) =>
     request<Category>(`/api/categories/${id}`, { method: "PATCH", headers: authHeaders(token), body: JSON.stringify(body) }),
 
   deleteCategory: (token: string, id: string) =>

@@ -16,6 +16,8 @@ export default function DashboardCategoriesPage() {
   const [categories, setCategories] = useState<Category[] | null>(null);
   const [editTarget, setEditTarget] = useState<EditTarget>(null);
   const [name, setName] = useState("");
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
@@ -30,12 +32,27 @@ export default function DashboardCategoriesPage() {
 
   function openAdd() {
     setName("");
+    setImageUrl(null);
     setEditTarget({});
   }
 
   function openEdit(category: Category) {
     setName(category.name);
+    setImageUrl(category.imageUrl);
     setEditTarget(category);
+  }
+
+  async function handleImageUpload(file: File) {
+    if (!token) return;
+    setUploadingImage(true);
+    try {
+      const { url } = await api.uploadImage(token, file);
+      setImageUrl(url);
+    } catch (err) {
+      show(err instanceof ApiError ? err.message : "تعذّر رفع الصورة", "error");
+    } finally {
+      setUploadingImage(false);
+    }
   }
 
   function closeModal() {
@@ -48,9 +65,9 @@ export default function DashboardCategoriesPage() {
     setSaving(true);
     try {
       if ("id" in editTarget) {
-        await api.updateCategory(token, editTarget.id, { name: name.trim() });
+        await api.updateCategory(token, editTarget.id, { name: name.trim(), imageUrl });
       } else {
-        await api.createCategory(token, { storeId: store.id, name: name.trim() });
+        await api.createCategory(token, { storeId: store.id, name: name.trim(), imageUrl });
       }
       setEditTarget(null);
       refresh();
@@ -150,6 +167,37 @@ export default function DashboardCategoriesPage() {
           <span className="block text-sm font-bold text-harbor mb-1.5">اسم التصنيف</span>
           <input autoFocus value={name} onChange={(e) => setName(e.target.value)} className="input" placeholder="مثال: أحذية" />
         </label>
+
+        <div className="mt-4">
+          <span className="block text-sm font-bold text-harbor mb-1.5">صورة التصنيف (اختياري)</span>
+          <p className="text-xs text-rope mb-2">تظهر في قسم &quot;تسوّق حسب التصنيف&quot; على واجهة المتجر، إن فعّلته.</p>
+          <div className="flex items-center gap-4">
+            {imageUrl && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={imageUrl} alt="" className="h-14 w-14 rounded-xl object-cover border border-harbor/10" />
+            )}
+            <label className="flex-1">
+              <span className="inline-block rounded-full border border-harbor/20 px-4 py-2 text-sm font-bold text-harbor hover:bg-harbor/5 cursor-pointer transition-colors">
+                {uploadingImage ? "جارٍ الرفع..." : imageUrl ? "تغيير الصورة" : "اختر صورة"}
+              </span>
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                className="hidden"
+                disabled={uploadingImage}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) void handleImageUpload(file);
+                }}
+              />
+            </label>
+            {imageUrl && (
+              <button type="button" onClick={() => setImageUrl(null)} className="text-xs font-bold text-signal hover:underline shrink-0">
+                إزالة
+              </button>
+            )}
+          </div>
+        </div>
       </Modal>
     </div>
   );

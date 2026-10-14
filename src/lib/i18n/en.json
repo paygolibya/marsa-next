@@ -73,6 +73,11 @@
   "bundles.heading": "Bundles",
   "bundles.itemsCount": "{count} products in one bundle",
   "bundles.addToCart": "Add bundle to cart",
+
+  "bestSellers.heading": "Best Sellers",
+  "bestSellers.badge": "Best Seller",
+
+  "categoryShowcase.heading": "Shop by Category",
   "bundles.savings": "Save {amount} when you buy this bundle together",
   "bundles.contains": "This bundle contains",
   "bundles.quantityPrefix": "× {count}",

@@ -1,4 +1,4 @@
-import { ProductsSection, CategoriesSection, TestimonialsSection, NewsletterSection } from "@/components/storefront/sections";
+import { ProductsSection, CategoriesSection, CategoryShowcaseSection, BestSellersSection, TestimonialsSection, NewsletterSection } from "@/components/storefront/sections";
 import type { SectionRenderProps, SectionType } from "@/components/storefront/sections/types";
 import { translate, isSupportedLanguage } from "@/lib/i18n";
 import { StorefrontHeaderRow } from "./StorefrontHeaderRow";
@@ -11,6 +11,8 @@ import { resolveLogoSizePx, resolveTextSizeClass, type StorefrontTemplateProps }
 const SECTION_COMPONENTS: Partial<Record<SectionType, (props: SectionRenderProps) => React.ReactNode>> = {
   products: ProductsSection,
   categories: CategoriesSection,
+  categoryShowcase: CategoryShowcaseSection,
+  bestSellers: BestSellersSection,
   testimonials: TestimonialsSection,
   newsletter: NewsletterSection,
 };
@@ -37,6 +39,7 @@ export default function RentalTemplate({
   navMenuItems,
   stats,
   testimonials,
+  bestSellers,
   cartTotalItems,
   onOpenCart,
   onAddToCart,
@@ -72,6 +75,7 @@ export default function RentalTemplate({
     bundles,
     stats,
     testimonials,
+    bestSellers,
     onAddToCart,
     onAddBundleToCart,
     newsletterEmail,

@@ -3,7 +3,9 @@ import {
   statsSettingsSchema,
   productsSettingsSchema,
   categoriesSettingsSchema,
+  categoryShowcaseSettingsSchema,
   bundlesSettingsSchema,
+  bestSellersSettingsSchema,
   testimonialsSettingsSchema,
   newsletterSettingsSchema,
 } from "@/components/storefront/sections/schemas";
@@ -52,6 +54,16 @@ export function SectionSettingsForm({
     );
   }
 
+  if (type === "categoryShowcase") {
+    const s = safeParseSettings(categoryShowcaseSettingsSchema, settings);
+    return (
+      <label className="block">
+        <span className="block text-sm font-bold text-harbor mb-1.5">عنوان القسم (اختياري)</span>
+        <input value={s.title ?? ""} onChange={(e) => onChange({ ...s, title: e.target.value || undefined })} className="input" placeholder="مثال: تسوّق حسب التصنيف" />
+      </label>
+    );
+  }
+
   if (type === "bundles") {
     const s = safeParseSettings(bundlesSettingsSchema, settings);
     return (
@@ -59,6 +71,30 @@ export function SectionSettingsForm({
         <span className="block text-sm font-bold text-harbor mb-1.5">عنوان القسم (اختياري)</span>
         <input value={s.title ?? ""} onChange={(e) => onChange({ ...s, title: e.target.value || undefined })} className="input" placeholder="مثال: باقات مميزة" />
       </label>
+    );
+  }
+
+  if (type === "bestSellers") {
+    const s = safeParseSettings(bestSellersSettingsSchema, settings);
+    return (
+      <div className="space-y-4">
+        <label className="block">
+          <span className="block text-sm font-bold text-harbor mb-1.5">عنوان القسم (اختياري)</span>
+          <input value={s.title ?? ""} onChange={(e) => onChange({ ...s, title: e.target.value || undefined })} className="input" placeholder="مثال: الأكثر مبيعًا" />
+        </label>
+        <label className="block">
+          <span className="block text-sm font-bold text-harbor mb-1.5">أقصى عدد منتجات يظهر</span>
+          <input
+            type="number"
+            min={1}
+            max={12}
+            value={s.limit}
+            onChange={(e) => onChange({ ...s, limit: Math.min(12, Math.max(1, Number(e.target.value) || 1)) })}
+            className="input"
+            dir="ltr"
+          />
+        </label>
+      </div>
     );
   }
 

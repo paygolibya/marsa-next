@@ -70,6 +70,17 @@ test("PATCH updates an owned category's name/position", async () => {
   assert.equal((calls.update as any).data.position, 2);
 });
 
+test("PATCH passes an imageUrl through to the update", async () => {
+  const { db, calls } = makeFakeDb({ category: { id: "category-1", storeId: "store-1" }, ownedStoreId: "store-1" });
+  const res = await handleUpdateCategory(
+    db,
+    authReq("http://localhost/x", { method: "PATCH", body: JSON.stringify({ imageUrl: "https://example.com/shoes.jpg" }) }),
+    "category-1"
+  );
+  assert.equal(res.status, 200);
+  assert.equal((calls.update as any).data.imageUrl, "https://example.com/shoes.jpg");
+});
+
 test("DELETE rejects an unauthenticated request with 401", async () => {
   const { db } = makeFakeDb({});
   const res = await handleDeleteCategory(db, noTokenReq("http://localhost/x", { method: "DELETE" }), "category-1");
