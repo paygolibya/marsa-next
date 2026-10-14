@@ -5,13 +5,18 @@ import { signMerchantToken, toMerchantDTO } from "@/lib/auth";
 import { registerSchema } from "@/lib/validation";
 import type { RequestOtpResult } from "@/lib/integrations/sms";
 import { getClientIp } from "@/lib/request-ip";
+import { getPlanFeatureFlags } from "@/lib/checkout-features";
 
 const OTP_EXPIRY_MS = 10 * 60 * 1000;
 const MAX_REGISTRATIONS_PER_IP_PER_HOUR = 3;
-// The 90-day free trial was offered to reach the first ~70 merchants.
-// That goal is met — new signups from here on get no trial and must
-// subscribe (any billing period) before their dashboard unlocks, same as
-// "inactive" already works for a lapsed subscription (dashboard/layout.tsx).
+// One free month for every new signup (the original 90-day trial ended
+// once the first ~70 merchants joined). Their first paid subscription
+// then gets 50% off its first month — see FIRST_PAYMENT_DISCOUNT_LYD in
+// src/lib/checkout-features.ts.
+export const TRIAL_DAYS = 30;
+// Full-featured tier during the trial, so a merchant can actually evaluate
+// everything before paying.
+const TRIAL_TIER = "advanced";
 
 type MerchantRow = Parameters<typeof toMerchantDTO>[0] & { id: string };
 
@@ -25,6 +30,10 @@ export type RegisterDb = {
         phone: string;
         passwordHash: string;
         subscriptionStatus: string;
+        subscriptionTier: string;
+        subscriptionStartDate: Date;
+        subscriptionEndDate: Date;
+        trialEndsAt: Date;
         registrationIp: string | null;
         otpCodeHash: string;
         otpExpiresAt: Date;
@@ -78,17 +87,23 @@ export async function handleRegister(deps: RegisterDeps, req: Request): Promise<
     // self-generated one.
     const otpResult = await deps.requestOtpPin(phone);
     const otpCodeHash = bcrypt.hashSync(otpResult.pin, 10);
+    const trialEndsAt = new Date(Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000);
 
     const merchant = await deps.db.merchant.create({
       data: {
         name,
         phone,
         passwordHash,
-        // No free trial — the merchant can still complete onboarding (the
-        // dashboard gate below is the only place this is enforced), but
-        // dashboard/layout.tsx blocks them at "inactive" with a link to
-        // /subscription until they actually pay for a billing period.
-        subscriptionStatus: "inactive",
+        // Free month starts immediately. subscriptionEndDate is what
+        // actually gates dashboard access (dashboard/layout.tsx and
+        // src/lib/subscription/expire.ts); trialEndsAt is kept alongside it
+        // so the UI/admin can tell a trial apart from a paid period.
+        subscriptionStatus: "active",
+        subscriptionTier: TRIAL_TIER,
+        subscriptionStartDate: new Date(),
+        subscriptionEndDate: trialEndsAt,
+        trialEndsAt,
+        ...getPlanFeatureFlags(TRIAL_TIER),
         registrationIp,
         otpCodeHash,
         otpExpiresAt: new Date(Date.now() + OTP_EXPIRY_MS),

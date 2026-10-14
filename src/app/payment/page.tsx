@@ -58,10 +58,22 @@ function PaymentPageContent() {
   const [loading, setLoading] = useState(false);
   const [walletPending, setWalletPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Display only — subscription-init re-derives the same discount
+  // server-side at charge time, so this can never under/over-charge.
+  const [discountLYD, setDiscountLYD] = useState(0);
+  const amountDueLYD = periodInfo.totalPriceLYD - discountLYD;
 
   useEffect(() => {
     if (ready && !token) router.replace("/login");
   }, [ready, token, router]);
+
+  useEffect(() => {
+    if (!token) return;
+    api
+      .subscriptionPricing(token)
+      .then((p) => setDiscountLYD(p.discountLYD))
+      .catch(() => setDiscountLYD(0));
+  }, [token]);
 
   async function handlePay() {
     if (!token) return;
@@ -136,9 +148,21 @@ function PaymentPageContent() {
                     <span className="text-rope">السعر الشهري الفعلي</span>
                     <span className="font-bold text-harbor">{periodInfo.monthlyEquivalentLYD} د.ل</span>
                   </div>
+                  {discountLYD > 0 && (
+                    <div className="mb-3 flex items-center justify-between rounded-xl bg-green-50 px-3 py-2 text-sm text-green-800">
+                      <span className="flex items-center gap-1.5 font-bold">
+                        <Icon name="tag" size={16} />
+                        خصم 50% على أول شهر مدفوع
+                      </span>
+                      <span className="font-bold">−{discountLYD} د.ل</span>
+                    </div>
+                  )}
                   <div className="flex items-center justify-between border-t border-harbor/10 pt-3">
                     <span className="font-bold text-harbor">المبلغ المستحق الآن</span>
-                    <span className="text-2xl font-extrabold text-signal">{periodInfo.totalPriceLYD} د.ل</span>
+                    <span className="flex items-baseline gap-2">
+                      {discountLYD > 0 && <span className="text-sm text-rope line-through">{periodInfo.totalPriceLYD} د.ل</span>}
+                      <span className="text-2xl font-extrabold text-signal">{amountDueLYD} د.ل</span>
+                    </span>
                   </div>
                 </div>
               </div>
@@ -168,7 +192,7 @@ function PaymentPageContent() {
                   disabled={loading || walletPending}
                   className="mt-2 w-full rounded-xl bg-signal py-3.5 font-bold text-canvas transition hover:bg-signal-dark disabled:opacity-40"
                 >
-                  {loading || walletPending ? "جارٍ المعالجة..." : `ادفع ${periodInfo.totalPriceLYD} د.ل الآن`}
+                  {loading || walletPending ? "جارٍ المعالجة..." : `ادفع ${amountDueLYD} د.ل الآن`}
                 </button>
               </div>
             </div>

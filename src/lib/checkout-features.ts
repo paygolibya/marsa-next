@@ -117,6 +117,19 @@ export const subscriptionPeriods: Record<SubscriptionPeriod, SubscriptionPeriodI
   },
 };
 
+// After the free first month (see TRIAL_DAYS in auth/register/handler.ts),
+// a merchant's FIRST paid subscription gets 50% off its first month —
+// half the monthly price, taken off whichever period they choose. Applied
+// server-side when the payment row is created (subscription-init), so the
+// gateway amount check in finalizeSubscriptionPayment still compares
+// against exactly what was charged.
+export const FIRST_PAYMENT_DISCOUNT_LYD = subscriptionPeriods["1m"].totalPriceLYD / 2;
+
+export function subscriptionChargeLYD(period: SubscriptionPeriod, firstPaidSubscription: boolean): number {
+  const base = subscriptionPeriods[period].totalPriceLYD;
+  return firstPaidSubscription ? base - FIRST_PAYMENT_DISCOUNT_LYD : base;
+}
+
 export function normalizeSubscriptionPeriod(period?: string | null): SubscriptionPeriod {
   if (period === "3m" || period === "12m") return period;
   return "1m";

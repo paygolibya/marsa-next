@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import jwt from "jsonwebtoken";
 import { handleSubscriptionInit, type SubscriptionInitDb } from "./handler";
+import { centsToMoamalatAmount } from "@/lib/payment/moamalat-client";
 
 process.env.JWT_SECRET ||= "test-secret";
 process.env.MOAMALAT_MERCHANT_ID = "TESTMID";
@@ -20,10 +21,14 @@ function noTokenReq(body: unknown) {
   return new Request("http://localhost/api/payments/moamalat/subscription-init", { method: "POST", body: JSON.stringify(body) });
 }
 
-function makeFakeDb() {
-  const calls: { create?: unknown } = {};
+function makeFakeDb(approvedPayments = 1) {
+  const calls: { create?: unknown; count?: unknown } = {};
   const db: SubscriptionInitDb = {
     payment: {
+      count: async (args) => {
+        calls.count = args;
+        return approvedPayments;
+      },
       create: async (args) => {
         calls.create = args;
         return { id: "payment-1" };
@@ -71,6 +76,29 @@ test("creates a pending payment for the authenticated merchant with the plan's o
   assert.equal(create.data.merchantId, "merchant-42");
   assert.equal(create.data.status, "pending");
   assert.equal(create.data.periodMonths, 12);
+});
+
+test("a returning merchant (already has an approved payment) pays the full plan price", async () => {
+  const { db, calls } = makeFakeDb(1);
+  await handleSubscriptionInit(db, req({ period: "3m" }));
+  assert.equal((calls.create as { data: { amount: number } }).data.amount, 400);
+});
+
+test("a merchant's FIRST paid subscription gets 50% off its first month (75 LYD off), on any period", async () => {
+  for (const [period, expected] of [["1m", 75], ["3m", 325], ["12m", 1425]] as const) {
+    const { db, calls } = makeFakeDb(0);
+    const res = await handleSubscriptionInit(db, req({ period }));
+    assert.equal(res.status, 200);
+    assert.equal((calls.create as { data: { amount: number } }).data.amount, expected, `period ${period}`);
+    assert.deepEqual((calls.count as { where: unknown }).where, { merchantId: "merchant-1", status: "approved" });
+  }
+});
+
+test("the LightBox amount sent to Moamalat is the discounted amount actually stored on the payment", async () => {
+  const { db } = makeFakeDb(0);
+  const res = await handleSubscriptionInit(db, req({ period: "1m" }));
+  const body = await res.json();
+  assert.equal(String(body.lightbox.AmountTrxn), String(centsToMoamalatAmount(75 * 100)));
 });
 
 test("the LightBox config's reference resolves back to this payment, not a hardcoded/placeholder id", async () => {

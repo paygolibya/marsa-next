@@ -48,7 +48,7 @@ export default function SubscriptionPage() {
           </ul>
           <p className="mt-4 flex items-center gap-2 rounded-xl bg-brass/10 p-3 text-sm font-bold text-harbor">
             <Icon name="gift" size={18} className="text-brass" />
-            بونص: أول 3 أشهر مجانًا عند التسجيل — بدون بطاقة ائتمان، وبكل الميزات كاملة.
+            بونص: أول شهر مجانًا عند التسجيل بكل الميزات كاملة، ثم خصم 50% على أول شهر مدفوع.
           </p>
         </div>
 

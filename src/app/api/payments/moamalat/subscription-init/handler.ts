@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import { getAuthMerchantId } from "@/lib/auth";
-import { subscriptionPeriods, type SubscriptionPeriod } from "@/lib/checkout-features";
+import { subscriptionChargeLYD, subscriptionPeriods, type SubscriptionPeriod } from "@/lib/checkout-features";
 import { buildLightboxConfig, getLightboxScriptUrl, isMoamalatConfigured, makeSubscriptionReference } from "@/lib/payment/moamalat-client";
 
 export type SubscriptionInitDb = {
   payment: {
+    count: (args: { where: { merchantId: string; status: string } }) => Promise<number>;
     create: (args: {
       data: { merchantId: string; tier: string; periodMonths: number; amount: number; currency: string; status: string; method: string };
     }) => Promise<{ id: string }>;
@@ -39,10 +40,16 @@ export async function handleSubscriptionInit(db: SubscriptionInitDb, req: Reques
     }
 
     const plan = subscriptionPeriods[period as SubscriptionPeriod];
-    const amountCents = plan.totalPriceLYD * 100;
+    // No approved payment yet = this is their first paid subscription, so
+    // the 50%-off-first-month discount applies. The discounted amount is
+    // what gets stored on the payment row, which is exactly what the
+    // gateway's reported amount is later verified against.
+    const approvedCount = await db.payment.count({ where: { merchantId, status: "approved" } });
+    const amountLYD = subscriptionChargeLYD(period as SubscriptionPeriod, approvedCount === 0);
+    const amountCents = Math.round(amountLYD * 100);
 
     const payment = await db.payment.create({
-      data: { merchantId, tier: "standard", periodMonths: plan.months, amount: plan.totalPriceLYD, currency: "LYD", status: "pending", method: "moamalat" },
+      data: { merchantId, tier: "standard", periodMonths: plan.months, amount: amountLYD, currency: "LYD", status: "pending", method: "moamalat" },
     });
 
     const lightbox = buildLightboxConfig(amountCents, makeSubscriptionReference(payment.id));

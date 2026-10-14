@@ -343,7 +343,7 @@ export default function MarketingPage() {
           <Reveal delayMs={300}>
             <p className="mt-10 flex items-center justify-center gap-2 text-center rounded-2xl bg-white/90 shadow-xl px-6 py-4 mx-auto max-w-xl font-bold text-harbor">
               <Icon name="gift" size={20} className="text-signal shrink-0" />
-              بونص: أول 3 أشهر مجانًا عند التسجيل — بدون بطاقة ائتمان.
+              بونص: أول شهر مجانًا عند التسجيل، ثم خصم 50% على أول شهر مدفوع.
             </p>
           </Reveal>
         </div>

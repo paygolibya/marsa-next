@@ -69,15 +69,18 @@ test("allows registration under the per-IP limit", async () => {
   assert.equal(res.status, 201);
 });
 
-test("creates a merchant as inactive, with no trial grant — must subscribe before the dashboard unlocks", async () => {
+test("grants a 30-day free month on signup — active immediately, trial and subscription ending together", async () => {
   const { deps, calls } = makeFakeDeps();
+  const before = Date.now();
   const res = await handleRegister(deps, req(validBody));
   assert.equal(res.status, 201);
   const create = calls.create as { data: { subscriptionStatus: string; subscriptionTier?: string; trialEndsAt?: Date; subscriptionEndDate?: Date } };
-  assert.equal(create.data.subscriptionStatus, "inactive");
-  assert.equal(create.data.subscriptionTier, undefined);
-  assert.equal(create.data.trialEndsAt, undefined);
-  assert.equal(create.data.subscriptionEndDate, undefined);
+  assert.equal(create.data.subscriptionStatus, "active");
+  assert.equal(create.data.subscriptionTier, "advanced");
+  assert.ok(create.data.trialEndsAt instanceof Date);
+  assert.equal(create.data.subscriptionEndDate?.getTime(), create.data.trialEndsAt!.getTime());
+  const days = (create.data.trialEndsAt!.getTime() - before) / (24 * 60 * 60 * 1000);
+  assert.ok(days > 29.9 && days < 30.1, `expected ~30 days, got ${days}`);
 });
 
 test("stores a hash of the OTP pin, never the plaintext code, and returns a signed token", async () => {

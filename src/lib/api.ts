@@ -579,6 +579,9 @@ export const api = {
       { method: "POST", body: JSON.stringify(fields) }
     ),
 
+  subscriptionPricing: (token: string) =>
+    request<{ firstPaymentDiscountEligible: boolean; discountLYD: number }>("/api/payments/subscription-pricing", { headers: authHeaders(token) }),
+
   subscriptionMoamalatInit: (token: string, period: "1m" | "3m" | "12m") =>
     request<{ paymentId: string; lightbox: LightboxConfig; moamalatScriptUrl: string }>("/api/payments/moamalat/subscription-init", {
       method: "POST",
