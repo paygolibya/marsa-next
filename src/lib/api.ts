@@ -113,6 +113,10 @@ export type Store = {
   businessHours: string | null;
   language: string;
   supportedLanguages: string[];
+  facebookPixelId: string | null;
+  tiktokPixelId: string | null;
+  googleAdsConversionId: string | null;
+  googleAdsConversionLabel: string | null;
 };
 export type ProductVariantOption = { name: string; values: string[] };
 export type ProductVariant = {
@@ -499,6 +503,10 @@ export const api = {
       bookingWorkingHours: Record<string, { open: string; close: string } | null> | null;
       language: string;
       supportedLanguages: string[];
+      facebookPixelId: string | null;
+      tiktokPixelId: string | null;
+      googleAdsConversionId: string | null;
+      googleAdsConversionLabel: string | null;
     }>
   ) =>
     request<Store>(`/api/stores/${id}`, {

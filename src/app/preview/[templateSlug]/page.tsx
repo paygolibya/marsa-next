@@ -109,6 +109,10 @@ export default function TemplatePreviewPage() {
       businessHours: null,
       language: "ar",
       supportedLanguages: ["ar"],
+      facebookPixelId: null,
+      tiktokPixelId: null,
+      googleAdsConversionId: null,
+      googleAdsConversionLabel: null,
       customization: {
         primaryColor: template.defaultColors.primaryColor,
         secondaryColor: template.defaultColors.secondaryColor,

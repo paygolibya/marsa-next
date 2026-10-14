@@ -47,6 +47,10 @@ export default function DashboardSettingsPage() {
   const [workingHours, setWorkingHours] = useState<Record<string, DayHours>>({});
   const [language, setLanguage] = useState<"ar" | "en">("ar");
   const [supportedLanguages, setSupportedLanguages] = useState<("ar" | "en")[]>(["ar"]);
+  const [facebookPixelId, setFacebookPixelId] = useState("");
+  const [tiktokPixelId, setTiktokPixelId] = useState("");
+  const [googleAdsConversionId, setGoogleAdsConversionId] = useState("");
+  const [googleAdsConversionLabel, setGoogleAdsConversionLabel] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -72,6 +76,10 @@ export default function DashboardSettingsPage() {
     setWorkingHours(store.bookingWorkingHours ?? {});
     setLanguage(store.language === "en" ? "en" : "ar");
     setSupportedLanguages(store.supportedLanguages?.length ? (store.supportedLanguages.filter((l): l is "ar" | "en" => l === "ar" || l === "en")) : ["ar"]);
+    setFacebookPixelId(store.facebookPixelId ?? "");
+    setTiktokPixelId(store.tiktokPixelId ?? "");
+    setGoogleAdsConversionId(store.googleAdsConversionId ?? "");
+    setGoogleAdsConversionLabel(store.googleAdsConversionLabel ?? "");
   }, [store]);
 
   function toggleSupportedLanguage(value: "ar" | "en", checked: boolean) {
@@ -108,6 +116,10 @@ export default function DashboardSettingsPage() {
         bookingWorkingHours: storeType === "booking" ? workingHours : null,
         language,
         supportedLanguages: supportedLanguages.includes(language) ? supportedLanguages : [...supportedLanguages, language],
+        facebookPixelId: facebookPixelId.trim() || null,
+        tiktokPixelId: tiktokPixelId.trim() || null,
+        googleAdsConversionId: googleAdsConversionId.trim() || null,
+        googleAdsConversionLabel: googleAdsConversionLabel.trim() || null,
       });
       setSaved(true);
       // The dashboard sidebar/nav depends on store.type (e.g. "الاستفسارات"
@@ -293,6 +305,57 @@ export default function DashboardSettingsPage() {
             placeholder="السبت–الخميس: 9ص–9م"
           />
         </label>
+
+        <div className="rounded-2xl border border-harbor/15 p-4 space-y-4">
+          <div>
+            <span className="block text-sm font-bold text-harbor">بكسلات الإعلانات</span>
+            <p className="text-xs text-rope mt-1">
+              ألصق معرّف البكسل من حساب إعلاناتك ليتتبّع عمليات الإضافة للسلة وبدء الدفع والشراء تلقائيًا على متجرك.
+            </p>
+          </div>
+          <label className="block">
+            <span className="block text-xs text-rope mb-1">معرّف بكسل فيسبوك (Facebook Pixel ID)</span>
+            <input
+              value={facebookPixelId}
+              onChange={(e) => setFacebookPixelId(e.target.value)}
+              className="input"
+              dir="ltr"
+              placeholder="مثال: 1234567890123456"
+            />
+          </label>
+          <label className="block">
+            <span className="block text-xs text-rope mb-1">معرّف بكسل تيك توك (TikTok Pixel ID)</span>
+            <input
+              value={tiktokPixelId}
+              onChange={(e) => setTiktokPixelId(e.target.value)}
+              className="input"
+              dir="ltr"
+              placeholder="مثال: C4A1B2C3D4E5F6G7H8I9J0"
+            />
+          </label>
+          <div className="grid sm:grid-cols-2 gap-3">
+            <label className="block">
+              <span className="block text-xs text-rope mb-1">معرّف تحويل Google Ads</span>
+              <input
+                value={googleAdsConversionId}
+                onChange={(e) => setGoogleAdsConversionId(e.target.value)}
+                className="input"
+                dir="ltr"
+                placeholder="مثال: AW-123456789"
+              />
+            </label>
+            <label className="block">
+              <span className="block text-xs text-rope mb-1">تسمية التحويل (Conversion Label)</span>
+              <input
+                value={googleAdsConversionLabel}
+                onChange={(e) => setGoogleAdsConversionLabel(e.target.value)}
+                className="input"
+                dir="ltr"
+                placeholder="مثال: AbCdEfGhIjK"
+              />
+            </label>
+          </div>
+        </div>
 
         {error && <p className="text-signal text-sm">{error}</p>}
         {saved && <p className="text-sm text-green-700">✓ تم الحفظ</p>}

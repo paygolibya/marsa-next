@@ -1,12 +1,29 @@
 "use client";
 
+import { firePixelEvent, type PixelEventType } from "./ad-pixels";
+
 // Fires one beacon at each of the 4 funnel moments this app tracks:
 // pageview (every storefront page mount), add_to_cart (inside useCart's
 // add/addBundle, so every call site gets this for free), checkout_started
 // (checkout page mount), order_completed (confirmation page mount). Never
 // awaited, never lets a tracking failure affect the real page — this is
 // pure telemetry, not a feature the storefront depends on.
+//
+// Also fires the merchant's own configured ad pixels (Facebook/TikTok/
+// Google Ads — see src/lib/ad-pixels.ts) for the 3 funnel moments that map
+// onto a real conversion event. Bundled into this same call rather than
+// threaded through every call site separately — same reasoning useCart's
+// own add/addBundle already gives for firing trackEvent from inside the
+// hook instead of at each "add to cart" button.
 const SESSION_KEY = "marsa_session_id";
+
+type TrackEventType = "pageview" | "add_to_cart" | "checkout_started" | "order_completed";
+
+const PIXEL_EVENT_TYPES: Partial<Record<TrackEventType, PixelEventType>> = {
+  add_to_cart: "add_to_cart",
+  checkout_started: "checkout_started",
+  order_completed: "purchase",
+};
 
 function getSessionId(): string {
   try {
@@ -23,7 +40,12 @@ function getSessionId(): string {
   }
 }
 
-export function trackEvent(storeSlug: string, type: "pageview" | "add_to_cart" | "checkout_started" | "order_completed", path: string) {
+export function trackEvent(
+  storeSlug: string,
+  type: TrackEventType,
+  path: string,
+  pixelData?: { valueCents?: number; currency?: string; transactionId?: string }
+) {
   try {
     const body = JSON.stringify({
       storeSlug,
@@ -43,5 +65,15 @@ export function trackEvent(storeSlug: string, type: "pageview" | "add_to_cart" |
     }
   } catch {
     // Never let analytics break the actual page.
+  }
+
+  const pixelEvent = PIXEL_EVENT_TYPES[type];
+  if (pixelEvent) {
+    try {
+      firePixelEvent(pixelEvent, pixelData);
+    } catch {
+      // Same rule as above — a third-party pixel script misbehaving must
+      // never break the actual page either.
+    }
   }
 }

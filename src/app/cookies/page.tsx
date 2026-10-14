@@ -1,5 +1,5 @@
 import { SiteNav } from "@/components/site-nav";
-import { SiteFooter } from "@/components/site-footer";
+import { SiteFooter, RIFQA_SOCIAL_LINKS } from "@/components/site-footer";
 
 // Honest and short on purpose — the app genuinely doesn't use tracking
 // cookies today (see CookieConsentBanner's own comment); this names
@@ -26,7 +26,7 @@ export default function CookiesPolicyPage() {
           </div>
         </div>
       </main>
-      <SiteFooter />
+      <SiteFooter socialLinks={RIFQA_SOCIAL_LINKS} />
     </>
   );
 }

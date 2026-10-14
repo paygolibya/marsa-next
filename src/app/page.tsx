@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { SiteNav } from "@/components/site-nav";
-import { SiteFooter } from "@/components/site-footer";
+import { SiteFooter, RIFQA_SOCIAL_LINKS } from "@/components/site-footer";
 import { Reveal } from "@/components/reveal";
 import { subscriptionPeriods } from "@/lib/checkout-features";
 
@@ -363,7 +363,7 @@ export default function MarketingPage() {
         </Reveal>
       </section>
 
-      <SiteFooter transparent />
+      <SiteFooter transparent socialLinks={RIFQA_SOCIAL_LINKS} />
     </>
   );
 }

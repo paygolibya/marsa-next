@@ -13,6 +13,17 @@ import { translate, type Language } from "@/lib/i18n";
 // (currently just the homepage) opt in explicitly.
 type SocialLinks = { instagramUrl?: string | null; facebookUrl?: string | null; tiktokUrl?: string | null };
 
+// Rifqa's OWN social accounts — separate from a merchant's own
+// instagramUrl/facebookUrl/tiktokUrl (store.customization), which are that
+// merchant's business links, not the platform's. Used on Rifqa's own
+// marketing pages (homepage, cookies policy, ...), never on a merchant
+// storefront.
+export const RIFQA_SOCIAL_LINKS: SocialLinks = {
+  facebookUrl: "https://www.facebook.com/share/1FxXb5eWMh/?mibextid=wwXIfr",
+  instagramUrl: "https://instagram.com/rifqa.ly?dlrf=b2thM2t5NDZobWNs&utm_source=qr",
+  tiktokUrl: "https://www.tiktok.com/@rifqa.ly",
+};
+
 // Minimal inline glyphs (no icon library in this codebase) — just enough
 // to be recognizable at 20px, matching the footer's own understated style.
 function InstagramIcon() {

@@ -437,6 +437,20 @@ model Store {
   shippingPolicy String? @map("shipping_policy")
   businessHours  String? @map("business_hours")
 
+  // Ad-pixel IDs a merchant pastes in from their own Facebook/TikTok/
+  // Google Ads account — not secrets (pixel IDs are meant to sit in public
+  // page source, that's how client-side ad tracking works), so these flow
+  // straight through the public store response unfiltered, same as every
+  // other Store scalar column already does. See src/lib/ad-pixels.ts for
+  // where they're actually used (script injection + conversion events).
+  // Google Ads needs BOTH an id and a conversion label (it has no single
+  // "pixel id" the way Facebook/TikTok do) — firePixelEvent only fires the
+  // Google Ads conversion when both are present.
+  facebookPixelId          String? @map("facebook_pixel_id")
+  tiktokPixelId            String? @map("tiktok_pixel_id")
+  googleAdsConversionId    String? @map("google_ads_conversion_id")
+  googleAdsConversionLabel String? @map("google_ads_conversion_label")
+
   // Custom domain (e.g. www.merchant-shop.ly) — the {slug}.rifqa.ly
   // subdomain needs no DB field at all, `slug` already is it. Verification
   // is Vercel's own (via its Domains API, src/lib/domains/vercel-client.ts)

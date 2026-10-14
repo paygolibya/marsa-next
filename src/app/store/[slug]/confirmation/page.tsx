@@ -6,6 +6,7 @@ import Link from "next/link";
 import { api, formatLYD, type Store } from "@/lib/api";
 import { useCart } from "@/lib/use-cart";
 import { trackEvent } from "@/lib/track-event";
+import { initAdPixels } from "@/lib/ad-pixels";
 import { isSupportedLanguage } from "@/lib/i18n";
 import { useTranslation } from "@/lib/i18n/useTranslation";
 
@@ -28,18 +29,34 @@ function ConfirmationPageContent() {
   const cart = useCart(params.slug);
 
   useEffect(() => {
-    api.publicStore(params.slug).then(({ store }) => setStore(store)).catch(() => {});
+    api.publicStore(params.slug).then(({ store }) => {
+      initAdPixels(store);
+      setStore(store);
+    }).catch(() => {});
   }, [params.slug]);
 
   const orderId = search.get("orderId");
+  const totalCentsParam = search.get("totalCents");
 
   // Only when a real order actually exists here (not the "no order to
   // show" fallback below) — this is the order_completed funnel moment,
-  // reached only after a successful order creation.
+  // reached only after a successful order creation. The order's own total
+  // (already in the URL for the receipt below) doubles as the Purchase
+  // conversion value for any ad pixel the merchant has configured.
+  //
+  // Gated on `store` being loaded (not just orderId) so this fires exactly
+  // once, after initAdPixels (see the effect above) has actually had a
+  // chance to run — firing before that would silently no-op every pixel.
   useEffect(() => {
-    if (orderId) trackEvent(params.slug, "order_completed", `/store/${params.slug}/confirmation`);
+    if (orderId && store) {
+      trackEvent(params.slug, "order_completed", `/store/${params.slug}/confirmation`, {
+        valueCents: totalCentsParam ? Number(totalCentsParam) : undefined,
+        currency: store.currency,
+        transactionId: orderId,
+      });
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [params.slug, orderId]);
+  }, [params.slug, orderId, Boolean(store)]);
 
   // The COD/same-page Moamalat flow already clears the cart itself
   // (checkout/page.tsx's goToConfirmation) before navigating here, but the

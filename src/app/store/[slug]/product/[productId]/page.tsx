@@ -8,6 +8,7 @@ import { api, ApiError, formatLYD, type Product, type ProductReview, type Store 
 import { useCart } from "@/lib/use-cart";
 import { captureReferralCode } from "@/lib/referral";
 import { trackEvent } from "@/lib/track-event";
+import { initAdPixels } from "@/lib/ad-pixels";
 import { CartDrawer } from "@/components/cart-drawer";
 import { SiteFooter } from "@/components/site-footer";
 import { InquiryModal } from "@/components/storefront/InquiryModal";
@@ -42,6 +43,7 @@ export default function ProductDetailPage() {
     api
       .publicStore(slug)
       .then(({ store, products, upsells }) => {
+        initAdPixels(store);
         setStore(store);
         setProducts(products);
         setUpsells(upsells);

@@ -90,7 +90,7 @@ export function useCart(storeSlug: string) {
       // Fired here (not at each call site) so every add-to-cart
       // interaction across the whole app — storefront grid, PDP, a cart
       // drawer's upsell suggestion — is tracked with this one change.
-      trackEvent(storeSlug, "add_to_cart", window.location.pathname);
+      trackEvent(storeSlug, "add_to_cart", window.location.pathname, { valueCents: (variant?.priceCents ?? product.priceCents) * quantity });
     },
     [storeSlug]
   );
@@ -116,7 +116,7 @@ export function useCart(storeSlug: string) {
         localStorage.setItem(storageKey(storeSlug), JSON.stringify(next));
         return next;
       });
-      trackEvent(storeSlug, "add_to_cart", window.location.pathname);
+      trackEvent(storeSlug, "add_to_cart", window.location.pathname, { valueCents: bundle.priceCents * quantity });
     },
     [storeSlug]
   );

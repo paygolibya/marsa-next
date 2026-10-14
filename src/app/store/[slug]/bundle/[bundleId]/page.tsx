@@ -8,6 +8,7 @@ import { api, formatLYD, type Bundle, type Product, type Store } from "@/lib/api
 import { useCart } from "@/lib/use-cart";
 import { captureReferralCode } from "@/lib/referral";
 import { trackEvent } from "@/lib/track-event";
+import { initAdPixels } from "@/lib/ad-pixels";
 import { CartDrawer } from "@/components/cart-drawer";
 import { SiteFooter } from "@/components/site-footer";
 import { isSupportedLanguage } from "@/lib/i18n";
@@ -36,6 +37,7 @@ export default function BundleDetailPage() {
     api
       .publicStore(slug)
       .then(({ store, bundles, products, upsells }) => {
+        initAdPixels(store);
         setStore(store);
         setProducts(products);
         setUpsells(upsells);

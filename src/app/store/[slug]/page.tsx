@@ -6,6 +6,7 @@ import { api, type Bundle, type Category, type Product, type Store, type StoreSt
 import { useCart } from "@/lib/use-cart";
 import { captureReferralCode } from "@/lib/referral";
 import { trackEvent } from "@/lib/track-event";
+import { initAdPixels } from "@/lib/ad-pixels";
 import { CartDrawer } from "@/components/cart-drawer";
 import { SiteFooter } from "@/components/site-footer";
 import { STOREFRONT_TEMPLATES } from "@/components/storefront/templates/registry";
@@ -45,6 +46,7 @@ export default function StorefrontPage() {
     api
       .publicStore(slug)
       .then(({ store, products, categories, bundles, upsells, navMenuItems, stats, testimonials, bestSellers }) => {
+        initAdPixels(store);
         setStore(store);
         setProducts(products);
         setCategories(categories);

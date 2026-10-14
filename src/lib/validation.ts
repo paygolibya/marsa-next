@@ -164,6 +164,14 @@ export const updateStoreSettingsSchema = z.object({
   bookingWorkingHours: bookingWorkingHoursSchema.optional().nullable(),
   language: languageSchema.optional(),
   supportedLanguages: z.array(languageSchema).min(1).optional(),
+  // Ad-pixel IDs — loosely validated (trimmed length cap, no format regex)
+  // since each platform's own id format isn't this app's business to
+  // enforce; a malformed id just means that platform's script silently
+  // never fires real events, no different from leaving it blank.
+  facebookPixelId: z.string().trim().max(50).optional().nullable(),
+  tiktokPixelId: z.string().trim().max(50).optional().nullable(),
+  googleAdsConversionId: z.string().trim().max(50).optional().nullable(),
+  googleAdsConversionLabel: z.string().trim().max(50).optional().nullable(),
 });
 
 export const createOrderSchema = z

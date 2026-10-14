@@ -49,6 +49,40 @@ test("updates an owned store's settings", async () => {
   assert.equal((calls.update as any).data.aboutText, "About us");
 });
 
+test("updates a store's ad-pixel ids", async () => {
+  const { db, calls } = makeFakeDb("store-1");
+  const res = await handleUpdateStore(
+    db,
+    authReq("http://localhost/x", {
+      method: "PATCH",
+      body: JSON.stringify({
+        facebookPixelId: "123456789",
+        tiktokPixelId: "C4A1B2C3",
+        googleAdsConversionId: "AW-123456789",
+        googleAdsConversionLabel: "AbCdEf",
+      }),
+    }),
+    "store-1"
+  );
+  assert.equal(res.status, 200);
+  const data = (calls.update as any).data;
+  assert.equal(data.facebookPixelId, "123456789");
+  assert.equal(data.tiktokPixelId, "C4A1B2C3");
+  assert.equal(data.googleAdsConversionId, "AW-123456789");
+  assert.equal(data.googleAdsConversionLabel, "AbCdEf");
+});
+
+test("clears a store's ad-pixel id by setting it to null", async () => {
+  const { db, calls } = makeFakeDb("store-1");
+  const res = await handleUpdateStore(
+    db,
+    authReq("http://localhost/x", { method: "PATCH", body: JSON.stringify({ facebookPixelId: null }) }),
+    "store-1"
+  );
+  assert.equal(res.status, 200);
+  assert.equal((calls.update as any).data.facebookPixelId, null);
+});
+
 test("updates a store's type and booking schedule together", async () => {
   const { db, calls } = makeFakeDb("store-1");
   const res = await handleUpdateStore(

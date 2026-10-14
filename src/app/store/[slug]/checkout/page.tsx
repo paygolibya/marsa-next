@@ -8,6 +8,7 @@ import { api, ApiError, formatLYD, type Store, type VanexCity } from "@/lib/api"
 import { useCart } from "@/lib/use-cart";
 import { getReferralCode } from "@/lib/referral";
 import { trackEvent } from "@/lib/track-event";
+import { initAdPixels } from "@/lib/ad-pixels";
 import { isSupportedLanguage } from "@/lib/i18n";
 import { useTranslation } from "@/lib/i18n/useTranslation";
 
@@ -94,6 +95,7 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     api.publicStore(slug).then(({ store }) => {
+      initAdPixels(store);
       setStore(store);
       const walletAvailable = Boolean(store.walletProvider && store.dpayAvailable);
       setPaymentMethod(store.codEnabled ? "cod" : walletAvailable ? "wallet" : "cod");
@@ -102,8 +104,14 @@ export default function CheckoutPage() {
 
   // "Started checkout" — landing on this page, not the form submit below
   // (that's the order_completed moment instead, fired on the confirmation
-  // page once the order actually exists).
-  useEffect(() => trackEvent(slug, "checkout_started", `/store/${slug}/checkout`), [slug]);
+  // page once the order actually exists). Gated on `store` (not just slug)
+  // so this fires after initAdPixels above has actually had a chance to
+  // run — firing before that would silently no-op the InitiateCheckout
+  // pixel event for any merchant who's configured one.
+  useEffect(() => {
+    if (store) trackEvent(slug, "checkout_started", `/store/${slug}/checkout`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slug, Boolean(store)]);
 
   // Landed back here from the apex-domain pay page (src/app/pay/[orderId])
   // after a failed/cancelled Moamalat attempt — window.location.search, not

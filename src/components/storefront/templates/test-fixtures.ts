@@ -56,6 +56,10 @@ export function makeTestStore(customizationOverrides: Partial<StoreCustomization
     businessHours: null,
     language: "ar",
     supportedLanguages: ["ar"],
+    facebookPixelId: null,
+    tiktokPixelId: null,
+    googleAdsConversionId: null,
+    googleAdsConversionLabel: null,
     customization,
   };
 }

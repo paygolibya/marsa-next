@@ -25,6 +25,10 @@ function makeStore(overrides: Partial<Store> = {}): Store {
     businessHours: null,
     language: "ar",
     supportedLanguages: ["ar"],
+    facebookPixelId: null,
+    tiktokPixelId: null,
+    googleAdsConversionId: null,
+    googleAdsConversionLabel: null,
     customization: null,
     ...overrides,
   };
