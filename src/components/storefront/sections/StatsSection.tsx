@@ -1,4 +1,5 @@
 import { translate, isSupportedLanguage } from "@/lib/i18n";
+import { Icon } from "@/components/ui/Icon";
 import { safeParseSettings, statsSettingsSchema } from "./schemas";
 import type { SectionRenderProps } from "./types";
 
@@ -25,7 +26,10 @@ export function StatsSection({ variant, colors, stats, settings: rawSettings, st
           )}
           {showRating && (
             <div>
-              <p className="font-display text-2xl font-extrabold">★ {stats.averageRating!.toFixed(1)}</p>
+              <p className="font-display text-2xl font-extrabold inline-flex items-center gap-1.5">
+                <Icon name="star" size={22} filled strokeWidth={1.5} />
+                {stats.averageRating!.toFixed(1)}
+              </p>
               <p className="text-xs opacity-70">{t("stats.reviewsSuffix", { count: stats.reviewCount })}</p>
             </div>
           )}
@@ -47,8 +51,9 @@ export function StatsSection({ variant, colors, stats, settings: rawSettings, st
         )}
         {showRating && (
           <div>
-            <p className="font-display text-xl font-extrabold" style={{ color: colors.accent }}>
-              ★ {stats.averageRating!.toFixed(1)}
+            <p className="font-display text-xl font-extrabold inline-flex items-center gap-1.5" style={{ color: colors.accent }}>
+              <Icon name="star" size={18} filled strokeWidth={1.5} />
+              {stats.averageRating!.toFixed(1)}
             </p>
             <p className="text-xs text-white/50 tracking-wide">{t("stats.reviewsSuffix", { count: stats.reviewCount })}</p>
           </div>

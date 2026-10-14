@@ -5,6 +5,7 @@ import { formatLYD, type Product } from "@/lib/api";
 import { InquiryModal } from "@/components/storefront/InquiryModal";
 import { translate, resolveProductTranslation, isSupportedLanguage } from "@/lib/i18n";
 import { ProductImagePlaceholder } from "./ProductImagePlaceholder";
+import { Icon } from "@/components/ui/Icon";
 import { safeParseSettings, productsSettingsSchema } from "./schemas";
 import type { SectionRenderProps } from "./types";
 
@@ -749,8 +750,9 @@ export function ProductsSection({
                     <ProductImagePlaceholder label={t("common.noImage")} />
                   )}
                   {stats?.averageRating != null && stats.reviewCount > 0 && (
-                    <span className="absolute top-1.5 right-1.5 rounded bg-black/70 text-white text-[10px] font-bold px-1.5 py-0.5">
-                      ★ {stats.averageRating.toFixed(1)}
+                    <span className="absolute top-1.5 right-1.5 inline-flex items-center gap-0.5 rounded bg-black/70 text-white text-[10px] font-bold px-1.5 py-0.5">
+                      <Icon name="star" size={10} filled strokeWidth={1.5} className="text-brass" />
+                      {stats.averageRating.toFixed(1)}
                     </span>
                   )}
                 </Link>

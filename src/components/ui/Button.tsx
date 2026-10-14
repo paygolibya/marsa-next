@@ -3,18 +3,22 @@
 import { forwardRef } from "react";
 
 export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
-export type ButtonSize = "sm" | "md";
+export type ButtonSize = "sm" | "md" | "lg";
 
+// Each variant has distinct hover / pressed / disabled states (not just a
+// color swap on hover), and every size clears the 40-44px minimum touch
+// target — merchants run their store from a phone as often as a laptop.
 const VARIANT_CLASSES: Record<ButtonVariant, string> = {
-  primary: "bg-signal text-canvas hover:bg-signal-dark",
-  secondary: "border border-harbor/20 text-harbor hover:bg-harbor/5",
-  ghost: "text-rope hover:text-harbor",
-  danger: "text-signal hover:underline",
+  primary: "bg-signal text-white shadow-sm shadow-signal/25 hover:bg-signal-dark hover:shadow-md hover:shadow-signal/30",
+  secondary: "border border-harbor/20 bg-white/60 text-harbor hover:bg-harbor/5 hover:border-harbor/30",
+  ghost: "text-rope hover:text-harbor hover:bg-harbor/5",
+  danger: "text-signal hover:bg-signal/10",
 };
 
 const SIZE_CLASSES: Record<ButtonSize, string> = {
-  sm: "rounded-full px-4 py-2 text-sm",
-  md: "rounded-full px-6 py-2.5",
+  sm: "min-h-[40px] rounded-full px-4 text-sm",
+  md: "min-h-[44px] rounded-full px-6",
+  lg: "min-h-[52px] rounded-full px-8 text-lg",
 };
 
 function Spinner() {
@@ -36,7 +40,8 @@ export const Button = forwardRef<HTMLButtonElement, React.ButtonHTMLAttributes<H
     <button
       ref={ref}
       disabled={disabled || loading}
-      className={`inline-flex items-center justify-center gap-2 font-bold transition-colors disabled:opacity-50 disabled:pointer-events-none ${VARIANT_CLASSES[variant]} ${SIZE_CLASSES[size]} ${className}`}
+      aria-busy={loading || undefined}
+      className={`inline-flex items-center justify-center gap-2 font-bold cursor-pointer select-none transition-[background-color,border-color,box-shadow,color,transform] duration-200 ease-out active:scale-[0.97] disabled:opacity-50 disabled:pointer-events-none ${VARIANT_CLASSES[variant]} ${SIZE_CLASSES[size]} ${className}`}
       {...rest}
     >
       {loading && <Spinner />}

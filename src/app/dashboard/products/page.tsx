@@ -6,7 +6,7 @@ import { useCurrentStore } from "@/lib/use-current-store";
 import { api, ApiError, formatLYD, type Category, type Product, type ProductVariant, type ProductVariantOption } from "@/lib/api";
 import ProductGalleryUpload from "@/components/products/ProductGalleryUpload";
 import ProductVariantsManager from "@/components/products/ProductVariantsManager";
-import { Button, Card, EmptyState, SkeletonCard } from "@/components/ui";
+import { Button, Card, EmptyState, Icon, SkeletonCard } from "@/components/ui";
 
 export default function DashboardProductsPage() {
   const { token } = useAuth();
@@ -116,8 +116,11 @@ export default function DashboardProductsPage() {
 
         {justCreated ? (
           <div className="space-y-4">
-            <p className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
-              ✓ تمت إضافة <span className="font-bold">{justCreated.name}</span> — يمكنك الآن إضافة متغيرات (مقاسات، ألوان...) إن أردت، أو المتابعة مباشرة.
+            <p className="flex items-start gap-2.5 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+              <Icon name="checkCircle" size={18} className="mt-0.5" />
+              <span>
+                تمت إضافة <span className="font-bold">{justCreated.name}</span> — يمكنك الآن إضافة متغيرات (مقاسات، ألوان...) إن أردت، أو المتابعة مباشرة.
+              </span>
             </p>
             <ProductVariantsManager
               productId={justCreated.id}
@@ -550,7 +553,10 @@ function CsvImport({ token, storeId, onImported }: { token: string | null; store
       </div>
       {result && (
         <div className="mt-3 text-sm">
-          <p className="text-green-700 font-bold">✓ تم إضافة {result.createdCount} منتج</p>
+          <p className="flex items-center gap-1.5 text-green-700 font-bold">
+            <Icon name="checkCircle" size={18} />
+            تم إضافة {result.createdCount} منتج
+          </p>
           {result.errors.length > 0 && (
             <ul className="mt-2 space-y-1 text-signal">
               {result.errors.map((e, i) => (

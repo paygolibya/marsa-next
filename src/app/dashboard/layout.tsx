@@ -10,47 +10,49 @@ import { useCurrentStore } from "@/lib/use-current-store";
 import { getImpersonationFlag, exitImpersonation } from "@/lib/impersonation";
 import ThemeToggle from "@/components/layout/ThemeToggle";
 import NotificationBell from "@/components/dashboard/NotificationBell";
-import { ToastProvider } from "@/components/ui";
+import { Icon, ToastProvider, type IconName } from "@/components/ui";
 import { SupportChatWidget } from "@/components/support/SupportChatWidget";
+
+type NavItem = { href: string; label: string; icon: IconName };
 
 // Showcase stores never create a real Order (no checkout at all — see
 // store.type) — "الطلبات" is replaced by "الاستفسارات" (Inquiry list) for
 // them, everything else stays the same.
-function getNavItems(storeType: string | undefined) {
+function getNavItems(storeType: string | undefined): NavItem[] {
   const isShowcase = storeType === "showcase";
   return [
-    { href: "/dashboard", label: "نظرة عامة", icon: "📊" },
-    { href: "/dashboard/products", label: "المنتجات", icon: "📦" },
-    { href: "/dashboard/categories", label: "التصنيفات", icon: "🗂️" },
+    { href: "/dashboard", label: "نظرة عامة", icon: "dashboard" },
+    { href: "/dashboard/products", label: "المنتجات", icon: "package" },
+    { href: "/dashboard/categories", label: "التصنيفات", icon: "folder" },
     isShowcase
-      ? { href: "/dashboard/inquiries", label: "الاستفسارات", icon: "💬" }
-      : { href: "/dashboard/orders", label: "الطلبات", icon: "🧾" },
+      ? { href: "/dashboard/inquiries", label: "الاستفسارات", icon: "message" }
+      : { href: "/dashboard/orders", label: "الطلبات", icon: "receipt" },
     // Bundles are a checkout-cart feature — showcase stores have no cart
     // at all (catalog + inquiry only), so there's nothing for them to do
     // with a bundle's fixed-price "add to cart" action.
-    ...(isShowcase ? [] : [{ href: "/dashboard/bundles", label: "الباقات", icon: "🎁" }]),
+    ...(isShowcase ? [] : [{ href: "/dashboard/bundles", label: "الباقات", icon: "gift" } as NavItem]),
     // Same reasoning as bundles above — upsells only ever surface in the
     // cart drawer, which a showcase store never opens.
-    ...(isShowcase ? [] : [{ href: "/dashboard/upsells", label: "الاقتراحات الإضافية", icon: "➕" }]),
+    ...(isShowcase ? [] : [{ href: "/dashboard/upsells", label: "الاقتراحات الإضافية", icon: "plusCircle" } as NavItem]),
     // Customers are derived entirely from real Orders — a showcase store
     // never has any (catalog + inquiry only), so the list would always be
     // empty there.
-    ...(isShowcase ? [] : [{ href: "/dashboard/customers", label: "العملاء", icon: "👥" }]),
+    ...(isShowcase ? [] : [{ href: "/dashboard/customers", label: "العملاء", icon: "users" } as NavItem]),
     // Affiliate commissions are earned on real Orders — a showcase store
     // never has any, same reasoning as customers/bundles/upsells above.
-    ...(isShowcase ? [] : [{ href: "/dashboard/affiliates", label: "برنامج الإحالة", icon: "🔗" }]),
-    { href: "/dashboard/design", label: "تصميم المتجر", icon: "🎨" },
+    ...(isShowcase ? [] : [{ href: "/dashboard/affiliates", label: "برنامج الإحالة", icon: "link" } as NavItem]),
+    { href: "/dashboard/design", label: "تصميم المتجر", icon: "palette" },
     // Pages/menu/redirects apply to every store type, including showcase —
     // a catalog-only store still benefits from an "About us" page and a
     // nav menu, unlike bundles/upsells/customers above which are tied to
     // having a real checkout cart.
-    { href: "/dashboard/pages", label: "الصفحات", icon: "📄" },
-    { href: "/dashboard/menu", label: "القائمة الرئيسية", icon: "📋" },
-    { href: "/dashboard/redirects", label: "إعادة التوجيه", icon: "↪️" },
-    { href: "/dashboard/payouts", label: "المستحقات المالية", icon: "💰" },
-    { href: "/dashboard/coupons", label: "كوبونات الخصم", icon: "🏷️" },
-    { href: "/dashboard/analytics", label: "التحليلات", icon: "📈" },
-    { href: "/dashboard/settings", label: "إعدادات المتجر", icon: "⚙️" },
+    { href: "/dashboard/pages", label: "الصفحات", icon: "file" },
+    { href: "/dashboard/menu", label: "القائمة الرئيسية", icon: "list" },
+    { href: "/dashboard/redirects", label: "إعادة التوجيه", icon: "redirect" },
+    { href: "/dashboard/payouts", label: "المستحقات المالية", icon: "wallet" },
+    { href: "/dashboard/coupons", label: "كوبونات الخصم", icon: "tag" },
+    { href: "/dashboard/analytics", label: "التحليلات", icon: "chart" },
+    { href: "/dashboard/settings", label: "إعدادات المتجر", icon: "settings" },
   ];
 }
 
@@ -80,7 +82,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const { stores, store, selectStore, loading } = useCurrentStore();
   // Read once on mount — this is already a "use client" file doing other
   // client-only localStorage reads (useCurrentStore), so the same pattern
-  // applies here. Set by admin/merchants/page.tsx's 🛠️ button.
+  // applies here. Set by admin/merchants/page.tsx's "إدارة المتجر" button.
   const [impersonation, setImpersonation] = useState(() => getImpersonationFlag());
 
   function handleExitImpersonation() {
@@ -126,7 +128,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   if (merchant && !merchant.phoneVerified && !impersonation) {
     return (
       <div className="min-h-screen flex items-center justify-center px-6">
-        <div className="max-w-md text-center rounded-2xl bg-white shadow-xl p-8">
+        <div className="max-w-md text-center rounded-3xl bg-white elevation-raised p-8 animate-rise-in">
+          <span className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-brass/15 text-brass">
+            <Icon name="shield" size={26} />
+          </span>
           <h1 className="font-display text-2xl font-extrabold text-harbor mb-3">تحقق من رقم هاتفك</h1>
           <p className="text-rope mb-8">لم يتم التحقق من رقم هاتفك بعد — أكمل خطوة التحقق للمتابعة.</p>
           <div className="flex items-center justify-center gap-3">
@@ -149,7 +154,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     const copy = STATUS_COPY[merchant.subscriptionStatus] ?? STATUS_COPY.pending;
     return (
       <div className="min-h-screen flex items-center justify-center px-6">
-        <div className="max-w-md text-center rounded-2xl bg-white shadow-xl p-8">
+        <div className="max-w-md text-center rounded-3xl bg-white elevation-raised p-8 animate-rise-in">
+          <span className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-brass/15 text-brass">
+            <Icon name={merchant.subscriptionStatus === "rejected" || merchant.subscriptionStatus === "suspended" ? "alert" : "clock"} size={26} />
+          </span>
           <h1 className="font-display text-2xl font-extrabold text-harbor mb-3">{copy.title}</h1>
           <p className="text-rope mb-8">{copy.body}</p>
           <div className="flex items-center justify-center gap-3">
@@ -183,24 +191,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const sidebarContent = (
     <>
-      <div className="px-6 py-6 border-b border-canvas/10 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2 font-display text-lg font-extrabold">
+      <div className="px-4 py-5 border-b border-canvas/10 flex items-center justify-between gap-2">
+        <Link href="/" className="flex min-w-0 items-center gap-2 font-display text-lg font-extrabold whitespace-nowrap">
           {/* logo.png is 720x836 (portrait) — width matches that real
               aspect ratio for a 28px-tall box instead of forcing a square
               that letterboxes it smaller than its own box. */}
           <Image src="/logo.png" alt="رفقة" width={24} height={28} className="h-7 w-auto object-contain" />
-          رفقة <span className="text-canvas/50 font-normal text-sm">من مرسى</span>
+          رفقة <span className="text-canvas/50 font-normal text-xs">من مرسى</span>
         </Link>
-        <div className="flex items-center gap-1">
+        <div className="flex shrink-0 items-center">
           <NotificationBell className="text-canvas/70 hover:text-canvas transition-colors p-1" />
           <ThemeToggle className="text-canvas/70 hover:text-canvas transition-colors p-1" />
           <button
             type="button"
             onClick={() => setSidebarOpen(false)}
             aria-label="إغلاق القائمة"
-            className="lg:hidden p-1 text-canvas/70 hover:text-canvas"
+            className="lg:hidden flex h-10 w-10 items-center justify-center rounded-full text-canvas/70 hover:text-canvas hover:bg-canvas/10 transition-colors"
           >
-            ✕
+            <Icon name="close" size={20} />
           </button>
         </div>
       </div>
@@ -222,25 +230,40 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
       )}
 
-      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-        {getNavItems(store?.type).map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={`flex items-center gap-2.5 rounded-lg px-4 py-2.5 text-sm font-bold transition-colors ${
-              pathname === item.href ? "bg-canvas/10 text-canvas" : "text-canvas/60 hover:bg-canvas/5"
-            }`}
-          >
-            <span aria-hidden>{item.icon}</span>
-            {item.label}
-          </Link>
-        ))}
+      <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto" aria-label="لوحة التحكم">
+        {getNavItems(store?.type).map((item) => {
+          const active = pathname === item.href;
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              aria-current={active ? "page" : undefined}
+              className={`group relative flex min-h-[44px] items-center gap-3 rounded-xl px-4 text-sm font-bold transition-colors duration-150 ${
+                active ? "bg-canvas/10 text-canvas" : "text-canvas/60 hover:bg-canvas/5 hover:text-canvas"
+              }`}
+            >
+              {/* Brass bar on the leading (right, RTL) edge — the active
+                  item is identifiable by shape too, not only a fill tint. */}
+              {active && <span className="absolute inset-y-2 right-0 w-1 rounded-l-full bg-brass" aria-hidden />}
+              <Icon name={item.icon} size={19} className={active ? "text-brass" : "text-canvas/50 group-hover:text-canvas/80 transition-colors"} />
+              {item.label}
+            </Link>
+          );
+        })}
       </nav>
 
-      <div className="px-6 py-4 border-t border-canvas/10 text-sm">
-        <p className="font-bold truncate">{merchant?.name}</p>
-        <button onClick={logout} className="text-canvas/50 hover:text-canvas mt-1">
-          تسجيل الخروج
+      <div className="px-4 py-4 border-t border-canvas/10 text-sm flex items-center gap-3">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brass/20 text-brass font-display font-extrabold" aria-hidden>
+          {merchant?.name?.trim().charAt(0) ?? "؟"}
+        </span>
+        <p className="flex-1 min-w-0 font-bold truncate">{merchant?.name}</p>
+        <button
+          onClick={logout}
+          aria-label="تسجيل الخروج"
+          title="تسجيل الخروج"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-canvas/50 hover:text-canvas hover:bg-canvas/10 transition-colors"
+        >
+          <Icon name="logout" size={19} />
         </button>
       </div>
     </>
@@ -252,12 +275,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* Mobile top bar — only the parts a phone actually needs: a menu
             toggle and the store switcher/name, not the full sidebar. */}
         <div className="lg:hidden sticky top-0 z-30 flex items-center justify-between bg-harbor text-canvas px-4 py-3">
-          <button type="button" onClick={() => setSidebarOpen(true)} aria-label="فتح القائمة" className="p-1.5">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              <line x1="3" y1="6" x2="21" y2="6" />
-              <line x1="3" y1="12" x2="21" y2="12" />
-              <line x1="3" y1="18" x2="21" y2="18" />
-            </svg>
+          <button
+            type="button"
+            onClick={() => setSidebarOpen(true)}
+            aria-label="فتح القائمة"
+            aria-expanded={sidebarOpen}
+            className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-canvas/10 transition-colors"
+          >
+            <Icon name="menu" size={22} strokeWidth={2} />
           </button>
           <span className="font-display font-extrabold text-sm truncate">{store?.name ?? "رفقة"}</span>
           <div className="flex items-center gap-1">
@@ -288,8 +313,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <main className="flex-1 bg-canvas min-w-0">
           {impersonation && (
             <div className="bg-purple-100 border-b border-purple-300 px-4 sm:px-6 py-3 text-sm text-purple-900 flex flex-wrap items-center justify-between gap-2">
-              <span>
-                🛠️ تعمل الآن نيابة عن <strong>{impersonation.merchantName}</strong> (بواسطة {impersonation.adminName})
+              <span className="flex items-center gap-2">
+                <Icon name="shield" size={18} />
+                <span>
+                  تعمل الآن نيابة عن <strong>{impersonation.merchantName}</strong> (بواسطة {impersonation.adminName})
+                </span>
               </span>
               <button onClick={handleExitImpersonation} className="font-bold text-purple-700 hover:underline whitespace-nowrap">
                 إنهاء والعودة للإدارة
@@ -298,9 +326,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           )}
           {trialDaysLeft !== null && trialDaysLeft >= 0 && (
             <div className="bg-brass/10 border-b border-brass/20 px-4 sm:px-6 py-3 text-sm text-harbor flex flex-wrap items-center justify-between gap-2">
-              <span>
-                ⏳ أنت في الفترة التجريبية المجانية —{" "}
-                {trialDaysLeft === 0 ? "تنتهي اليوم" : `تنتهي خلال ${trialDaysLeft} يوم`}
+              <span className="flex items-center gap-2">
+                <Icon name="clock" size={18} className="text-brass" />
+                <span>
+                  أنت في الفترة التجريبية المجانية —{" "}
+                  {trialDaysLeft === 0 ? "تنتهي اليوم" : `تنتهي خلال ${trialDaysLeft} يوم`}
+                </span>
               </span>
               <Link href="/subscription" className="font-bold text-brass hover:underline whitespace-nowrap">
                 اشترك الآن

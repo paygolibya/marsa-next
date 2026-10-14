@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useAuth } from "@/lib/auth-context";
+import { Icon } from "@/components/ui";
 
 interface Template {
   id: string;
@@ -59,7 +60,7 @@ export default function TemplateSwitcher({ currentTemplateSlug, storeId, availab
 
   return (
     <div className="relative">
-      <button onClick={() => setIsOpen(!isOpen)} disabled={loading} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold disabled:opacity-50 transition">
+      <button onClick={() => setIsOpen(!isOpen)} disabled={loading} className="inline-flex min-h-[44px] items-center gap-2 px-5 bg-signal hover:bg-signal-dark text-white rounded-full font-bold shadow-sm shadow-signal/25 disabled:opacity-50 active:scale-[0.97] transition">
         {loading ? "جاري التغيير..." : "تغيير التصميم"}
       </button>
 
@@ -78,7 +79,12 @@ export default function TemplateSwitcher({ currentTemplateSlug, storeId, availab
               >
                 <div className="font-bold">{template.nameAr}</div>
                 {template.price > 0 && <div className="text-sm text-blue-600">{template.price} د.ل</div>}
-                {template.slug === currentTemplateSlug && <div className="text-sm text-green-600">✓ القالب الحالي</div>}
+                {template.slug === currentTemplateSlug && (
+                  <div className="flex items-center gap-1 text-sm font-bold text-green-600">
+                    <Icon name="checkCircle" size={16} />
+                    القالب الحالي
+                  </div>
+                )}
               </button>
             ))}
           </div>

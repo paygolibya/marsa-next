@@ -6,6 +6,7 @@ import { SiteNav } from "@/components/site-nav";
 import { useAuth } from "@/lib/auth-context";
 import { normalizeSubscriptionPeriod, subscriptionPeriods } from "@/lib/checkout-features";
 import { api, ApiError } from "@/lib/api";
+import { Icon } from "@/components/ui";
 
 declare global {
   interface Window {
@@ -143,14 +144,20 @@ function PaymentPageContent() {
               </div>
 
               <div className="rounded-2xl border border-green-200 bg-green-50 p-6 text-sm text-green-800">
-                <p className="font-bold mb-2">✅ كل الميزات مفعّلة فور الدفع</p>
+                <p className="flex items-center gap-2 font-bold mb-2">
+                  <Icon name="checkCircle" size={18} />
+                  كل الميزات مفعّلة فور الدفع
+                </p>
                 <p>Moamalat + التحويل المباشر + الدفع عند الاستلام لعملائك، شحن فانكس تلقائي، رسائل SMS وبريد إلكتروني، ولوحة تحكم كاملة بدون أي قيود.</p>
               </div>
             </div>
 
             <div className="space-y-6">
               <div className="rounded-2xl border border-harbor/10 bg-white p-8">
-                <h3 className="mb-1 text-center font-bold text-harbor">⚡ الدفع الفوري عبر Moamalat</h3>
+                <h3 className="mb-1 flex items-center justify-center gap-2 font-bold text-harbor">
+                  <Icon name="zap" size={18} className="text-signal" />
+                  الدفع الفوري عبر Moamalat
+                </h3>
                 <p className="mb-6 text-center text-xs text-rope">تفعيل تلقائي فور الدفع — لا حاجة لانتظار المراجعة</p>
 
                 {error && <p className="mb-2 text-sm text-signal">{error}</p>}

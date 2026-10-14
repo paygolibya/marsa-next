@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
+import { Icon } from "@/components/ui";
 
 interface Payment {
   id: string;
@@ -134,19 +135,22 @@ export default function PaymentsPage() {
 
                 {payment.receiptFile && (
                   <div className="mb-4">
-                    <a href={payment.receiptFile} target="_blank" rel="noreferrer" className="font-bold text-signal hover:underline">
-                      👁️ عرض الإيصال
+                    <a href={payment.receiptFile} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 font-bold text-signal hover:underline">
+                      <Icon name="eye" size={18} />
+                      عرض الإيصال
                     </a>
                   </div>
                 )}
 
                 {payment.status === "pending" && (
                   <div className="flex gap-3">
-                    <button onClick={() => approvePayment(payment.id)} className="flex-1 rounded-lg bg-green-600 py-2.5 font-bold text-white transition hover:bg-green-700 active:bg-green-800">
-                      ✓ موافقة
+                    <button onClick={() => approvePayment(payment.id)} className="flex-1 inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-green-600 font-bold text-white transition hover:bg-green-700 active:bg-green-800">
+                      <Icon name="check" size={18} strokeWidth={2.25} />
+                      موافقة
                     </button>
-                    <button onClick={() => rejectPayment(payment.id)} className="flex-1 rounded-lg bg-red-600 py-2.5 font-bold text-white transition hover:bg-red-700 active:bg-red-800">
-                      ✗ رفض
+                    <button onClick={() => rejectPayment(payment.id)} className="flex-1 inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-red-600 font-bold text-white transition hover:bg-red-700 active:bg-red-800">
+                      <Icon name="close" size={18} strokeWidth={2.25} />
+                      رفض
                     </button>
                   </div>
                 )}

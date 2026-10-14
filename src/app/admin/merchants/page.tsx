@@ -5,6 +5,11 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import type { Merchant as AuthMerchant } from "@/lib/api";
 import { startImpersonation } from "@/lib/impersonation";
+import { Icon } from "@/components/ui";
+
+// Icon-only row actions: a real accessible name (aria-label, not just a
+// hover-only title) and a 40px hit area instead of the old ~28px chips.
+const ROW_ACTION = "inline-flex h-10 w-10 items-center justify-center rounded-lg text-white transition-colors disabled:opacity-40";
 
 interface MerchantStore {
   id: string;
@@ -367,10 +372,11 @@ export default function MerchantsPage() {
                           setSelectedMerchant(merchant);
                           setShowDetails(true);
                         }}
-                        className="rounded bg-blue-600 px-3 py-1 text-sm font-bold text-white hover:bg-blue-700"
+                        className={`${ROW_ACTION} bg-blue-600 hover:bg-blue-700`}
                         title="عرض التفاصيل"
+                        aria-label="عرض التفاصيل"
                       >
-                        👁️
+                        <Icon name="eye" size={18} />
                       </button>
                       <button
                         onClick={() => {
@@ -384,36 +390,40 @@ export default function MerchantsPage() {
                           }
                         }}
                         disabled={!merchant.stores.length}
-                        className="rounded bg-green-600 px-3 py-1 text-sm font-bold text-white hover:bg-green-700 disabled:opacity-40"
+                        className={`${ROW_ACTION} bg-green-600 hover:bg-green-700`}
                         title="عرض المتجر"
+                        aria-label="عرض المتجر"
                       >
-                        🔗
+                        <Icon name="external" size={18} />
                       </button>
                       <button
                         onClick={() => withRowBusy(merchant.id, () => impersonateMerchant(merchant))}
                         disabled={busyMerchantIds.has(merchant.id)}
-                        className="rounded bg-purple-600 px-3 py-1 text-sm font-bold text-white hover:bg-purple-700 disabled:opacity-40"
+                        className={`${ROW_ACTION} bg-purple-600 hover:bg-purple-700`}
                         title="إدارة المتجر"
+                        aria-label="إدارة المتجر"
                       >
-                        🛠️
+                        <Icon name="shield" size={18} />
                       </button>
                       {(merchant.subscriptionStatus === "pending" || merchant.subscriptionStatus === "inactive") && (
                         <>
                           <button
                             onClick={() => setAcceptingMerchant(merchant)}
                             disabled={busyMerchantIds.has(merchant.id)}
-                            className="rounded bg-emerald-600 px-3 py-1 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-40"
+                            className={`${ROW_ACTION} bg-emerald-600 hover:bg-emerald-700`}
                             title="قبول"
+                            aria-label="قبول"
                           >
-                            ✓
+                            <Icon name="check" size={18} strokeWidth={2.25} />
                           </button>
                           <button
                             onClick={() => withRowBusy(merchant.id, () => rejectMerchant(merchant.id))}
                             disabled={busyMerchantIds.has(merchant.id)}
-                            className="rounded bg-orange-600 px-3 py-1 text-sm font-bold text-white hover:bg-orange-700 disabled:opacity-40"
+                            className={`${ROW_ACTION} bg-orange-600 hover:bg-orange-700`}
                             title="رفض"
+                            aria-label="رفض"
                           >
-                            ✗
+                            <Icon name="close" size={18} strokeWidth={2.25} />
                           </button>
                         </>
                       )}
@@ -421,19 +431,21 @@ export default function MerchantsPage() {
                         <button
                           onClick={() => withRowBusy(merchant.id, () => suspendMerchant(merchant.id))}
                           disabled={busyMerchantIds.has(merchant.id)}
-                          className="rounded bg-red-600 px-3 py-1 text-sm font-bold text-white hover:bg-red-700 disabled:opacity-40"
+                          className={`${ROW_ACTION} bg-red-600 hover:bg-red-700`}
                           title="إيقاف مؤقت"
+                          aria-label="إيقاف مؤقت"
                         >
-                          ⏸️
+                          <Icon name="pause" size={18} />
                         </button>
                       )}
                       <button
                         onClick={() => withRowBusy(merchant.id, () => deleteMerchant(merchant.id))}
                         disabled={busyMerchantIds.has(merchant.id)}
-                        className="rounded bg-red-800 px-3 py-1 text-sm font-bold text-white hover:bg-red-900 disabled:opacity-40"
+                        className={`${ROW_ACTION} bg-red-800 hover:bg-red-900`}
                         title="حذف نهائي"
+                        aria-label="حذف نهائي"
                       >
-                        🗑️
+                        <Icon name="trash" size={18} />
                       </button>
                     </div>
                   </td>
@@ -470,8 +482,12 @@ function MerchantDetailsModal({
       <div className="mx-4 w-full max-w-2xl rounded-lg bg-white p-8">
         <div className="mb-6 flex items-center justify-between">
           <h2 className="text-2xl font-bold">{merchant.name}</h2>
-          <button onClick={onClose} className="text-2xl text-gray-500 hover:text-gray-700">
-            ✕
+          <button
+            onClick={onClose}
+            aria-label="إغلاق"
+            className="flex h-10 w-10 items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors"
+          >
+            <Icon name="close" size={20} />
           </button>
         </div>
 

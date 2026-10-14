@@ -4,6 +4,7 @@ import Link from "next/link";
 import { formatLYD, type Product } from "@/lib/api";
 import type { CartLine } from "@/lib/use-cart";
 import { translate, type Language } from "@/lib/i18n";
+import { Icon } from "@/components/ui/Icon";
 
 // Optional — when the calling page has the store's own customization
 // loaded, the drawer picks up the MERCHANT's colors instead of always
@@ -83,10 +84,10 @@ export function CartDrawer({
           <h2 className={`font-display text-xl font-bold ${primary ? "text-white" : "text-harbor"}`}>{t("cart.title")}</h2>
           <button
             onClick={onClose}
-            className={primary ? "text-white/80 hover:text-white" : "text-rope hover:text-harbor"}
+            className={`flex h-10 w-10 items-center justify-center rounded-full transition-colors ${primary ? "text-white/80 hover:text-white hover:bg-white/10" : "text-rope hover:text-harbor hover:bg-harbor/5"}`}
             aria-label={t("cart.close")}
           >
-            ✕
+            <Icon name="close" size={20} />
           </button>
         </div>
 

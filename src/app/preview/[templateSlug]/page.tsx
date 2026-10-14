@@ -7,6 +7,7 @@ import { templatesData } from "@/lib/templates-data";
 import { STOREFRONT_TEMPLATES } from "@/components/storefront/templates/registry";
 import type { Product, Store, StoreStats, StoreTestimonial } from "@/lib/api";
 import type { SectionData } from "@/components/storefront/sections/types";
+import { Icon } from "@/components/ui/Icon";
 
 // Real sample data driving the ACTUAL template component — this used to
 // be a generic color-swatch/feature-list mockup with no relationship to
@@ -166,7 +167,10 @@ export default function TemplatePreviewPage() {
   return (
     <>
       <div className="sticky top-0 z-40 bg-harbor text-canvas text-sm flex items-center justify-between px-6 py-2.5">
-        <span>👀 معاينة حية لقالب &quot;{template.nameAr}&quot; ببيانات تجريبية</span>
+        <span className="flex items-center gap-2">
+          <Icon name="eye" size={18} className="text-brass" />
+          معاينة حية لقالب &quot;{template.nameAr}&quot; ببيانات تجريبية
+        </span>
         <Link href="/onboarding" className="rounded-full bg-signal px-4 py-1.5 font-bold text-canvas hover:bg-signal-dark transition-colors">
           اختر هذا القالب
         </Link>

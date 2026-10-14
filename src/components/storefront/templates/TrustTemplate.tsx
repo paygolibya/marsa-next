@@ -2,6 +2,7 @@ import { ProductsSection, CategoriesSection, CategoryShowcaseSection, BundlesSec
 import type { SectionRenderProps, SectionType } from "@/components/storefront/sections/types";
 import { translate, isSupportedLanguage } from "@/lib/i18n";
 import { StorefrontHeaderRow } from "./StorefrontHeaderRow";
+import { Icon } from "@/components/ui/Icon";
 import { StorefrontNavRow } from "./StorefrontNavRow";
 import { resolveCoverImageHeightClass, resolveLogoSizePx, resolveTextSizeClass, type StorefrontTemplateProps } from "./types";
 
@@ -162,13 +163,15 @@ export default function TrustTemplate({
           {stats && (stats.deliveredOrderCount > 0 || showRating) && (
             <div className="mt-6 flex flex-wrap justify-center gap-3">
               {stats.deliveredOrderCount > 0 && (
-                <span className="rounded-lg bg-white px-4 py-2 text-sm font-bold shadow-sm" style={{ color: primary }}>
-                  ✓ {t("stats.deliveredCombined", { count: stats.deliveredOrderCount })}
+                <span className="inline-flex items-center gap-1.5 rounded-lg bg-white px-4 py-2 text-sm font-bold shadow-sm" style={{ color: primary }}>
+                  <Icon name="checkCircle" size={16} />
+                  {t("stats.deliveredCombined", { count: stats.deliveredOrderCount })}
                 </span>
               )}
               {showRating && (
-                <span className="rounded-lg bg-white px-4 py-2 text-sm font-bold shadow-sm" style={{ color: primary }}>
-                  ✓ {t("stats.ratingWithCount", { rating: stats.averageRating!.toFixed(1), count: stats.reviewCount })}
+                <span className="inline-flex items-center gap-1.5 rounded-lg bg-white px-4 py-2 text-sm font-bold shadow-sm" style={{ color: primary }}>
+                  <Icon name="checkCircle" size={16} />
+                  {t("stats.ratingWithCount", { rating: stats.averageRating!.toFixed(1), count: stats.reviewCount })}
                 </span>
               )}
             </div>

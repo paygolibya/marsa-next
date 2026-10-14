@@ -5,6 +5,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useCurrentStore } from "@/lib/use-current-store";
 import { api, formatLYD, type Order, type Product } from "@/lib/api";
 import { GetStartedChecklist } from "@/components/dashboard/GetStartedChecklist";
+import { Icon } from "@/components/ui";
 
 export default function DashboardOverviewPage() {
   const { token } = useAuth();
@@ -62,18 +63,20 @@ export default function DashboardOverviewPage() {
                   href={storeUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="flex-1 rounded-full bg-brass px-4 py-2.5 text-center font-bold text-canvas transition hover:bg-brass/90"
+                  className="flex-1 inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full bg-brass px-4 text-center font-bold text-harbor transition hover:bg-brass-light active:scale-[0.98]"
                 >
-                  👁️ عرض المتجر
+                  <Icon name="external" size={18} />
+                  عرض المتجر
                 </a>
                 <button
                   onClick={() => {
                     navigator.clipboard.writeText(storeUrl);
                     alert("تم نسخ الرابط!");
                   }}
-                  className="flex-1 rounded-full border border-harbor/15 px-4 py-2.5 font-bold text-harbor transition hover:bg-harbor/5"
+                  className="flex-1 inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full border border-harbor/15 px-4 font-bold text-harbor transition hover:bg-harbor/5 active:scale-[0.98]"
                 >
-                  🔗 نسخ الرابط
+                  <Icon name="link" size={18} />
+                  نسخ الرابط
                 </button>
               </div>
               <p className="mt-3 break-all text-sm text-rope" dir="ltr">

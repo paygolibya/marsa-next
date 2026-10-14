@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { api, ApiError } from "@/lib/api";
+import { Icon } from "@/components/ui";
 
 type DomainRecord = { type: string; domain: string; value: string; reason: string };
 type DomainState = {
@@ -115,7 +116,10 @@ export default function DomainSettings({ storeId }: { storeId: string }) {
                     {state.customDomain}
                   </span>
                   {state.customDomainVerified ? (
-                    <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-bold text-green-800">✓ موثّق</span>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-3 py-1 text-xs font-bold text-green-800">
+                <Icon name="check" size={14} strokeWidth={2.5} />
+                موثّق
+              </span>
                   ) : (
                     <span className="rounded-full bg-yellow-100 px-3 py-1 text-xs font-bold text-yellow-800">بانتظار التوثيق</span>
                   )}

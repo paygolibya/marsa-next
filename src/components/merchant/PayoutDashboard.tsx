@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { api, formatLYD } from "@/lib/api";
 import type { MerchantPayoutSummary } from "@/types/payment";
-import { Badge, Card, DataTable, type DataTableColumn, EmptyState, Skeleton, SkeletonCard } from "@/components/ui";
+import { Badge, Card, DataTable, type DataTableColumn, EmptyState, Icon, Skeleton, SkeletonCard } from "@/components/ui";
 
 const STATUS_LABELS: Record<string, string> = {
   ready_for_transfer: "قيد الانتظار",
@@ -62,9 +62,12 @@ export default function PayoutDashboard() {
   return (
     <div className="p-4 sm:p-6 lg:p-10">
       <h1 className="font-display text-2xl font-extrabold text-harbor mb-2">المستحقات المالية</h1>
-      <p className="mb-6 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
-        ⚡ تُحتسب مستحقاتك تلقائيًا فور تسليم كل طلب — لا حاجة لأي إجراء من طرفك. تصلك 99% من قيمة كل عملية بيع
-        عبر المحفظة الإلكترونية، وتُجمَّع الدفعات أسبوعيًا استعدادًا للتحويل.
+      <p className="mb-6 flex items-start gap-2.5 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+        <Icon name="zap" size={18} className="mt-0.5" />
+        <span>
+          تُحتسب مستحقاتك تلقائيًا فور تسليم كل طلب — لا حاجة لأي إجراء من طرفك. تصلك 99% من قيمة كل عملية بيع
+          عبر المحفظة الإلكترونية، وتُجمَّع الدفعات أسبوعيًا استعدادًا للتحويل.
+        </span>
       </p>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-10">

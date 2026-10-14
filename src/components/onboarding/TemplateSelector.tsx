@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { Icon, Stars } from "@/components/ui/Icon";
 
 interface Template {
   id: string;
@@ -89,14 +90,6 @@ function TemplateCard({
   isPaid?: boolean;
   recommended?: boolean;
 }) {
-  const renderStars = (rating: number) => {
-    const stars = [];
-    for (let i = 0; i < 5; i += 1) {
-      stars.push(<span key={i} className={i < Math.floor(rating) ? "text-yellow-400" : "text-gray-300"}>⭐</span>);
-    }
-    return stars;
-  };
-
   return (
     <div
       onClick={() => onSelect(template)}
@@ -107,7 +100,10 @@ function TemplateCard({
       <div className="relative aspect-[4/3] bg-gray-100 overflow-hidden">
         <Image src={template.thumbnail} alt={template.nameAr} fill sizes="(min-width: 768px) 50vw, 100vw" className="object-cover object-top" />
         {template.isNew && (
-          <div className="absolute top-2 left-2 bg-green-500 text-white px-3 py-1 rounded-full text-xs font-bold">جديد ✨</div>
+          <div className="absolute top-2 left-2 inline-flex items-center gap-1 bg-green-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-sm">
+            <Icon name="sparkles" size={13} />
+            جديد
+          </div>
         )}
         {isPaid && (
           <div className="absolute top-2 right-2 bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-bold">
@@ -131,15 +127,16 @@ function TemplateCard({
 
       <div className="p-4 space-y-3">
         {recommended && (
-          <span className="inline-block bg-purple-100 text-purple-700 px-2.5 py-1 rounded-full text-xs font-bold">
-            ✨ موصى به لمجالك
+          <span className="inline-flex items-center gap-1 bg-purple-100 text-purple-800 px-2.5 py-1 rounded-full text-xs font-bold">
+            <Icon name="sparkles" size={13} />
+            موصى به لمجالك
           </span>
         )}
         <h3 className="text-lg font-bold text-gray-900">{template.nameAr}</h3>
         <p className="text-sm text-gray-600 line-clamp-2">{template.descriptionAr}</p>
 
         <div className="flex items-center gap-2">
-          <div className="flex gap-0.5">{renderStars(template.rating)}</div>
+          <Stars rating={Math.floor(template.rating)} size={14} className="text-yellow-400" />
           <span className="text-sm text-gray-600">({template.reviews} تقييم)</span>
         </div>
 
@@ -158,8 +155,9 @@ function TemplateCard({
           عرض حي →
         </Link>
 
-        <button className={`w-full py-2 rounded-lg font-bold transition ${isSelected ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-900 hover:bg-gray-200"}`}>
-          {isSelected ? "✓ مختار" : "اختر هذا القالب"}
+        <button className={`w-full inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl font-bold transition active:scale-[0.98] ${isSelected ? "bg-signal text-white" : "bg-harbor/5 text-harbor hover:bg-harbor/10"}`}>
+          {isSelected && <Icon name="check" size={18} strokeWidth={2.25} />}
+          {isSelected ? "مختار" : "اختر هذا القالب"}
         </button>
       </div>
     </div>

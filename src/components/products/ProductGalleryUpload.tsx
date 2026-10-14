@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { api, ApiError } from "@/lib/api";
+import { Icon } from "@/components/ui/Icon";
 
 const MAX_IMAGES = 8;
 
@@ -75,12 +76,16 @@ export default function ProductGalleryUpload({ images, onChange }: { images: str
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={url} alt="" className="h-full w-full object-cover" />
             {i === 0 && <span className="absolute bottom-0 inset-x-0 bg-harbor/80 text-white text-[9px] text-center py-0.5">الرئيسية</span>}
+            {/* Always visible on touch screens (no hover there — this used
+                to be invisible on phones entirely); hover/focus-revealed
+                only from sm up, where a pointer exists. */}
             <button
               type="button"
               onClick={() => removeAt(i)}
-              className="absolute top-1 left-1 h-6 w-6 rounded-full bg-black/60 text-white text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+              aria-label="إزالة الصورة"
+              className="absolute top-1 left-1 h-7 w-7 rounded-full bg-black/60 text-white flex items-center justify-center opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
             >
-              ✕
+              <Icon name="close" size={14} strokeWidth={2.25} />
             </button>
           </div>
         ))}

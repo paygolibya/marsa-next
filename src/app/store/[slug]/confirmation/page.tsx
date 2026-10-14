@@ -9,6 +9,7 @@ import { trackEvent } from "@/lib/track-event";
 import { initAdPixels } from "@/lib/ad-pixels";
 import { isSupportedLanguage } from "@/lib/i18n";
 import { useTranslation } from "@/lib/i18n/useTranslation";
+import { Icon } from "@/components/ui/Icon";
 
 const courierLabels: Record<string, string> = {
   vanex: "Vanex",
@@ -93,7 +94,9 @@ function ConfirmationPageContent() {
   return (
     <div className="min-h-screen" style={{ backgroundColor: secondary }}>
       <main className="mx-auto max-w-lg px-6 py-20 text-center">
-        <span className="stamp mx-auto mb-6 h-16 w-16 border-brass text-brass text-2xl font-bold">✓</span>
+        <span className="stamp mx-auto mb-6 h-16 w-16 border-brass text-brass animate-rise-in">
+          <Icon name="check" size={30} strokeWidth={2.5} />
+        </span>
         <h1 className="font-display text-3xl font-extrabold text-harbor">{t("confirmation.heading")}</h1>
         <p className="text-rope mt-2">{t("confirmation.subtext")}</p>
 

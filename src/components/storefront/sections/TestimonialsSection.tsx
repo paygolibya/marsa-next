@@ -1,4 +1,5 @@
 import { translate, isSupportedLanguage } from "@/lib/i18n";
+import { Stars } from "@/components/ui/Icon";
 import { safeParseSettings, testimonialsSettingsSchema } from "./schemas";
 import type { SectionRenderProps } from "./types";
 
@@ -17,8 +18,7 @@ export function TestimonialsSection({ variant, colors, settings: rawSettings, te
           {items.map((item, i) => (
             <div key={i} className="rounded-2xl bg-white p-6 shadow-lg">
               <p className="text-lg mb-3" style={{ color: colors.accent }}>
-                {"★".repeat(item.rating)}
-                {"☆".repeat(5 - item.rating)}
+                <Stars rating={item.rating} />
               </p>
               {item.reviewText && <p className="text-harbor/80 mb-4">&quot;{item.reviewText}&quot;</p>}
               <p className="text-xs font-bold text-rope">
@@ -41,8 +41,7 @@ export function TestimonialsSection({ variant, colors, settings: rawSettings, te
           {items.map((item, i) => (
             <div key={i}>
               <p className="mb-3" style={{ color: colors.accent }}>
-                {"★".repeat(item.rating)}
-                {"☆".repeat(5 - item.rating)}
+                <Stars rating={item.rating} />
               </p>
               {item.reviewText && <p className="text-sm text-white/70 mb-3">&quot;{item.reviewText}&quot;</p>}
               <p className="text-xs text-white/40 tracking-wide">
@@ -63,8 +62,7 @@ export function TestimonialsSection({ variant, colors, settings: rawSettings, te
           {items.map((item, i) => (
             <div key={i} className="rounded-lg border border-harbor/10 bg-white p-3 transition-shadow hover:shadow-md">
               <p className="text-xs mb-1" style={{ color: colors.accent }}>
-                {"★".repeat(item.rating)}
-                {"☆".repeat(5 - item.rating)}
+                <Stars rating={item.rating} />
               </p>
               {item.reviewText && <p className="text-xs text-harbor/80 mb-2 line-clamp-3">&quot;{item.reviewText}&quot;</p>}
               <p className="text-[10px] text-rope">
@@ -85,8 +83,7 @@ export function TestimonialsSection({ variant, colors, settings: rawSettings, te
         {items.map((item, i) => (
           <div key={i} className="rounded-2xl border border-harbor/10 bg-white p-5 transition-shadow hover:shadow-md">
             <p className="font-bold mb-2" style={{ color: colors.accent }}>
-              {"★".repeat(item.rating)}
-              {"☆".repeat(5 - item.rating)}
+              <Stars rating={item.rating} />
             </p>
             {item.reviewText && <p className="text-sm text-harbor/80 mb-3">&quot;{item.reviewText}&quot;</p>}
             <p className="text-xs text-rope">

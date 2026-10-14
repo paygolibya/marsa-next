@@ -2,6 +2,7 @@ import { StatsSection, ProductsSection, CategoriesSection, CategoryShowcaseSecti
 import type { SectionRenderProps, SectionType } from "@/components/storefront/sections/types";
 import { translate, isSupportedLanguage } from "@/lib/i18n";
 import { StorefrontHeaderRow } from "./StorefrontHeaderRow";
+import { Icon } from "@/components/ui/Icon";
 import { StorefrontNavRow } from "./StorefrontNavRow";
 import {
   resolveCoverImageHeightClass,
@@ -127,9 +128,10 @@ export default function BoldTemplate({
               <button
                 onClick={onOpenCart}
                 style={{ backgroundColor: primary }}
-                className="relative rounded-xl px-5 py-2 text-white font-extrabold text-sm shadow-lg hover:opacity-90 transition-opacity"
+                className="relative inline-flex min-h-[40px] items-center gap-2 rounded-xl px-5 py-2 text-white font-extrabold text-sm shadow-lg hover:opacity-90 active:scale-[0.97] transition-[opacity,transform]"
               >
-                🛒 {t("cart.titleShort")}
+                <Icon name="cart" size={18} />
+                {t("cart.titleShort")}
                 {cartTotalItems > 0 && (
                   <span className="absolute -top-2 -left-2 h-5 w-5 rounded-full bg-harbor text-[11px] font-bold flex items-center justify-center text-white">
                     {cartTotalItems}

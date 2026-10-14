@@ -6,7 +6,7 @@ import { useCurrentStore } from "@/lib/use-current-store";
 import { api, ApiError, type StoreType, type Template } from "@/lib/api";
 import DomainSettings from "@/components/store/DomainSettings";
 import TemplateSwitcher from "@/components/store/TemplateSwitcher";
-import { Button } from "@/components/ui";
+import { Button, Icon } from "@/components/ui";
 import { STORE_INDUSTRIES } from "@/lib/store-industries";
 
 const STORE_TYPES: { value: StoreType; label: string; description: string }[] = [
@@ -358,7 +358,12 @@ export default function DashboardSettingsPage() {
         </div>
 
         {error && <p className="text-signal text-sm">{error}</p>}
-        {saved && <p className="text-sm text-green-700">✓ تم الحفظ</p>}
+        {saved && (
+          <p className="flex items-center gap-1.5 text-sm font-bold text-green-700" role="status">
+            <Icon name="checkCircle" size={18} />
+            تم الحفظ
+          </p>
+        )}
 
         <Button type="submit" loading={saving} loadingText="جارٍ الحفظ...">
           حفظ الإعدادات

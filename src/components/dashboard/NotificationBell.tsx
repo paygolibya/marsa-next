@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import { api, type Notification } from "@/lib/api";
+import { Icon } from "@/components/ui/Icon";
 
 const POLL_MS = 30000;
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
@@ -137,12 +138,13 @@ export default function NotificationBell({ className = "" }: { className?: strin
       <button
         type="button"
         onClick={() => (open ? setOpen(false) : handleOpen())}
-        aria-label="الإشعارات"
-        className={`relative ${className}`}
+        aria-label={unreadCount > 0 ? `الإشعارات — ${unreadCount} غير مقروءة` : "الإشعارات"}
+        aria-expanded={open}
+        className={`relative inline-flex h-10 w-10 items-center justify-center rounded-full ${className}`}
       >
-        🔔
+        <Icon name="bell" size={20} />
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -left-1 h-4 min-w-4 px-1 rounded-full bg-signal text-[10px] font-bold text-white flex items-center justify-center">
+          <span className="absolute top-1 left-1 h-4 min-w-4 px-1 rounded-full bg-signal text-[10px] font-bold text-white flex items-center justify-center ring-2 ring-harbor" aria-hidden>
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}

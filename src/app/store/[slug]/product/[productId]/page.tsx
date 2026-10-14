@@ -12,6 +12,7 @@ import { initAdPixels } from "@/lib/ad-pixels";
 import { CartDrawer } from "@/components/cart-drawer";
 import { SiteFooter } from "@/components/site-footer";
 import { InquiryModal } from "@/components/storefront/InquiryModal";
+import { Stars } from "@/components/ui/Icon";
 import { isSupportedLanguage, resolveProductTranslation, translate, type Language } from "@/lib/i18n";
 import { useTranslation } from "@/lib/i18n/useTranslation";
 
@@ -163,9 +164,11 @@ export default function ProductDetailPage() {
           <div>
             <h1 className="font-display text-2xl font-extrabold text-harbor">{resolved.name}</h1>
             {reviews.length > 0 && (
-              <p className="text-sm text-rope mt-1">
-                {"★".repeat(Math.round(average))}
-                {"☆".repeat(5 - Math.round(average))} {t("stats.reviewsSuffix", { count: reviews.length })}
+              <p className="flex items-center gap-2 text-sm text-rope mt-1">
+                <span className="text-brass">
+                  <Stars rating={average} />
+                </span>
+                {t("stats.reviewsSuffix", { count: reviews.length })}
               </p>
             )}
             <p className="font-bold text-xl mt-4" style={{ color: primary }}>
@@ -352,7 +355,7 @@ function ReviewsSection({
             <li key={r.id} className="rounded-xl border border-harbor/10 bg-white/50 p-4">
               <div className="flex items-center justify-between">
                 <span className="font-bold text-harbor">{r.buyerName}</span>
-                <span className="text-brass text-sm">{"★".repeat(r.rating)}{"☆".repeat(5 - r.rating)}</span>
+                <span className="text-brass text-sm"><Stars rating={r.rating} /></span>
               </div>
               {r.reviewText && <p className="text-sm text-rope mt-2">{r.reviewText}</p>}
             </li>

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { api, ApiError, type SupportMessage } from "@/lib/api";
-import { Button } from "@/components/ui";
+import { Button, Icon } from "@/components/ui";
 
 // Floating button + slide-in panel — same fixed/sticky pattern as
 // cart-drawer.tsx. Mounted once in the dashboard layout, inside
@@ -58,10 +58,11 @@ export function SupportChatWidget() {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        aria-label="الدعم الفني"
-        className="fixed bottom-4 left-4 sm:bottom-5 sm:left-5 z-40 h-12 w-12 sm:h-14 sm:w-14 rounded-full bg-signal text-canvas shadow-lg shadow-signal/30 hover:bg-signal-dark transition-colors flex items-center justify-center text-xl sm:text-2xl"
+        aria-label={open ? "إغلاق الدعم الفني" : "الدعم الفني"}
+        aria-expanded={open}
+        className="fixed bottom-4 left-4 sm:bottom-5 sm:left-5 z-40 h-12 w-12 sm:h-14 sm:w-14 rounded-full bg-signal text-white shadow-lg shadow-signal/30 hover:bg-signal-dark hover:shadow-xl active:scale-95 transition-[background-color,box-shadow,transform] duration-200 flex items-center justify-center"
       >
-        {open ? "✕" : "💬"}
+        <Icon name={open ? "close" : "message"} size={24} />
       </button>
 
       {open && (

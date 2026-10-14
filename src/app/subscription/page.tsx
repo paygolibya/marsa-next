@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { PLATFORM_FEATURES, subscriptionPeriods, type SubscriptionPeriod } from "@/lib/checkout-features";
+import { Icon } from "@/components/ui";
 
 const periodList = Object.values(subscriptionPeriods);
 
@@ -33,17 +34,21 @@ export default function SubscriptionPage() {
         {/* One shared feature checklist — there's only one plan now, so
             this doesn't repeat per-card like the old 3-tier layout did. */}
         <div className="mb-10 rounded-2xl bg-white/90 shadow-xl p-8">
-          <h2 className="mb-4 font-display text-lg font-bold text-harbor">📦 كل هذا مُفعّل من أول يوم</h2>
+          <h2 className="mb-4 flex items-center gap-2 font-display text-lg font-bold text-harbor">
+            <Icon name="package" size={22} className="text-signal" />
+            كل هذا مُفعّل من أول يوم
+          </h2>
           <ul className="grid gap-3 sm:grid-cols-2">
             {PLATFORM_FEATURES.map((f) => (
               <li key={f} className="flex items-start gap-2 text-sm text-harbor/80">
-                <span className="text-signal">✓</span>
+                <Icon name="checkCircle" size={18} className="text-signal mt-px" />
                 <span>{f}</span>
               </li>
             ))}
           </ul>
-          <p className="mt-4 rounded-xl bg-brass/10 p-3 text-sm font-bold text-harbor">
-            🎁 بونص: أول 3 أشهر مجانًا عند التسجيل — بدون بطاقة ائتمان، وبكل الميزات كاملة.
+          <p className="mt-4 flex items-center gap-2 rounded-xl bg-brass/10 p-3 text-sm font-bold text-harbor">
+            <Icon name="gift" size={18} className="text-brass" />
+            بونص: أول 3 أشهر مجانًا عند التسجيل — بدون بطاقة ائتمان، وبكل الميزات كاملة.
           </p>
         </div>
 
@@ -83,11 +88,12 @@ export default function SubscriptionPage() {
                 <div className="flex-1" />
                 <button
                   type="button"
-                  className={`w-full rounded-full py-3 text-center font-bold transition ${
+                  className={`w-full inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full text-center font-bold transition active:scale-[0.98] ${
                     popular ? "bg-white text-signal hover:bg-white/90" : selected ? "bg-harbor text-canvas" : "bg-harbor/5 text-harbor hover:bg-harbor/10"
                   }`}
                 >
-                  {selected ? "✓ مختار" : "اختر هذه المدة"}
+                  {selected && <Icon name="check" size={18} strokeWidth={2.25} />}
+                  {selected ? "مختار" : "اختر هذه المدة"}
                 </button>
               </div>
             );

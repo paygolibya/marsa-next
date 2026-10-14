@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
+import { Icon } from "./Icon";
 
 // Dependency-free (portal + Escape + backdrop click + a basic Tab focus
 // trap) — matches this codebase's pattern of not reaching for a UI library
@@ -51,8 +52,10 @@ export function Modal({
   if (!open || typeof document === "undefined") return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} aria-hidden />
+    <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4">
+      {/* Blur signals "the page behind is paused until you finish or
+          dismiss this", not decoration. */}
+      <div className="absolute inset-0 bg-harbor-deep/50 backdrop-blur-sm animate-fade-in" onClick={onClose} aria-hidden />
       <div
         ref={dialogRef}
         role="dialog"
@@ -60,11 +63,21 @@ export function Modal({
         aria-label={title}
         tabIndex={-1}
         onKeyDown={handleTabTrap}
-        className="relative w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl bg-white shadow-2xl p-6 outline-none"
+        className="relative w-full sm:max-w-lg max-h-[90dvh] sm:max-h-[85vh] overflow-y-auto rounded-t-3xl sm:rounded-2xl bg-white shadow-2xl p-6 outline-none animate-modal-in"
       >
-        {title && <h2 className="font-display text-lg font-extrabold text-harbor mb-4">{title}</h2>}
+        <div className="flex items-start justify-between gap-4 mb-4">
+          {title ? <h2 className="font-display text-lg font-extrabold text-harbor">{title}</h2> : <span />}
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="إغلاق"
+            className="-m-2 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-rope hover:bg-harbor/5 hover:text-harbor transition-colors"
+          >
+            <Icon name="close" size={20} />
+          </button>
+        </div>
         {children}
-        {footer && <div className="mt-6 flex justify-end gap-2">{footer}</div>}
+        {footer && <div className="mt-6 pt-4 border-t border-harbor/10 flex flex-wrap justify-end gap-2">{footer}</div>}
       </div>
     </div>,
     document.body

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
+import { Icon, type IconName } from "@/components/ui";
 
 type Stats = {
   merchants: number;
@@ -93,10 +94,10 @@ export default function AdminDashboard() {
       <div className="rounded-lg border border-gray-200 bg-white p-6">
         <h2 className="mb-4 text-2xl font-bold">الإجراءات السريعة</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <QuickAction href="/admin/payments" title="مراجعة الدفعات" icon="💰" color="blue" />
-          <QuickAction href="/admin/merchants" title="التجار" icon="👥" color="green" />
-          <QuickAction href="/admin/orders" title="الطلبات" icon="📦" color="yellow" />
-          <QuickAction href="/admin/settings" title="الإعدادات" icon="⚙️" color="purple" />
+          <QuickAction href="/admin/payments" title="مراجعة الدفعات" icon="card" color="blue" />
+          <QuickAction href="/admin/merchants" title="التجار" icon="users" color="green" />
+          <QuickAction href="/admin/orders" title="الطلبات" icon="package" color="yellow" />
+          <QuickAction href="/admin/settings" title="الإعدادات" icon="settings" color="purple" />
         </div>
       </div>
     </div>
@@ -119,18 +120,21 @@ function StatCard({ title, value, color }: { title: string; value: string | numb
   );
 }
 
-function QuickAction({ href, title, icon, color }: { href: string; title: string; icon: string; color: string }) {
+function QuickAction({ href, title, icon, color }: { href: string; title: string; icon: IconName; color: string }) {
   const colors = {
-    blue: "bg-blue-50 hover:bg-blue-100",
-    green: "bg-green-50 hover:bg-green-100",
-    yellow: "bg-yellow-50 hover:bg-yellow-100",
-    purple: "bg-purple-50 hover:bg-purple-100",
+    blue: "bg-blue-50 hover:bg-blue-100 text-blue-600",
+    green: "bg-green-50 hover:bg-green-100 text-green-700",
+    yellow: "bg-yellow-50 hover:bg-yellow-100 text-yellow-800",
+    purple: "bg-purple-50 hover:bg-purple-100 text-purple-800",
   } as const;
 
   return (
-    <Link href={href} className={`rounded-lg p-4 text-center transition ${colors[color as keyof typeof colors]}`}>
-      <div className="mb-2 text-2xl">{icon}</div>
-      <div className="font-bold">{title}</div>
+    <Link
+      href={href}
+      className={`flex flex-col items-center gap-2 rounded-xl p-5 text-center transition-[background-color,transform] duration-200 hover:-translate-y-0.5 ${colors[color as keyof typeof colors]}`}
+    >
+      <Icon name={icon} size={26} />
+      <span className="font-bold text-gray-900">{title}</span>
     </Link>
   );
 }

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { api, ApiError, formatLYD } from "@/lib/api";
 import type { Payout, PlatformStats } from "@/types/payment";
+import { Icon } from "@/components/ui";
 
 const STATUS_LABELS: Record<string, string> = {
   ready_for_transfer: "جاهزة للتحويل",
@@ -80,9 +81,12 @@ export default function AdminPayoutsPage() {
   return (
     <div>
       <h1 className="mb-2 text-4xl font-bold text-harbor">مستحقات التجار</h1>
-      <p className="mb-8 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
-        ⚡ يتم احتساب المستحقات تلقائيًا فور تسليم الطلب، وتُجمَّع أسبوعيًا كل يوم جمعة — لا حاجة لأي إجراء يدوي للحساب.
-        الإجراء اليدوي الوحيد هو الضغط على &quot;تحويل&quot; بعد إرسال المبلغ فعليًا للتاجر.
+      <p className="mb-8 flex items-start gap-2.5 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+        <Icon name="zap" size={18} className="mt-0.5" />
+        <span>
+          يتم احتساب المستحقات تلقائيًا فور تسليم الطلب، وتُجمَّع أسبوعيًا كل يوم جمعة — لا حاجة لأي إجراء يدوي للحساب.
+          الإجراء اليدوي الوحيد هو الضغط على &quot;تحويل&quot; بعد إرسال المبلغ فعليًا للتاجر.
+        </span>
       </p>
 
       {stats && (

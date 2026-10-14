@@ -4,6 +4,7 @@ import { SiteNav } from "@/components/site-nav";
 import { SiteFooter, RIFQA_SOCIAL_LINKS } from "@/components/site-footer";
 import { Reveal } from "@/components/reveal";
 import { subscriptionPeriods } from "@/lib/checkout-features";
+import { Icon, type IconName } from "@/components/ui/Icon";
 
 const periodList = Object.values(subscriptionPeriods);
 
@@ -17,25 +18,25 @@ const partners = [
 
 const features = [
   {
-    icon: "💳",
+    icon: "card" as IconName,
     eyebrow: "الدفع عند الاستلام",
     title: "إدارة الدفع النقدي بثقة",
     body: "تتبّع كل طلب دفع عند الاستلام من لحظة الطلب حتى تحصيل المندوب للمبلغ، بلا فوضى في الدفاتر.",
   },
   {
-    icon: "📊",
+    icon: "chart" as IconName,
     eyebrow: "المزامنة",
     title: "طلباتك في جدول بيانات، تلقائيًا",
     body: "كل طلب يُسجَّل في Google Sheets فور تأكيده، جاهز لفريق المبيعات أو المحاسبة دون نسخ يدوي.",
   },
   {
-    icon: "⚡",
+    icon: "zap" as IconName,
     eyebrow: "الدفع الفوري",
     title: "دفع بثلاث خطوات من الجوال",
     body: "تجربة دفع سريعة عبر مجمّع دي‑باي (معاملات، موبي‑كاش، إدفعلي، وان‑باي) بلا إعادة توجيه مربكة.",
   },
   {
-    icon: "🚚",
+    icon: "truck" as IconName,
     eyebrow: "الشحن",
     title: "إرسال تلقائي لشركات التوصيل",
     body: "بمجرد تأكيد الطلب، يُرسَل مباشرة إلى فانكس، ويعود رقم التتبع فورًا للعميل.",
@@ -108,17 +109,22 @@ export default function MarketingPage() {
                 />
               </div>
               <span
-                className="absolute -bottom-5 -right-5 rounded-2xl bg-white shadow-xl px-5 py-3 text-sm font-bold text-harbor animate-bob"
+                className="absolute -bottom-5 -right-5 inline-flex items-center gap-2 rounded-2xl bg-white shadow-xl px-5 py-3 text-sm font-bold text-harbor animate-bob"
                 dir="rtl"
               >
-                ✓ طلب جديد مؤكد
+                <Icon name="checkCircle" size={18} className="text-green-600" />
+                طلب جديد مؤكد
               </span>
               <span
                 className="absolute -top-5 -left-5 rounded-2xl bg-brass shadow-xl px-4 py-2.5 text-xs font-bold text-harbor animate-bob"
                 style={{ animationDelay: "1.5s" }}
                 dir="rtl"
               >
-                +٤.٨ ★ تقييم العملاء
+                <span className="inline-flex items-center gap-1.5">
+                  +٤.٨
+                  <Icon name="star" size={14} filled strokeWidth={1.5} />
+                  تقييم العملاء
+                </span>
               </span>
             </div>
           </Reveal>
@@ -151,8 +157,8 @@ export default function MarketingPage() {
           {features.map((f, i) => (
             <Reveal key={f.title} delayMs={i * 100}>
               <div className="group h-full rounded-2xl border border-harbor/10 bg-white/60 p-8 hover:-translate-y-1.5 hover:shadow-xl hover:border-brass/40 transition-all duration-300">
-                <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-brass/15 text-2xl mb-5 group-hover:scale-110 transition-transform">
-                  {f.icon}
+                <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-brass/15 text-signal mb-5 group-hover:scale-110 transition-transform">
+                  <Icon name={f.icon} size={24} />
                 </span>
                 <p className="text-signal text-xs font-bold tracking-widest uppercase mb-3">{f.eyebrow}</p>
                 <h3 className="font-display text-xl font-bold text-harbor mb-2">{f.title}</h3>
@@ -335,8 +341,9 @@ export default function MarketingPage() {
           </div>
 
           <Reveal delayMs={300}>
-            <p className="mt-10 text-center rounded-2xl bg-white/90 shadow-xl px-6 py-4 mx-auto max-w-xl font-bold text-harbor">
-              🎁 بونص: أول 3 أشهر مجانًا عند التسجيل — بدون بطاقة ائتمان.
+            <p className="mt-10 flex items-center justify-center gap-2 text-center rounded-2xl bg-white/90 shadow-xl px-6 py-4 mx-auto max-w-xl font-bold text-harbor">
+              <Icon name="gift" size={20} className="text-signal shrink-0" />
+              بونص: أول 3 أشهر مجانًا عند التسجيل — بدون بطاقة ائتمان.
             </p>
           </Reveal>
         </div>

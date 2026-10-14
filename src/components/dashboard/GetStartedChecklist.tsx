@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import type { Store } from "@/lib/api";
 import { resolveChecklistSteps } from "@/lib/onboarding-checklist";
-import { useToast } from "@/components/ui";
+import { Icon, useToast } from "@/components/ui";
 
 function dismissedKey(storeId: string) {
   return `marsa_onboarding_dismissed_${storeId}`;
@@ -51,9 +51,9 @@ export function GetStartedChecklist({ store, productCount }: { store: Store; pro
             dismiss();
           }}
           aria-label="إغلاق"
-          className="shrink-0 text-rope hover:text-harbor text-lg leading-none px-1"
+          className="shrink-0 flex h-9 w-9 items-center justify-center rounded-full text-rope hover:text-harbor hover:bg-harbor/5 transition-colors"
         >
-          ✕
+          <Icon name="close" size={18} />
         </button>
       </summary>
 
@@ -69,11 +69,11 @@ export function GetStartedChecklist({ store, productCount }: { store: Store; pro
           <li key={step.id} className="flex items-center justify-between gap-3 rounded-xl border border-harbor/10 px-4 py-3">
             <div className="flex items-center gap-3 min-w-0">
               <span
-                className={`shrink-0 flex h-6 w-6 items-center justify-center rounded-full border-2 text-xs font-bold ${
-                  step.done ? "border-signal bg-signal text-canvas" : "border-harbor/20 text-transparent"
+                className={`shrink-0 flex h-6 w-6 items-center justify-center rounded-full border-2 transition-colors ${
+                  step.done ? "border-signal bg-signal text-white" : "border-harbor/20 text-transparent"
                 }`}
               >
-                ✓
+                <Icon name="check" size={14} strokeWidth={2.5} />
               </span>
               <div className="min-w-0">
                 <p className="font-bold text-harbor text-sm truncate">{step.title}</p>

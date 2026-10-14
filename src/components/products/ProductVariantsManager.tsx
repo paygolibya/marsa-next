@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { api, ApiError, type ProductVariant, type ProductVariantOption } from "@/lib/api";
+import { Icon } from "@/components/ui";
 
 // Real structured variants (e.g. الحجم × اللون), not just a free-text
 // label: the merchant defines option types + values here, the server
@@ -160,15 +161,15 @@ function VariantRow({
           dir="ltr"
           type="number"
           step="0.01"
-          className="input !py-1 !px-2 text-xs w-24"
+          className="input !min-h-[36px] !py-1 !px-2 text-xs w-24"
         />
       </td>
       <td className="py-1.5">
-        <input value={stock} onChange={(e) => setStock(e.target.value)} dir="ltr" type="number" min="0" className="input !py-1 !px-2 text-xs w-16" />
+        <input value={stock} onChange={(e) => setStock(e.target.value)} dir="ltr" type="number" min="0" className="input !min-h-[36px] !py-1 !px-2 text-xs w-16" />
       </td>
       <td className="py-1.5 whitespace-nowrap">
-        <button type="button" onClick={handleSave} disabled={saving} className="text-brass font-bold ml-2">
-          {saving ? "..." : saved ? "✓" : "حفظ"}
+        <button type="button" onClick={handleSave} disabled={saving} aria-label={saved ? "تم الحفظ" : undefined} className="inline-flex min-h-[36px] items-center text-brass font-bold ml-2">
+          {saving ? "..." : saved ? <Icon name="check" size={18} strokeWidth={2.25} className="text-green-600" /> : "حفظ"}
         </button>
         <button type="button" onClick={() => void onDelete()} className="text-signal font-bold">
           حذف
