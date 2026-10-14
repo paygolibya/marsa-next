@@ -8,3 +8,7 @@ node_modules/
 # Playwright's own local run output (traces, screenshots on failure).
 test-results/
 playwright-report/
+
+# Local-only Claude Code skills (e.g. third-party skill packs) — not part
+# of the project, just this machine's own setup.
+.claude/skills/
