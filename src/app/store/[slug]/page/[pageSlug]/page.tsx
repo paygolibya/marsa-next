@@ -7,6 +7,7 @@ import { api, type Store } from "@/lib/api";
 import { SiteFooter } from "@/components/site-footer";
 import { isSupportedLanguage } from "@/lib/i18n";
 import { useTranslation } from "@/lib/i18n/useTranslation";
+import { StorefrontSkeleton } from "@/components/storefront/StorefrontSkeleton";
 
 export default function StorePageDetail() {
   const params = useParams<{ slug: string; pageSlug: string }>();
@@ -39,7 +40,7 @@ export default function StorePageDetail() {
     );
   }
 
-  if (!store || !page) return null;
+  if (!store || !page) return <StorefrontSkeleton variant="product" label={t("common.loading")} />;
 
   const primary = store.customization?.primaryColor || "#0066cc";
   const secondary = store.customization?.secondaryColor || "#f0f0f0";

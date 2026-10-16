@@ -11,6 +11,10 @@
   "common.close": "إغلاق",
   "common.total": "الإجمالي",
   "common.dash": "—",
+  "common.retry": "إعادة المحاولة",
+  "common.loading": "جارٍ التحميل…",
+  "store.loadErrorHeading": "تعذّر تحميل المتجر",
+  "store.loadErrorSubtext": "تحقق من اتصالك بالإنترنت ثم حاول مرة أخرى.",
 
   "cart.title": "سلة التسوق",
   "cart.titleShort": "السلة",

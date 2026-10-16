@@ -12,6 +12,7 @@ import { initAdPixels } from "@/lib/ad-pixels";
 import { CartDrawer } from "@/components/cart-drawer";
 import { SiteFooter } from "@/components/site-footer";
 import { InquiryModal } from "@/components/storefront/InquiryModal";
+import { StorefrontLoadError, StorefrontSkeleton } from "@/components/storefront/StorefrontSkeleton";
 import { Stars } from "@/components/ui/Icon";
 import { isSupportedLanguage, resolveProductTranslation, translate, type Language } from "@/lib/i18n";
 import { useTranslation } from "@/lib/i18n/useTranslation";
@@ -26,6 +27,8 @@ export default function ProductDetailPage() {
   const [upsells, setUpsells] = useState<{ triggerProductId: string; offeredProductId: string }[]>([]);
   const [product, setProduct] = useState<Product | null>(null);
   const [notFound, setNotFound] = useState(false);
+  const [loadError, setLoadError] = useState(false);
+  const [attempt, setAttempt] = useState(0);
   const [cartOpen, setCartOpen] = useState(false);
   const [reviews, setReviews] = useState<ProductReview[]>([]);
   const [average, setAverage] = useState(0);
@@ -41,6 +44,7 @@ export default function ProductDetailPage() {
   useEffect(() => trackEvent(slug, "pageview", `/store/${slug}/product/${productId}`), [slug, productId]);
 
   useEffect(() => {
+    setLoadError(false);
     api
       .publicStore(slug)
       .then(({ store, products, upsells }) => {
@@ -61,8 +65,8 @@ export default function ProductDetailPage() {
           setSelectedOptions(Object.fromEntries(found.variantOptions.map((o) => [o.name, o.values[0]])));
         }
       })
-      .catch(() => setNotFound(true));
-  }, [slug, productId]);
+      .catch((err) => (err instanceof ApiError && err.status === 404 ? setNotFound(true) : setLoadError(true)));
+  }, [slug, productId, attempt]);
 
   // The variant matching whatever the buyer has currently picked — null
   // if this product has no variants, or the exact combination isn't
@@ -105,7 +109,18 @@ export default function ProductDetailPage() {
     );
   }
 
-  if (!store || !product) return null;
+  if (loadError && !product) {
+    return (
+      <StorefrontLoadError
+        heading={t("store.loadErrorHeading")}
+        subtext={t("store.loadErrorSubtext")}
+        retryLabel={t("common.retry")}
+        onRetry={() => setAttempt((n) => n + 1)}
+      />
+    );
+  }
+
+  if (!store || !product) return <StorefrontSkeleton variant="product" label={t("common.loading")} />;
 
   const primary = store.customization?.primaryColor || "#0066cc";
   const secondary = store.customization?.secondaryColor || "#f0f0f0";

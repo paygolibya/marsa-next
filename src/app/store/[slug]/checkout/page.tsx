@@ -11,6 +11,7 @@ import { trackEvent } from "@/lib/track-event";
 import { initAdPixels } from "@/lib/ad-pixels";
 import { isSupportedLanguage } from "@/lib/i18n";
 import { useTranslation } from "@/lib/i18n/useTranslation";
+import { StorefrontSkeleton } from "@/components/storefront/StorefrontSkeleton";
 
 const courierLabels: Record<string, string> = {
   vanex: "Vanex",
@@ -263,7 +264,7 @@ export default function CheckoutPage() {
     }
   }
 
-  if (!store) return null;
+  if (!store) return <StorefrontSkeleton variant="product" label={t("common.loading")} />;
 
   const secondary = store.customization?.secondaryColor || "#f0f0f0";
 

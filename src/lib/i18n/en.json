@@ -11,6 +11,10 @@
   "common.close": "Close",
   "common.total": "Total",
   "common.dash": "—",
+  "common.retry": "Try again",
+  "common.loading": "Loading…",
+  "store.loadErrorHeading": "Could not load the store",
+  "store.loadErrorSubtext": "Check your internet connection and try again.",
 
   "cart.title": "Shopping Cart",
   "cart.titleShort": "Cart",

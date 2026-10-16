@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { api, type Bundle, type Category, type Product, type Store, type StoreStats, type StoreTestimonial } from "@/lib/api";
+import { api, ApiError, type Bundle, type Category, type Product, type Store, type StoreStats, type StoreTestimonial } from "@/lib/api";
 import { useCart } from "@/lib/use-cart";
 import { captureReferralCode } from "@/lib/referral";
 import { trackEvent } from "@/lib/track-event";
@@ -11,6 +11,7 @@ import { CartDrawer } from "@/components/cart-drawer";
 import { SiteFooter } from "@/components/site-footer";
 import { STOREFRONT_TEMPLATES } from "@/components/storefront/templates/registry";
 import ModernTemplate from "@/components/storefront/templates/ModernTemplate";
+import { StorefrontLoadError, StorefrontSkeleton } from "@/components/storefront/StorefrontSkeleton";
 import { isSupportedLanguage } from "@/lib/i18n";
 import { useTranslation } from "@/lib/i18n/useTranslation";
 
@@ -30,6 +31,10 @@ export default function StorefrontPage() {
   const [bestSellers, setBestSellers] = useState<Product[]>([]);
   const [query, setQuery] = useState("");
   const [notFound, setNotFound] = useState(false);
+  // A network/server failure is not "this store doesn't exist" — only a
+  // real 404 says that; anything else offers a retry instead.
+  const [loadError, setLoadError] = useState(false);
+  const [attempt, setAttempt] = useState(0);
   const [cartOpen, setCartOpen] = useState(false);
 
   const [newsletterEmail, setNewsletterEmail] = useState("");
@@ -43,6 +48,7 @@ export default function StorefrontPage() {
   useEffect(() => trackEvent(slug, "pageview", `/store/${slug}`), [slug]);
 
   useEffect(() => {
+    setLoadError(false);
     api
       .publicStore(slug)
       .then(({ store, products, categories, bundles, upsells, navMenuItems, stats, testimonials, bestSellers }) => {
@@ -57,8 +63,8 @@ export default function StorefrontPage() {
         setTestimonials(testimonials);
         setBestSellers(bestSellers);
       })
-      .catch(() => setNotFound(true));
-  }, [slug]);
+      .catch((err) => (err instanceof ApiError && err.status === 404 ? setNotFound(true) : setLoadError(true)));
+  }, [slug, attempt]);
 
   async function handleNewsletterSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -82,7 +88,18 @@ export default function StorefrontPage() {
     );
   }
 
-  if (!store) return null;
+  if (loadError && !store) {
+    return (
+      <StorefrontLoadError
+        heading={t("store.loadErrorHeading")}
+        subtext={t("store.loadErrorSubtext")}
+        retryLabel={t("common.retry")}
+        onRetry={() => setAttempt((n) => n + 1)}
+      />
+    );
+  }
+
+  if (!store) return <StorefrontSkeleton variant="store" label={t("common.loading")} />;
 
   const filtered = products.filter((p) => p.name.includes(query) && (!selectedCategoryId || p.categoryId === selectedCategoryId));
   const footerBranded = store.customization?.footerStyle === "branded";

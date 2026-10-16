@@ -13,6 +13,7 @@ import { CartDrawer } from "@/components/cart-drawer";
 import { SiteFooter } from "@/components/site-footer";
 import { isSupportedLanguage } from "@/lib/i18n";
 import { useTranslation } from "@/lib/i18n/useTranslation";
+import { StorefrontSkeleton } from "@/components/storefront/StorefrontSkeleton";
 
 export default function BundleDetailPage() {
   const params = useParams<{ slug: string; bundleId: string }>();
@@ -62,7 +63,7 @@ export default function BundleDetailPage() {
     );
   }
 
-  if (!store || !bundle) return null;
+  if (!store || !bundle) return <StorefrontSkeleton variant="product" label={t("common.loading")} />;
 
   const primary = store.customization?.primaryColor || "#0066cc";
   const secondary = store.customization?.secondaryColor || "#f0f0f0";
