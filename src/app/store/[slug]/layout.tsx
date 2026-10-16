@@ -16,7 +16,8 @@ async function getStoreBranding(slug: string) {
     where: { slug },
     select: {
       name: true,
-      customization: { select: { primaryColor: true } },
+      aboutText: true,
+      customization: { select: { primaryColor: true, logo: true, coverImage: true } },
     },
   });
 }
@@ -35,8 +36,28 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   // 192/512 sizes.
   const iconUrl = (size: 180 | 192 | 512) => `/api/stores/public/${slug}/icon?size=${size}`;
 
+  // Link previews when a merchant shares their store (or runs an ad
+  // pointing at it): cover image first, then logo, then the resized
+  // store icon so there is always some image.
+  const description = store.aboutText?.trim().slice(0, 160) || `تسوّق من ${store.name} أونلاين — اطلب الآن والتوصيل لكل ليبيا.`;
+  const shareImage = store.customization?.coverImage || store.customization?.logo || iconUrl(512);
+
   return {
     title: store.name,
+    description,
+    openGraph: {
+      type: "website",
+      siteName: store.name,
+      title: store.name,
+      description,
+      images: [{ url: shareImage, alt: store.name }],
+    },
+    twitter: {
+      card: store.customization?.coverImage ? "summary_large_image" : "summary",
+      title: store.name,
+      description,
+      images: [shareImage],
+    },
     manifest: `/api/stores/public/${slug}/manifest`,
     appleWebApp: {
       capable: true,

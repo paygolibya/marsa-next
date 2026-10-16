@@ -24,9 +24,30 @@ const almaraiBody = Almarai({
   variable: "--font-tajawal",
 });
 
+const SITE_DESCRIPTION = "أنشئ متجرك الإلكتروني في ليبيا خلال دقائق — دفع بمعاملات، شحن فانكس، وقوالب جاهزة. أول شهر مجانًا.";
+
 export const metadata: Metadata = {
+  // Resolves relative og:image URLs. Storefront layouts override their
+  // own images with absolute URLs, so this only shapes rifqa.ly's pages.
+  metadataBase: new URL(`https://${process.env.ROOT_DOMAIN ?? "rifqa.ly"}`),
   title: "رفقة — من مرسى",
-  description: "منصة رفقة للتجارة الإلكترونية في ليبيا، من مرسى",
+  description: SITE_DESCRIPTION,
+  // Link previews on Facebook / WhatsApp / X — previously none, so every
+  // shared rifqa.ly link rendered as a bare URL.
+  openGraph: {
+    type: "website",
+    siteName: "رفقة",
+    locale: "ar_LY",
+    title: "رفقة — متجرك الإلكتروني في ليبيا",
+    description: SITE_DESCRIPTION,
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "رفقة" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "رفقة — متجرك الإلكتروني في ليبيا",
+    description: SITE_DESCRIPTION,
+    images: ["/og-image.png"],
+  },
   appleWebApp: {
     capable: true,
     title: "رفقة",

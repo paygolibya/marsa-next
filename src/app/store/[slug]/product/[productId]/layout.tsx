@@ -9,7 +9,16 @@ import { isSupportedLanguage, resolveProductTranslation } from "@/lib/i18n";
 async function getProductMeta(productId: string) {
   return prisma.product.findUnique({
     where: { id: productId },
-    select: { name: true, description: true, metaTitle: true, metaDescription: true, translations: true, store: { select: { language: true } } },
+    select: {
+      name: true,
+      description: true,
+      metaTitle: true,
+      metaDescription: true,
+      translations: true,
+      imageUrl: true,
+      priceCents: true,
+      store: { select: { language: true, name: true, currency: true } },
+    },
   });
 }
 
@@ -24,9 +33,22 @@ export async function generateMetadata({ params }: { params: Promise<{ productId
     language,
   );
 
+  const title = resolved.metaTitle || resolved.name;
+  const description = resolved.metaDescription || resolved.description?.slice(0, 160) || undefined;
+  const images = product.imageUrl ? [{ url: product.imageUrl, alt: resolved.name }] : undefined;
+
+  // Product link previews (WhatsApp/Facebook shares, and what Facebook's
+  // ad crawler reads) — the product photo plus price, instead of a bare
+  // title.
   return {
-    title: resolved.metaTitle || resolved.name,
-    description: resolved.metaDescription || resolved.description?.slice(0, 160) || undefined,
+    title,
+    description,
+    openGraph: { type: "website", siteName: product.store.name, title, description, images },
+    twitter: { card: images ? "summary_large_image" : "summary", title, description, images: images?.map((i) => i.url) },
+    other: {
+      "product:price:amount": (product.priceCents / 100).toFixed(2),
+      "product:price:currency": product.store.currency || "LYD",
+    },
   };
 }
 
