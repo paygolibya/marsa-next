@@ -17,12 +17,26 @@ function noTokenReq(body: unknown) {
   return new Request("http://localhost/api/templates/modern/switch", { method: "POST", body: JSON.stringify(body) });
 }
 
-function makeFakeDb(opts: { ownedStoreId?: string; template?: { id: string } | null }) {
+type FakeStore = {
+  template: { defaultColors: unknown } | null;
+  customization: { primaryColor: string; secondaryColor: string } | null;
+};
+
+function makeFakeDb(opts: {
+  ownedStoreId?: string;
+  template?: { id: string; defaultColors?: unknown } | null;
+  store?: Partial<FakeStore>;
+}) {
   const calls: Record<string, unknown> = {};
   const db: SwitchTemplateDb = {
-    template: { findFirst: async () => opts.template ?? null },
+    template: {
+      findFirst: async () => (opts.template ? { id: opts.template.id, defaultColors: opts.template.defaultColors ?? null } : null),
+    },
     store: {
-      findFirst: async (args) => (opts.ownedStoreId && args.where.id === opts.ownedStoreId ? { id: opts.ownedStoreId } : null),
+      findFirst: async (args) =>
+        opts.ownedStoreId && args.where.id === opts.ownedStoreId
+          ? { id: opts.ownedStoreId, template: opts.store?.template ?? null, customization: opts.store?.customization ?? null }
+          : null,
       update: async (args) => {
         calls.storeUpdate = args;
         return { id: args.where.id, templateId: args.data.templateId };
@@ -73,4 +87,47 @@ test("switches the template for an owned store and syncs templateCustomization",
   assert.equal(update.data.templateId, "template-1");
   const upsert = calls.upsert as { where: { storeId: string }; create: { templateId: string } };
   assert.equal(upsert.create.templateId, "template-1");
+});
+
+type UpsertArgs = {
+  create: { primaryColor?: string; secondaryColor?: string };
+  update: { templateId: string; primaryColor?: string; secondaryColor?: string };
+};
+
+const LUXURY = { primaryColor: "#1f2937", secondaryColor: "#f59e0b" };
+const SPORT = { primaryColor: "#dc2626", secondaryColor: "#111827" };
+
+test("applies the new template's colors when the store still has the old template's defaults", async () => {
+  const { db, calls } = makeFakeDb({
+    ownedStoreId: "store-1",
+    template: { id: "sport", defaultColors: SPORT },
+    // Case differs on purpose — color pickers may store uppercase hex.
+    store: { template: { defaultColors: LUXURY }, customization: { primaryColor: "#1F2937", secondaryColor: "#F59E0B" } },
+  });
+  const res = await handleSwitchTemplate(db, req({ storeId: "store-1" }), "sport");
+  assert.equal(res.status, 200);
+  const upsert = calls.upsert as UpsertArgs;
+  assert.equal(upsert.update.primaryColor, SPORT.primaryColor);
+  assert.equal(upsert.update.secondaryColor, SPORT.secondaryColor);
+});
+
+test("applies the new template's colors when the store has no customization yet", async () => {
+  const { db, calls } = makeFakeDb({ ownedStoreId: "store-1", template: { id: "sport", defaultColors: SPORT } });
+  await handleSwitchTemplate(db, req({ storeId: "store-1" }), "sport");
+  const upsert = calls.upsert as UpsertArgs;
+  assert.equal(upsert.create.primaryColor, SPORT.primaryColor);
+  assert.equal(upsert.create.secondaryColor, SPORT.secondaryColor);
+});
+
+test("keeps a merchant's own brand colors when switching templates", async () => {
+  const { db, calls } = makeFakeDb({
+    ownedStoreId: "store-1",
+    template: { id: "sport", defaultColors: SPORT },
+    store: { template: { defaultColors: LUXURY }, customization: { primaryColor: "#123456", secondaryColor: "#abcdef" } },
+  });
+  await handleSwitchTemplate(db, req({ storeId: "store-1" }), "sport");
+  const upsert = calls.upsert as UpsertArgs;
+  assert.equal(upsert.update.templateId, "sport");
+  assert.equal(upsert.update.primaryColor, undefined);
+  assert.equal(upsert.update.secondaryColor, undefined);
 });

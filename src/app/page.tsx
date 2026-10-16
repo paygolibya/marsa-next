@@ -8,12 +8,15 @@ import { Icon, type IconName } from "@/components/ui/Icon";
 
 const periodList = Object.values(subscriptionPeriods);
 
+// Only integrations that are actually live — DPay (and the MobiCash/
+// EDFali/OnePay wallets it aggregated) was reverted; card payments go
+// directly through Moamalat now.
 const partners = [
   { label: "Moamalat" },
-  { label: "MobiCash" },
-  { label: "EDFali" },
-  { label: "OnePay" },
   { label: "Vanex" },
+  { label: "Facebook Pixel" },
+  { label: "TikTok Pixel" },
+  { label: "Google Ads" },
 ];
 
 const features = [
@@ -25,15 +28,15 @@ const features = [
   },
   {
     icon: "chart" as IconName,
-    eyebrow: "المزامنة",
-    title: "طلباتك في جدول بيانات، تلقائيًا",
-    body: "كل طلب يُسجَّل في Google Sheets فور تأكيده، جاهز لفريق المبيعات أو المحاسبة دون نسخ يدوي.",
+    eyebrow: "التحليلات",
+    title: "اعرف من أين تأتي مبيعاتك",
+    body: "لوحة تحليلات لزياراتك وطلباتك ومبيعاتك، وربط مباشر ببكسل فيسبوك وتيك توك وGoogle Ads لتعرف أي إعلان يبيع فعلًا.",
   },
   {
     icon: "zap" as IconName,
-    eyebrow: "الدفع الفوري",
-    title: "دفع بثلاث خطوات من الجوال",
-    body: "تجربة دفع سريعة عبر مجمّع دي‑باي (معاملات، موبي‑كاش، إدفعلي، وان‑باي) بلا إعادة توجيه مربكة.",
+    eyebrow: "الدفع الإلكتروني",
+    title: "دفع فوري ببطاقات معاملات",
+    body: "عملاؤك يدفعون ببطاقات معاملات مباشرة داخل متجرك دون مغادرته، ويُؤكَّد الطلب تلقائيًا فور نجاح الدفع.",
   },
   {
     icon: "truck" as IconName,
@@ -292,7 +295,7 @@ export default function MarketingPage() {
               <h2 className="font-display text-3xl md:text-4xl font-extrabold text-harbor">
                 خطة واحدة، بكل الميزات — اختر المدة فقط
               </h2>
-              <p className="mt-3 text-rope">DPay، فانكس، رسائل SMS وبريد إلكتروني، منتجات وطلبات غير محدودة — من أول يوم، بأي مدة تختارها.</p>
+              <p className="mt-3 text-rope">الدفع عبر معاملات، شحن فانكس، رسائل SMS وبريد إلكتروني، منتجات وطلبات غير محدودة — من أول يوم، بأي مدة تختارها.</p>
             </div>
           </Reveal>
 
