@@ -1,5 +1,6 @@
 // Pure helpers extracted from the Vanex webhook route so the mapping/auth
 // logic can be unit-tested without needing a request object or Prisma.
+import { safeEqual } from "@/lib/security/safe-equal";
 
 export const VANEX_STATUS_BY_TYPE: Record<string, string> = {
   package_accepted: "accepted",
@@ -16,5 +17,5 @@ export function resolveVanexCourierStatus(type: string): string | null {
 }
 
 export function isValidVanexWebhookKey(receivedKey: string | null, expectedKey: string | undefined): boolean {
-  return Boolean(receivedKey && expectedKey && receivedKey === expectedKey);
+  return safeEqual(receivedKey, expectedKey);
 }

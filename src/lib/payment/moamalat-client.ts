@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import { safeEqual } from "@/lib/security/safe-equal";
 
 // Direct Moamalat LightBox integration — see docs/moamalat.md for the full
 // contract and how it was verified. Replaces the old DPay aggregator,
@@ -121,7 +122,7 @@ export function verifyMoamalatResponseHash(fields: Record<string, string>, recei
   const secretKey = process.env.MOAMALAT_SECRET_KEY;
   if (!secretKey || !receivedHash) return false;
   const expected = computeSecureHash(fields, secretKey);
-  return expected === receivedHash.toUpperCase();
+  return safeEqual(expected, receivedHash.toUpperCase());
 }
 
 // MerchantReference is the one thing Moamalat echoes back verbatim in

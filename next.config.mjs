@@ -16,6 +16,27 @@ const nextConfig = {
   // node_modules import at runtime instead, the way Next expects for any
   // native dependency used in a Route Handler.
   serverExternalPackages: ["sharp"],
+  // Baseline browser security headers on every response. Deliberately no
+  // full script-src CSP yet — checkout loads Moamalat's LightBox, stores
+  // load merchants' Facebook/TikTok/Google pixels, and images come from
+  // Vercel Blob, so a strict policy needs its own careful rollout.
+  // frame-ancestors alone is safe and closes clickjacking on the
+  // dashboard and checkout (nothing in the app embeds its own pages).
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          { key: "X-Frame-Options", value: "SAMEORIGIN" },
+          { key: "Content-Security-Policy", value: "frame-ancestors 'self'" },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), interest-cohort=()" },
+          { key: "Strict-Transport-Security", value: "max-age=31536000" },
+        ],
+      },
+    ];
+  },
 };
 
 // withSentryConfig wraps the build to (optionally) upload source maps and
