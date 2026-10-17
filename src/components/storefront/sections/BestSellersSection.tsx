@@ -28,7 +28,7 @@ export function BestSellersSection({ colors, store, bestSellers, onAddToCart, se
         {bestSellers.map((product) => (
           <div
             key={product.id}
-            className="relative rounded-2xl border border-harbor/10 bg-white overflow-hidden flex flex-col transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5"
+            className="relative rounded-2xl border border-harbor/10 bg-white overflow-hidden flex flex-col transition duration-300 hover:shadow-lg hover:-translate-y-0.5"
           >
             <span
               className="absolute top-3 right-3 z-10 rounded-full px-3 py-1 text-[11px] font-bold text-white"

@@ -5,6 +5,7 @@ import { formatLYD, type Product } from "@/lib/api";
 import type { CartLine } from "@/lib/use-cart";
 import { translate, type Language } from "@/lib/i18n";
 import { Icon } from "@/components/ui/Icon";
+import { useEscapeKey } from "@/lib/use-escape-key";
 
 // Optional — when the calling page has the store's own customization
 // loaded, the drawer picks up the MERCHANT's colors instead of always
@@ -46,6 +47,7 @@ export function CartDrawer({
   onAddToCart?: (product: Product) => void;
   language?: Language;
 }) {
+  useEscapeKey(open, onClose);
   const t = (key: string, vars?: Record<string, string | number>) => translate(language, key, vars);
   const primary = theme?.primaryColor || undefined;
   const secondary = theme?.secondaryColor || undefined;

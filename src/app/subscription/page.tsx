@@ -60,7 +60,7 @@ export default function SubscriptionPage() {
               <div
                 key={period.id}
                 onClick={() => setSelectedPeriod(period.id)}
-                className={`relative cursor-pointer h-full rounded-2xl p-8 flex flex-col transition-all duration-300 ${
+                className={`relative cursor-pointer h-full rounded-2xl p-8 flex flex-col transition duration-300 ${
                   popular
                     ? "bg-gradient-to-br from-signal via-rose to-brass text-white shadow-2xl scale-[1.03]"
                     : "bg-white border border-harbor/10 text-harbor shadow-md"

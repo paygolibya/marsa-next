@@ -59,7 +59,7 @@ export function GetStartedChecklist({ store, productCount }: { store: Store; pro
 
       <div className="mt-2 h-1.5 w-full rounded-full bg-harbor/10 overflow-hidden">
         <div
-          className="h-full rounded-full bg-signal transition-all"
+          className="h-full rounded-full bg-signal transition"
           style={{ width: completable.length > 0 ? `${(doneCount / completable.length) * 100}%` : "0%" }}
         />
       </div>

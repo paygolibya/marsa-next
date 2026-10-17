@@ -41,7 +41,7 @@ export const Button = forwardRef<HTMLButtonElement, React.ButtonHTMLAttributes<H
       ref={ref}
       disabled={disabled || loading}
       aria-busy={loading || undefined}
-      className={`inline-flex items-center justify-center gap-2 font-bold cursor-pointer select-none transition-[background-color,border-color,box-shadow,color,transform] duration-200 ease-out active:scale-[0.97] disabled:opacity-50 disabled:pointer-events-none ${VARIANT_CLASSES[variant]} ${SIZE_CLASSES[size]} ${className}`}
+      className={`inline-flex items-center justify-center gap-2 font-bold cursor-pointer select-none transition-[background-color,border-color,box-shadow,color,transform] duration-200 ease-out active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 ${VARIANT_CLASSES[variant]} ${SIZE_CLASSES[size]} ${className}`}
       {...rest}
     >
       {loading && <Spinner />}

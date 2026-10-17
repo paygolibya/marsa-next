@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import { api, type Notification } from "@/lib/api";
 import { Icon } from "@/components/ui/Icon";
+import { useEscapeKey } from "@/lib/use-escape-key";
 
 const POLL_MS = 30000;
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
@@ -39,6 +40,7 @@ function timeAgo(iso: string): string {
 export default function NotificationBell({ className = "" }: { className?: string }) {
   const { token, merchant, refreshMerchant } = useAuth();
   const [open, setOpen] = useState(false);
+  useEscapeKey(open, () => setOpen(false));
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [emailDraft, setEmailDraft] = useState("");

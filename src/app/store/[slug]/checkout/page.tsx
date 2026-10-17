@@ -559,7 +559,7 @@ export default function CheckoutPage() {
                 (isRental && (!rentalStart || !rentalEnd)) ||
                 (isBooking && !selectedSlot)
               }
-              className="w-full rounded-full bg-signal py-3.5 font-bold text-canvas shadow-lg shadow-signal/20 hover:bg-signal-dark hover:-translate-y-0.5 transition-all disabled:opacity-60 disabled:translate-y-0"
+              className="w-full rounded-full bg-signal py-3.5 font-bold text-canvas shadow-lg shadow-signal/20 hover:bg-signal-dark hover:-translate-y-0.5 transition disabled:opacity-60 disabled:translate-y-0"
             >
               {loading || walletPending ? t("checkout.confirming") : t("checkout.confirmOrder", { total: formatLYD(grandTotalCents, language) })}
             </button>

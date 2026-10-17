@@ -33,7 +33,7 @@ export function BundlesSection({ colors, store, bundles, onAddBundleToCart, sett
         {bundles.map((bundle) => (
           <div
             key={bundle.id}
-            className="rounded-2xl border border-harbor/10 bg-white overflow-hidden flex flex-col transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5"
+            className="rounded-2xl border border-harbor/10 bg-white overflow-hidden flex flex-col transition duration-300 hover:shadow-lg hover:-translate-y-0.5"
           >
             <Link href={`/store/${store.slug}/bundle/${bundle.id}`} className="aspect-square bg-harbor/5 flex items-center justify-center text-rope text-sm overflow-hidden group">
               {bundle.imageUrl ? (

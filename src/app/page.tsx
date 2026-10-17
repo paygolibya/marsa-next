@@ -8,6 +8,32 @@ import { Icon, type IconName } from "@/components/ui/Icon";
 
 const periodList = Object.values(subscriptionPeriods);
 
+// What every subscription period includes — one plan, so the list is the
+// same on each card. Only features that actually ship today.
+const PLAN_INCLUDES = [
+  "منتجات وطلبات غير محدودة",
+  "الدفع ببطاقات معاملات أو عند الاستلام",
+  "شحن تلقائي مع فانكس لكل ليبيا",
+  "رسائل SMS وبريد إلكتروني لعملائك",
+  "تحليلات وبكسلات فيسبوك وتيك توك و Google",
+  "قوالب جاهزة لكل نوع نشاط",
+];
+
+// Section titles sit directly on the brand gradient in white — they were
+// each wrapped in a floating white card, which read as a stray box
+// rather than a heading.
+function SectionHeading({ eyebrow, title, subtitle }: { eyebrow: string; title: string; subtitle?: string }) {
+  return (
+    <div className="mx-auto mb-12 max-w-2xl text-center">
+      <span className="mb-4 inline-block rounded-full bg-white/20 px-4 py-1.5 text-sm font-bold text-white ring-1 ring-white/30 backdrop-blur-sm">
+        {eyebrow}
+      </span>
+      <h2 className="font-display text-3xl font-extrabold leading-tight text-white drop-shadow-sm md:text-4xl">{title}</h2>
+      {subtitle && <p className="mt-4 text-lg leading-relaxed text-white/90">{subtitle}</p>}
+    </div>
+  );
+}
+
 // Only integrations that are actually live — DPay (and the MobiCash/
 // EDFali/OnePay wallets it aggregated) was reverted; card payments go
 // directly through Moamalat now.
@@ -30,7 +56,7 @@ const features = [
     icon: "chart" as IconName,
     eyebrow: "التحليلات",
     title: "اعرف من أين تأتي مبيعاتك",
-    body: "لوحة تحليلات لزياراتك وطلباتك ومبيعاتك، وربط مباشر ببكسل فيسبوك وتيك توك وGoogle Ads لتعرف أي إعلان يبيع فعلًا.",
+    body: "لوحة تحليلات لزياراتك وطلباتك ومبيعاتك، وربط مباشر ببكسل فيسبوك وتيك توك و Google Ads لتعرف أي إعلان يبيع فعلًا.",
   },
   {
     icon: "zap" as IconName,
@@ -84,13 +110,13 @@ export default function MarketingPage() {
               <div className="mt-10 flex items-center justify-center lg:justify-start gap-4 flex-wrap">
                 <Link
                   href="/register"
-                  className="rounded-full bg-signal px-8 py-3 font-bold text-canvas shadow-lg shadow-signal/30 hover:bg-signal-dark hover:-translate-y-0.5 hover:shadow-xl transition-all"
+                  className="rounded-full bg-signal px-8 py-3 font-bold text-canvas shadow-lg shadow-signal/30 hover:bg-signal-dark hover:-translate-y-0.5 hover:shadow-xl transition"
                 >
                   أنشئ متجرك الآن
                 </Link>
                 <Link
                   href="/store/alhayes-fashion"
-                  className="rounded-full border-2 border-harbor/15 px-8 py-3 font-bold text-harbor hover:bg-harbor/5 hover:-translate-y-0.5 transition-all"
+                  className="rounded-full border-2 border-harbor/15 px-8 py-3 font-bold text-harbor hover:bg-harbor/5 hover:-translate-y-0.5 transition"
                 >
                   شاهد متجرًا حقيقيًا
                 </Link>
@@ -147,25 +173,27 @@ export default function MarketingPage() {
       </section>
 
       {/* FEATURES */}
+      {/* Layout adapted from 21st.dev's "Feature Grid" (lavikatiyar):
+          solid cards with the icon beside the copy on wider screens,
+          rebuilt with Rifqa's own tokens. The previous translucent
+          bg-white/60 cards let the pink page gradient bleed through and
+          left the grey body text with poor contrast. */}
       <section id="features" className="mx-auto max-w-6xl px-6 py-24">
         <Reveal>
-          <div className="max-w-xl mb-14 mx-auto lg:mx-0 rounded-2xl bg-white/90 shadow-xl px-8 py-6 text-center lg:text-right">
-            <p className="text-signal font-bold text-sm mb-2">لماذا رفقة</p>
-            <h2 className="font-display text-3xl md:text-4xl font-extrabold text-harbor">
-              كل ما يحتاجه متجرك، مبني لسوق ليبيا تحديدًا
-            </h2>
-          </div>
+          <SectionHeading eyebrow="لماذا رفقة" title="كل ما يحتاجه متجرك، مبني لسوق ليبيا تحديدًا" />
         </Reveal>
-        <div className="grid md:grid-cols-2 gap-8">
+        <div className="grid gap-6 lg:grid-cols-2">
           {features.map((f, i) => (
             <Reveal key={f.title} delayMs={i * 100}>
-              <div className="group h-full rounded-2xl border border-harbor/10 bg-white/60 p-8 hover:-translate-y-1.5 hover:shadow-xl hover:border-brass/40 transition-all duration-300">
-                <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-brass/15 text-signal mb-5 group-hover:scale-110 transition-transform">
-                  <Icon name={f.icon} size={24} />
+              <div className="group flex h-full flex-col gap-5 rounded-2xl border border-white/60 bg-white p-7 shadow-lg shadow-harbor/5 transition duration-300 hover:-translate-y-1 hover:shadow-xl sm:flex-row sm:items-start">
+                <span className="inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-signal to-rose text-white shadow-md shadow-signal/30">
+                  <Icon name={f.icon} size={26} />
                 </span>
-                <p className="text-signal text-xs font-bold tracking-widest uppercase mb-3">{f.eyebrow}</p>
-                <h3 className="font-display text-xl font-bold text-harbor mb-2">{f.title}</h3>
-                <p className="text-rope leading-relaxed">{f.body}</p>
+                <div className="min-w-0">
+                  <p className="mb-1.5 text-xs font-bold text-signal">{f.eyebrow}</p>
+                  <h3 className="mb-2 font-display text-xl font-bold text-harbor">{f.title}</h3>
+                  <p className="leading-relaxed text-harbor/70">{f.body}</p>
+                </div>
               </div>
             </Reveal>
           ))}
@@ -290,53 +318,81 @@ export default function MarketingPage() {
       <section id="pricing">
         <div className="mx-auto max-w-6xl px-6 py-24">
           <Reveal>
-            <div className="max-w-xl mb-14 rounded-2xl bg-white/90 shadow-xl px-8 py-6 inline-block">
-              <p className="text-signal font-bold text-sm mb-2">الاشتراك</p>
-              <h2 className="font-display text-3xl md:text-4xl font-extrabold text-harbor">
-                خطة واحدة، بكل الميزات — اختر المدة فقط
-              </h2>
-              <p className="mt-3 text-rope">الدفع عبر معاملات، شحن فانكس، رسائل SMS وبريد إلكتروني، منتجات وطلبات غير محدودة — من أول يوم، بأي مدة تختارها.</p>
-            </div>
+            <SectionHeading
+              eyebrow="الاشتراك"
+              title="خطة واحدة، بكل الميزات — اختر المدة فقط"
+              subtitle="كل مدة تشمل كل شيء من أول يوم — الفرق الوحيد هو كم توفّر."
+            />
           </Reveal>
 
-          <div className="grid md:grid-cols-3 gap-6 items-stretch">
+          {/* Card structure adapted from 21st.dev's "Pricing Section"
+              (uilayout.contact): badge inline in the header row (it used
+              to sit at -top-3 inside an overflow-hidden card, so it was
+              clipped to a thin white sliver), the popular plan marked by a
+              ring instead of only a gradient, and an "included" checklist
+              so every card states what the price buys. */}
+          <div className="grid items-stretch gap-6 md:grid-cols-3">
             {periodList.map((period, i) => {
               const popular = period.id === "3m";
               return (
                 <Reveal key={period.id} delayMs={i * 100}>
                   <div
-                    className={`relative h-full rounded-2xl p-8 flex flex-col transition-all duration-300 hover:-translate-y-1.5 overflow-hidden ${
+                    className={`relative flex h-full flex-col rounded-3xl p-7 transition duration-300 hover:-translate-y-1 ${
                       popular
-                        ? "bg-gradient-to-br from-signal via-rose to-brass text-white shadow-2xl scale-[1.03] hover:shadow-[0_25px_50px_-12px_rgba(219,61,46,0.5)]"
-                        : "bg-white border border-harbor/10 text-harbor shadow-md hover:shadow-xl"
+                        ? "bg-gradient-to-br from-signal via-rose to-brass text-white shadow-2xl shadow-signal/30 ring-4 ring-white/70 md:scale-[1.03]"
+                        : "border border-white/60 bg-white text-harbor shadow-lg shadow-harbor/5 hover:shadow-xl"
                     }`}
                   >
-                    {period.badge && (
-                      <span className="absolute -top-3 right-6 rounded-full bg-white px-4 py-1 text-xs font-bold text-signal shadow-lg animate-bob whitespace-nowrap">
-                        {period.badge}
-                      </span>
-                    )}
-                    <h3 className="font-display text-xl font-bold">{period.label}</h3>
-                    <p className={`text-sm mt-1 ${popular ? "text-white/80" : "text-rope"}`}>{period.tagline}</p>
-                    <p className="mt-6 mb-1">
-                      <span className="font-display text-4xl font-extrabold">{period.totalPriceLYD}</span>
-                      <span className="text-sm"> د.ل</span>
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <h3 className="font-display text-2xl font-extrabold">{period.label}</h3>
+                        <p className={`mt-1 text-sm ${popular ? "text-white/85" : "text-harbor/60"}`}>{period.tagline}</p>
+                      </div>
+                      {period.badge && (
+                        <span
+                          className={`shrink-0 whitespace-nowrap rounded-full px-3 py-1 text-xs font-bold ${
+                            popular ? "bg-white text-signal shadow-md" : "bg-signal/10 text-signal"
+                          }`}
+                        >
+                          {period.badge}
+                        </span>
+                      )}
+                    </div>
+
+                    <p className="mt-6 flex items-baseline gap-1.5">
+                      <span className="font-display text-5xl font-extrabold tracking-tight">{period.totalPriceLYD}</span>
+                      <span className="text-base font-bold">د.ل</span>
                     </p>
-                    <p className={`text-sm mb-6 ${popular ? "text-white/80" : "text-rope"}`}>= {period.monthlyEquivalentLYD} د.ل / شهر</p>
+                    <p className={`mt-1 text-sm ${popular ? "text-white/85" : "text-harbor/60"}`}>= {period.monthlyEquivalentLYD} د.ل / شهر</p>
                     {period.savingsLabel && (
-                      <p className={`mb-6 inline-block w-fit rounded-full px-3 py-1 text-xs font-bold ${popular ? "bg-white/20 text-white" : "bg-signal/10 text-signal"}`}>
+                      <p className={`mt-3 inline-block w-fit rounded-full px-3 py-1 text-xs font-bold ${popular ? "bg-white/20 text-white" : "bg-signal/10 text-signal"}`}>
                         {period.savingsLabel}
                       </p>
                     )}
-                    <div className="flex-1" />
+
                     <Link
                       href="/register"
-                      className={`mt-8 block text-center rounded-full py-3 font-bold transition-colors ${
-                        popular ? "bg-white text-signal hover:bg-white/90" : "bg-harbor text-canvas hover:bg-harbor-deep"
+                      className={`mt-6 block rounded-2xl py-3.5 text-center font-bold transition-colors ${
+                        popular ? "bg-white text-signal shadow-lg hover:bg-white/90" : "bg-harbor text-canvas hover:bg-harbor-deep"
                       }`}
                     >
                       ابدأ بـ{period.label}
                     </Link>
+
+                    <ul className={`mt-6 space-y-2.5 border-t pt-5 text-sm ${popular ? "border-white/25" : "border-harbor/10"}`}>
+                      {PLAN_INCLUDES.map((item) => (
+                        <li key={item} className="flex items-center gap-2.5">
+                          <span
+                            className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${
+                              popular ? "bg-white/25 text-white" : "bg-signal/10 text-signal"
+                            }`}
+                          >
+                            <Icon name="check" size={13} strokeWidth={3} />
+                          </span>
+                          <span className={popular ? "text-white/95" : "text-harbor/80"}>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                 </Reveal>
               );
@@ -365,7 +421,7 @@ export default function MarketingPage() {
             </p>
             <Link
               href="/register"
-              className="inline-block rounded-full bg-white px-10 py-3.5 font-bold text-signal shadow-xl hover:-translate-y-0.5 hover:shadow-2xl transition-all"
+              className="inline-block rounded-full bg-white px-10 py-3.5 font-bold text-signal shadow-xl hover:-translate-y-0.5 hover:shadow-2xl transition"
             >
               أنشئ متجرك مجانًا
             </Link>

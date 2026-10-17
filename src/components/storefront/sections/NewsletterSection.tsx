@@ -34,12 +34,12 @@ export function NewsletterSection({
               value={newsletterEmail}
               onChange={(e) => setNewsletterEmail(e.target.value)}
               placeholder={t("newsletter.placeholder")}
-              className="flex-1 rounded-xl px-4 py-3 text-harbor font-bold"
+              className="min-w-0 flex-1 rounded-xl px-4 py-3 text-harbor font-bold"
             />
             <button
               type="submit"
               disabled={newsletterState === "loading"}
-              className="rounded-xl bg-white px-6 py-3 font-extrabold disabled:opacity-60 hover:opacity-90 transition-opacity"
+              className="shrink-0 rounded-xl bg-white px-6 py-3 font-extrabold disabled:opacity-60 hover:opacity-90 transition-opacity"
               style={{ color: colors.primary }}
             >
               {newsletterState === "loading" ? "..." : t("newsletter.subscribe")}
@@ -71,13 +71,13 @@ export function NewsletterSection({
               value={newsletterEmail}
               onChange={(e) => setNewsletterEmail(e.target.value)}
               placeholder={t("newsletter.placeholder")}
-              className="flex-1 rounded-none border-0 border-b bg-transparent px-2 py-2 text-white placeholder:text-white/40 focus:outline-none"
+              className="min-w-0 flex-1 rounded-none border-0 border-b bg-transparent px-2 py-2 text-white placeholder:text-white/40 focus:outline-none focus-visible:border-white focus-visible:bg-white/5"
               style={{ borderColor: `${colors.accent}50` }}
             />
             <button
               type="submit"
               disabled={newsletterState === "loading"}
-              className="rounded-full border px-6 py-2 text-xs font-bold tracking-widest disabled:opacity-50 hover:bg-white/5 transition-colors"
+              className="shrink-0 rounded-full border px-6 py-2 text-xs font-bold tracking-widest disabled:opacity-50 hover:bg-white/5 transition-colors"
               style={{ borderColor: colors.accent, color: colors.accent }}
             >
               {newsletterState === "loading" ? "..." : t("newsletter.subscribe")}

@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { isAdminMerchant } from "@/lib/is-admin";
 import ThemeToggle from "@/components/layout/ThemeToggle";
+import { useEscapeKey } from "@/lib/use-escape-key";
 
 export function SiteNav() {
   const { merchant, ready } = useAuth();
@@ -21,6 +22,7 @@ export function SiteNav() {
   // bag icon, "ابدأ الآن" ran off the left edge). Below `md` this collapses
   // to logo + a menu toggle instead of trying to force everything into one row.
   const [menuOpen, setMenuOpen] = useState(false);
+  useEscapeKey(menuOpen, () => setMenuOpen(false));
 
   useEffect(() => {
     function onScroll() {
@@ -77,7 +79,7 @@ export function SiteNav() {
   return (
     <header
       className={`sticky top-0 z-30 transition-colors duration-300 ${
-        scrolled || menuOpen ? "bg-canvas/95 backdrop-blur shadow-sm border-b border-harbor/10" : "bg-transparent"
+        scrolled || menuOpen ? "bg-canvas/95 backdrop-blur shadow-sm border-b border-harbor/10" : "bg-canvas"
       }`}
     >
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 sm:px-6 py-4 gap-3">
@@ -87,7 +89,7 @@ export function SiteNav() {
               that letterboxes it smaller than its own box. */}
           <Image src="/logo.png" alt="رفقة" width={31} height={36} priority className="h-9 w-auto shrink-0 object-contain" />
           <span className="font-display text-lg sm:text-xl font-extrabold text-harbor whitespace-nowrap">
-            رفقة <span className="hidden sm:inline text-rope font-normal text-sm">من مرسى</span>
+            رفقة <span className="hidden sm:inline text-harbor/60 font-normal text-sm">من مرسى</span>
           </span>
         </Link>
 

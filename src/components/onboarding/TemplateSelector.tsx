@@ -93,7 +93,7 @@ function TemplateCard({
   return (
     <div
       onClick={() => onSelect(template)}
-      className={`cursor-pointer rounded-lg overflow-hidden border-2 transition-all hover:shadow-lg ${
+      className={`cursor-pointer rounded-lg overflow-hidden border-2 transition hover:shadow-lg ${
         isSelected ? "border-blue-600 shadow-lg ring-2 ring-blue-500 ring-offset-2" : "border-gray-200 hover:border-gray-400"
       }`}
     >

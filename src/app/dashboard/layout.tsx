@@ -12,6 +12,7 @@ import ThemeToggle from "@/components/layout/ThemeToggle";
 import NotificationBell from "@/components/dashboard/NotificationBell";
 import { Icon, ToastProvider, type IconName } from "@/components/ui";
 import { SupportChatWidget } from "@/components/support/SupportChatWidget";
+import { useEscapeKey } from "@/lib/use-escape-key";
 
 type NavItem = { href: string; label: string; icon: IconName };
 
@@ -104,6 +105,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // `lg` it's now an off-canvas drawer behind a menu button, same pattern
   // already proven on SiteNav's mobile fix.
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  useEscapeKey(sidebarOpen, () => setSidebarOpen(false));
 
   useEffect(() => {
     setSidebarOpen(false);
