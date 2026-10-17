@@ -116,6 +116,17 @@ function StoreTrackPageContent() {
               {result.courierStatus && (
                 <Row label={t("track.shipmentStatus")} value={courierStatusKeys[result.courierStatus] ? t(courierStatusKeys[result.courierStatus]) : result.courierStatus} />
               )}
+              {result.deliveryPromisedBy && result.status !== "delivered" && result.status !== "cancelled" && result.status !== "refunded" && (
+                <Row
+                  label={t("track.deliveryBy")}
+                  value={new Date(result.deliveryPromisedBy).toLocaleString(language === "en" ? "en-US" : "ar-LY", {
+                    timeZone: "Africa/Tripoli",
+                    weekday: "long",
+                    hour: "numeric",
+                    minute: "2-digit",
+                  })}
+                />
+              )}
               {result.courierTrackingId && <Row label={t("confirmation.trackingNumber")} value={result.courierTrackingId} mono />}
               {result.courierNote && <Row label={t("track.courierNote")} value={result.courierNote} />}
               {store?.type === "booking" && result.scheduledStartAt && (

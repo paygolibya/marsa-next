@@ -65,6 +65,8 @@ test("a matching order returns only the restricted field set — buyer PII never
       "courierStatusAt",
       "courierTrackingId",
       "createdAt",
+      "deliveryPromisedBy",
+      "deliveryServiceLevel",
       "items",
       "scheduledStartAt",
       "scheduledEndAt",
@@ -83,4 +85,20 @@ test("a rental order's pickup/return dates pass through to the buyer-facing resp
   const body = await res.json();
   assert.equal(new Date(body.scheduledStartAt).getTime(), start.getTime());
   assert.equal(new Date(body.scheduledEndAt).getTime(), end.getTime());
+});
+
+test("an own-team (Tripoli) order tells the buyer when delivery was promised", async () => {
+  const placed = new Date("2026-10-17T10:00:00+02:00");
+  const deps: TrackOrderDeps = {
+    verifyBuyerOrder: async () => ({ ...fullOrder, createdAt: placed, deliveryServiceLevel: "SAME_DAY" }) as any,
+  };
+  const body = await (await handleTrackOrder(deps, req({ orderId: "order-1", phone: "0912345678" }))).json();
+  assert.equal(body.deliveryServiceLevel, "SAME_DAY");
+  assert.equal(new Date(body.deliveryPromisedBy).toISOString(), new Date("2026-10-17T21:00:00+02:00").toISOString());
+});
+
+test("a Vanex order has no delivery promise", async () => {
+  const deps: TrackOrderDeps = { verifyBuyerOrder: async () => fullOrder as any };
+  const body = await (await handleTrackOrder(deps, req({ orderId: "order-1", phone: "0912345678" }))).json();
+  assert.equal(body.deliveryPromisedBy, null);
 });

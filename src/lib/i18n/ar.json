@@ -223,6 +223,7 @@
   "track.trackButton": "تتبع",
   "track.orderStatus": "حالة الطلب",
   "track.shipmentStatus": "حالة الشحنة",
+  "track.deliveryBy": "موعد التوصيل",
   "track.courierNote": "ملاحظة الشحن",
   "track.appointment": "الموعد",
   "track.rentalPeriod": "فترة الاستئجار",

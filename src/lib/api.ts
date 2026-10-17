@@ -243,6 +243,8 @@ export type Order = {
   courierStatus: string | null;
   courierStatusAt: string | null;
   courierNote: string | null;
+  // Set only for Tripoli orders delivered by Rifqa's own team.
+  deliveryServiceLevel?: "SAME_DAY" | "NEXT_MORNING" | null;
   createdAt: string;
   refundedAt: string | null;
   refundReason: string | null;
@@ -779,6 +781,8 @@ export const api = {
       createdAt: string;
       scheduledStartAt: string | null;
       scheduledEndAt: string | null;
+      deliveryServiceLevel: "SAME_DAY" | "NEXT_MORNING" | null;
+      deliveryPromisedBy: string | null;
       items: OrderItem[];
     }>(`/api/orders/track?orderId=${encodeURIComponent(orderId)}&phone=${encodeURIComponent(phone)}`),
 

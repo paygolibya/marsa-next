@@ -94,11 +94,14 @@ export async function handleUpdateDriverStatus(deps: DriverStatusDeps, req: Requ
     await deps.db.order.update({ where: { id: order.id }, data });
 
     if (courierStatus) {
+      // Vanex's "accepted" message talks about a shipping center; an
+      // own-team pickup means the driver is already heading to the buyer.
+      const notifyStatus = status === "PICKED_UP" ? "own_team_picked_up" : courierStatus;
       await deps.sendOrderStatusEmail(
         { id: order.id, buyerName: order.buyerName, buyerEmail: order.buyerEmail, totalCents: order.totalCents },
-        courierStatus
+        notifyStatus
       );
-      await deps.sendShipmentStatusSms(order.buyerPhone, courierStatus, null);
+      await deps.sendShipmentStatusSms(order.buyerPhone, notifyStatus, null);
     }
 
     if (status === "DELIVERED") {

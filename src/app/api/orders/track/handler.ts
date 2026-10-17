@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { promisedDeliveryBy, type DeliveryServiceLevel } from "@/lib/delivery/own-team";
 
 type OrderRow = {
   status: string;
@@ -11,6 +12,7 @@ type OrderRow = {
   createdAt: Date;
   scheduledStartAt: Date | null;
   scheduledEndAt: Date | null;
+  deliveryServiceLevel?: string | null;
   items: { id: string; productId: string | null; productName: string; unitPriceCents: number; quantity: number; variantLabel: string | null; bundleId: string | null }[];
 };
 
@@ -48,6 +50,11 @@ export async function handleTrackOrder(deps: TrackOrderDeps, req: Request): Prom
     createdAt: order.createdAt,
     scheduledStartAt: order.scheduledStartAt,
     scheduledEndAt: order.scheduledEndAt,
+    // Own-team (Tripoli) orders: when the buyer was promised delivery.
+    deliveryServiceLevel: order.deliveryServiceLevel ?? null,
+    deliveryPromisedBy: order.deliveryServiceLevel
+      ? promisedDeliveryBy(order.createdAt, order.deliveryServiceLevel as DeliveryServiceLevel)
+      : null,
     items: order.items.map((i) => ({
       id: i.id,
       productId: i.productId,

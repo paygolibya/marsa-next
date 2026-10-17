@@ -131,9 +131,15 @@ export default function DashboardOrdersPage() {
       key: "trackingId",
       header: "رقم التتبع",
       render: (o) => (
-        <span className="font-mono" dir="ltr">
-          {o.courierTrackingId ?? "—"}
-        </span>
+        o.deliveryServiceLevel ? (
+          <span className="text-xs font-bold text-harbor">
+            فريق رفقة · {o.deliveryServiceLevel === "SAME_DAY" ? "نفس اليوم" : "صباح الغد"}
+          </span>
+        ) : (
+          <span className="font-mono" dir="ltr">
+            {o.courierTrackingId ?? "—"}
+          </span>
+        )
       ),
     },
     {

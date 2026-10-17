@@ -73,6 +73,7 @@ export async function sendOrderConfirmationEmail(order: EmailOrder): Promise<voi
 
 const STATUS_MESSAGES: Record<string, string> = {
   accepted: "تم استلام شحنتك من قبل شركة الشحن.",
+  own_team_picked_up: "استلم مندوب رفقة طلبك وهو في الطريق إليك.",
   delivered: "تم تسليم طلبك بنجاح.",
   failed_delivery: "تعذّر تسليم طلبك، سيتم التواصل معك.",
   returned: "تم إرجاع شحنتك.",

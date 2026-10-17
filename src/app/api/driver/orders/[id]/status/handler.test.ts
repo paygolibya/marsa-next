@@ -74,7 +74,7 @@ test("picked up: records the driver and the Vanex-equivalent courier status, not
   assert.equal(calls.update!.data.deliveryCourierId, "admin-1");
   assert.equal(calls.update!.data.courierStatus, "accepted");
   assert.equal(calls.update!.data.status, undefined);
-  assert.deepEqual(calls.sms, ["accepted"]);
+  assert.deepEqual(calls.sms, ["own_team_picked_up"], "own-team wording, not Vanex's shipping-center message");
   assert.deepEqual(calls.commission, []);
 });
 

@@ -223,6 +223,7 @@
   "track.trackButton": "Track",
   "track.orderStatus": "Order status",
   "track.shipmentStatus": "Shipment status",
+  "track.deliveryBy": "Delivery by",
   "track.courierNote": "Courier note",
   "track.appointment": "Appointment",
   "track.rentalPeriod": "Rental period",

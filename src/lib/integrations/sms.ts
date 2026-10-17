@@ -175,6 +175,7 @@ export async function sendNewInquirySms(merchantPhone: string, buyerName: string
 
 const SHIPMENT_STATUS_MESSAGES: Record<string, string> = {
   accepted: "طلبك في الطريق إلى مركز الشحن!",
+  own_team_picked_up: "استلم مندوب رفقة طلبك وهو في الطريق إليك!",
   delivered: "تم التسليم بنجاح! شكراً لاستخدامك رفقة",
   failed_delivery: "تعذّر تسليم طلبك، سيتم التواصل معك.",
   returned: "تم إرجاع شحنتك.",
