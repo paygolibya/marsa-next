@@ -13,6 +13,7 @@ import { Icon } from "@/components/ui/Icon";
 
 const courierLabels: Record<string, string> = {
   vanex: "Vanex",
+  own_team: "فريق توصيل رفقة",
 };
 
 export default function ConfirmationPage() {

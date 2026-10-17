@@ -4,6 +4,7 @@ import { createShipment } from "@/lib/integrations/couriers";
 import { sendOrderConfirmationEmail } from "@/lib/integrations/email";
 import { sendNewOrderSms } from "@/lib/integrations/sms";
 import { notifyMerchantNewOrder } from "@/lib/notifications/notify";
+import { resolveDeliveryProvider, resolveServiceLevel } from "@/lib/delivery/own-team";
 
 export type FinalizeWalletOrderResult = {
   updated: boolean; // false = already finalized by a concurrent call (the notification + client-relayed complete callback racing, or a duplicate notification delivery) — a safe no-op, not an error
@@ -57,7 +58,7 @@ export async function finalizeWalletOrder(orderId: string, outcome: "paid" | "fa
     include: {
       items: { select: { quantity: true } },
       store: { select: { slug: true, courier: true, type: true, merchant: { select: { id: true, phone: true, email: true, name: true } } } },
-      vanexArea: { select: { vanexId: true, city: { select: { vanexId: true } } } },
+      vanexArea: { select: { vanexId: true, city: { select: { vanexId: true, name: true } } } },
     },
   });
   if (!order) return { updated: true };
@@ -83,6 +84,31 @@ export async function finalizeWalletOrder(orderId: string, outcome: "paid" | "fa
       await sendNewOrderSms(order.store.merchant.phone, order.id, order.buyerName);
       await notifyMerchantNewOrder(order.store.merchant, { id: order.id, buyerName: order.buyerName, totalCents: order.totalCents, storeId: order.storeId });
       return { updated: true };
+    }
+
+    // Own-team (Tripoli) orders never reach Vanex — same routing as the COD
+    // path in orders/handler.ts. The service level was fixed (and its fee
+    // charged) at order creation; the fallback only covers an order placed
+    // before own-team delivery existed but paid after.
+    if (resolveDeliveryProvider({ city: order.vanexArea?.city.name ?? order.buyerCity }) === "OWN_TEAM") {
+      await prisma.order.update({
+        where: { id: order.id },
+        data: {
+          status: "confirmed",
+          deliveryServiceLevel: order.deliveryServiceLevel ?? resolveServiceLevel(new Date()),
+          deliveryStatus: order.deliveryStatus ?? "PENDING",
+        },
+      });
+      await sendOrderConfirmationEmail({
+        id: order.id,
+        buyerName: order.buyerName,
+        buyerEmail: order.buyerEmail,
+        totalCents: order.totalCents,
+        storeSlug: order.store.slug,
+      });
+      await sendNewOrderSms(order.store.merchant.phone, order.id, order.buyerName);
+      await notifyMerchantNewOrder(order.store.merchant, { id: order.id, buyerName: order.buyerName, totalCents: order.totalCents, storeId: order.storeId });
+      return { updated: true, courier: "own_team" };
     }
 
     const shipment = await createShipment(order.store.courier, {

@@ -160,6 +160,26 @@ export type Affiliate = {
 };
 export type AffiliatePayout = { id: string; affiliateId: string; amountCents: number; status: string; createdAt: string };
 
+// An own-team (Tripoli) order as the /driver view sees it.
+export type DriverOrder = {
+  id: string;
+  createdAt: string;
+  promisedBy: string;
+  buyerName: string;
+  buyerPhone: string;
+  buyerCity: string;
+  buyerAddress: string;
+  totalCents: number;
+  amountToCollectCents: number;
+  paymentMethod: string;
+  status: string;
+  deliveryServiceLevel: "SAME_DAY" | "NEXT_MORNING";
+  deliveryStatus: "PENDING" | "PICKED_UP" | "OUT_FOR_DELIVERY" | "DELIVERED" | "FAILED" | null;
+  cashCollectedCents: number | null;
+  store: { name: string; merchant: { phone: string } };
+  items: { productName: string; quantity: number; variantLabel: string | null }[];
+};
+
 export type BundleItem = { id: string; productId: string; quantity: number; product: { name: string; priceCents: number; imageUrl: string | null } };
 export type Bundle = {
   id: string;
@@ -780,6 +800,16 @@ export const api = {
       topReferrers: { referrer: string; count: number }[];
       visitsOverTime: { date: string; pageviews: number }[];
     }>(`/api/analytics/events-by-store/${storeId}?days=${days}`, { headers: authHeaders(token) }),
+
+  driverOrders: (token: string) =>
+    request<{ date: string; orders: DriverOrder[] }>("/api/driver/orders", { headers: authHeaders(token) }),
+
+  updateDriverStatus: (token: string, orderId: string, status: "PICKED_UP" | "OUT_FOR_DELIVERY" | "DELIVERED" | "FAILED", cashCollectedCents?: number) =>
+    request<{ success: true; deliveryStatus: string }>(`/api/driver/orders/${orderId}/status`, {
+      method: "POST",
+      headers: authHeaders(token),
+      body: JSON.stringify({ status, cashCollectedCents }),
+    }),
 
   adminPayouts: (token: string, status?: string) =>
     request<{ stats: PlatformStats; payouts: Payout[] }>(`/api/admin/payouts/ready${status ? `?status=${status}` : ""}`, {

@@ -49,7 +49,7 @@ function baseBody(overrides: Record<string, unknown> = {}) {
   return {
     storeSlug: "test-store",
     items: [{ productId: "p1", quantity: 2 }],
-    buyer: { name: "Buyer", phone: "0911111111", city: "Tripoli", address: "Some street", email: "" },
+    buyer: { name: "Buyer", phone: "0911111111", city: "Benghazi", address: "Some street", email: "" },
     paymentMethod: "cod",
     ...overrides,
   };
@@ -242,26 +242,26 @@ test("COD order: total is computed server-side (price × quantity + shipping), n
 
 test("vanexAreaId: prices shipping at the area's own rate and passes {cityId, subCityId} to the courier", async () => {
   const { deps, calls } = makeFakeDeps({
-    vanexArea: { id: "area-1", name: "Andalus", priceCents: 1500, vanexId: 42, city: { name: "Tripoli", vanexId: 7 } },
+    vanexArea: { id: "area-1", name: "Andalus", priceCents: 1500, vanexId: 42, city: { name: "Benghazi", vanexId: 7 } },
   });
   const res = await handleCreateOrder(deps, req(baseBody({ buyer: { ...baseBody().buyer, vanexAreaId: "area-1" } })));
   assert.equal(res.status, 201);
   const body = await res.json();
   assert.equal(body.totalCents, 11500); // 5000 * 2 + 1500 shipping
   assert.deepEqual(calls.shipment.order.vanex, { cityId: 7, subCityId: 42 });
-  assert.equal(calls.shipment.order.buyer.city, "Tripoli - Andalus");
+  assert.equal(calls.shipment.order.buyer.city, "Benghazi - Andalus");
 });
 
 test("vanexCityId (no area): prices shipping at the city's own flat rate and passes {cityId} (no subCityId) to the courier", async () => {
   const { deps, calls } = makeFakeDeps({
-    vanexCity: { id: "city-1", name: "Tripoli", priceCents: 1000, vanexId: 7 },
+    vanexCity: { id: "city-1", name: "Benghazi", priceCents: 1000, vanexId: 7 },
   });
   const res = await handleCreateOrder(deps, req(baseBody({ buyer: { ...baseBody().buyer, vanexCityId: "city-1" } })));
   assert.equal(res.status, 201);
   const body = await res.json();
   assert.equal(body.totalCents, 11000); // 5000 * 2 + 1000 shipping
   assert.deepEqual(calls.shipment.order.vanex, { cityId: 7 });
-  assert.equal(calls.shipment.order.buyer.city, "Tripoli");
+  assert.equal(calls.shipment.order.buyer.city, "Benghazi");
 });
 
 test("rejects an invalid vanexCityId with 400", async () => {
@@ -615,4 +615,118 @@ test("no referralCode at all means no affiliate lookup side effects", async () =
   assert.equal(res.status, 201);
   assert.equal(calls.orderCreate.data.affiliateCode, null);
   assert.equal(calls.affiliateCommissionCreate, undefined);
+});
+
+// Tripoli in-house delivery (lib/delivery/own-team.ts): Greater Tripoli
+// orders must never reach Vanex; everything else must reach it exactly as
+// before.
+const at = (tripoliTime: string) => () => new Date(`2026-10-17T${tripoliTime}:00+02:00`);
+
+function countShipments(deps: OrdersDeps) {
+  const counter = { calls: 0 };
+  const original = deps.createShipment;
+  deps.createShipment = async (courier, order) => {
+    counter.calls += 1;
+    return original(courier, order);
+  };
+  return counter;
+}
+
+test("Tripoli order (Vanex area picker) placed 13:59: never calls Vanex, SAME_DAY at 15 LYD replaces the Vanex price", async () => {
+  const { deps, calls } = makeFakeDeps({
+    vanexArea: { id: "area-1", name: "بن عاشور", priceCents: 2500, vanexId: 42, city: { name: "طرابلس", vanexId: 1 } },
+  });
+  deps.now = at("13:59");
+  const vanex = countShipments(deps);
+  const res = await handleCreateOrder(deps, req(baseBody({ buyer: { ...baseBody().buyer, vanexAreaId: "area-1" } })));
+  assert.equal(res.status, 201);
+  const body = await res.json();
+  assert.equal(vanex.calls, 0, "Vanex must never be called for a Tripoli order");
+  assert.equal(body.shippingCents, 1500);
+  assert.equal(body.totalCents, 11500);
+  assert.equal(body.courier, "own_team");
+  assert.equal(body.deliveryServiceLevel, "SAME_DAY");
+  assert.equal(body.trackingId, undefined);
+  assert.equal(calls.orderCreate.data.deliveryServiceLevel, "SAME_DAY");
+  assert.equal(calls.orderCreate.data.deliveryStatus, "PENDING");
+  assert.equal(calls.orderCreate.data.buyerCity, "طرابلس - بن عاشور");
+  assert.equal(calls.orderUpdate.data.status, "confirmed");
+  assert.equal(calls.orderUpdate.data.courierTrackingId, undefined);
+  assert.ok(calls.email);
+  assert.ok(calls.sms);
+  assert.equal(calls.notify.order.storeId, "store-1");
+});
+
+test("Tripoli-variant Vanex city (no area) placed 14:00: never calls Vanex, NEXT_MORNING at 10 LYD", async () => {
+  const { deps, calls } = makeFakeDeps({
+    vanexCity: { id: "city-1", name: "سوبر فانكس طرابلس", priceCents: 3000, vanexId: 1118 },
+  });
+  deps.now = at("14:00");
+  const vanex = countShipments(deps);
+  const res = await handleCreateOrder(deps, req(baseBody({ buyer: { ...baseBody().buyer, vanexCityId: "city-1" } })));
+  const body = await res.json();
+  assert.equal(vanex.calls, 0);
+  assert.equal(body.shippingCents, 1000);
+  assert.equal(body.totalCents, 11000);
+  assert.equal(calls.orderCreate.data.deliveryServiceLevel, "NEXT_MORNING");
+});
+
+test("Janzour and Tajoura are own team too", async () => {
+  for (const name of ["جنزور", "تاجوراء"]) {
+    const { deps } = makeFakeDeps({ vanexCity: { id: "city-1", name, priceCents: 2000, vanexId: 9 } });
+    deps.now = at("23:30");
+    const vanex = countShipments(deps);
+    const body = await (await handleCreateOrder(deps, req(baseBody({ buyer: { ...baseBody().buyer, vanexCityId: "city-1" } })))).json();
+    assert.equal(vanex.calls, 0, name);
+    assert.equal(body.deliveryServiceLevel, "NEXT_MORNING", name);
+  }
+});
+
+test("free-text Tripoli city (no picker): never calls Vanex", async () => {
+  const { deps } = makeFakeDeps();
+  deps.now = at("10:00");
+  const vanex = countShipments(deps);
+  const res = await handleCreateOrder(deps, req(baseBody({ buyer: { ...baseBody().buyer, city: "Tripoli" } })));
+  assert.equal(res.status, 201);
+  assert.equal(vanex.calls, 0);
+});
+
+test("non-Tripoli order: exactly one Vanex call with the same payload as before, no own-team fields", async () => {
+  const { deps, calls } = makeFakeDeps({
+    vanexArea: { id: "area-1", name: "الكيش", priceCents: 3000, vanexId: 42, city: { name: "بنغازي", vanexId: 7 } },
+  });
+  deps.now = at("10:00");
+  const vanex = countShipments(deps);
+  const res = await handleCreateOrder(deps, req(baseBody({ buyer: { ...baseBody().buyer, vanexAreaId: "area-1" } })));
+  const body = await res.json();
+  assert.equal(vanex.calls, 1);
+  assert.equal(calls.shipment.courier, "vanex");
+  assert.deepEqual(calls.shipment.order.vanex, { cityId: 7, subCityId: 42 });
+  assert.equal(calls.shipment.order.buyer.city, "بنغازي - الكيش");
+  assert.equal(calls.shipment.order.totalCents, 13000);
+  assert.equal(body.shippingCents, 3000, "Vanex fee unchanged");
+  assert.equal(body.trackingId, "TRK-TEST-1");
+  assert.equal(calls.orderCreate.data.deliveryServiceLevel, null);
+  assert.equal(calls.orderCreate.data.deliveryStatus, null);
+});
+
+test("wallet Tripoli order: own-team fee and service level are fixed at creation, no shipment", async () => {
+  const { deps, calls } = makeFakeDeps({
+    vanexArea: { id: "area-1", name: "السراج", priceCents: 1500, vanexId: 42, city: { name: "طرابلس", vanexId: 1 } },
+  });
+  deps.now = at("09:00");
+  const vanex = countShipments(deps);
+  const res = await handleCreateOrder(deps, req(baseBody({ paymentMethod: "wallet", buyer: { ...baseBody().buyer, vanexAreaId: "area-1" } })));
+  assert.equal(res.status, 201);
+  assert.equal(vanex.calls, 0);
+  assert.equal(calls.orderCreate.data.deliveryServiceLevel, "SAME_DAY");
+  assert.equal(calls.orderCreate.data.shippingCents, 1500);
+});
+
+test("a digital store in Tripoli gets no own-team service level or fee", async () => {
+  const { deps, calls } = makeFakeDeps({ store: { ...STORE, type: "digital" } });
+  deps.now = at("10:00");
+  await handleCreateOrder(deps, req(baseBody({ buyer: { ...baseBody().buyer, city: "طرابلس" } })));
+  assert.equal(calls.orderCreate.data.deliveryServiceLevel, null);
+  assert.equal(calls.orderCreate.data.shippingCents, 0);
 });

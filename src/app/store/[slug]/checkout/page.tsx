@@ -12,6 +12,7 @@ import { initAdPixels } from "@/lib/ad-pixels";
 import { isSupportedLanguage } from "@/lib/i18n";
 import { useTranslation } from "@/lib/i18n/useTranslation";
 import { StorefrontSkeleton } from "@/components/storefront/StorefrontSkeleton";
+import { quoteOwnTeamDelivery, resolveDeliveryProvider } from "@/lib/delivery/own-team";
 
 const courierLabels: Record<string, string> = {
   vanex: "Vanex",
@@ -134,10 +135,32 @@ export default function CheckoutPage() {
 
   const selectedCity = vanexCities.find((c) => c.id === vanexCityId);
   const selectedArea = selectedCity?.areas.find((a) => a.id === vanexAreaId);
+  // Greater Tripoli is delivered by Rifqa's own team at a time-based fee
+  // instead of the Vanex price — same routing + Africa/Tripoli cutoff the
+  // server applies (lib/delivery/own-team.ts), re-evaluated every minute
+  // so a buyer sitting on this page across 14:00 sees the tier change.
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 60_000);
+    return () => clearInterval(id);
+  }, []);
+  const ownTeamQuote =
+    store?.type === "physical" && resolveDeliveryProvider({ city: usesVanexPricing ? selectedCity?.name : city }) === "OWN_TEAM"
+      ? quoteOwnTeamDelivery(now)
+      : null;
+  const promisedTime = ownTeamQuote?.promisedBy.toLocaleTimeString(language === "en" ? "en-US" : "ar-LY", {
+    timeZone: "Africa/Tripoli",
+    hour: "numeric",
+    minute: "2-digit",
+  });
   // Area gives the precise rate when picked; otherwise fall back to the
   // city's own flat Vanex rate rather than defaulting to free shipping —
   // a buyer whose exact district isn't in Vanex's list can still check out.
-  const shippingCents = usesVanexPricing ? (selectedArea?.priceCents ?? selectedCity?.priceCents ?? 0) : 0;
+  const shippingCents = ownTeamQuote
+    ? ownTeamQuote.feeCents
+    : usesVanexPricing
+      ? (selectedArea?.priceCents ?? selectedCity?.priceCents ?? 0)
+      : 0;
   const discountCents = appliedCoupon?.discountCents ?? 0;
   // cart.subtotalCents is quantity × the product's own priceCents, which
   // for a rental store IS the daily rate — multiply by the selected
@@ -424,7 +447,7 @@ export default function CheckoutPage() {
                     <option value="">{t("checkout.selectArea")}</option>
                     {selectedCity?.areas.map((a) => (
                       <option key={a.id} value={a.id}>
-                        {a.name} — {formatLYD(a.priceCents, language)}
+                        {ownTeamQuote ? a.name : `${a.name} — ${formatLYD(a.priceCents, language)}`}
                       </option>
                     ))}
                   </select>
@@ -450,9 +473,30 @@ export default function CheckoutPage() {
             {store.type === "physical" && (
               <div>
                 <span className="block text-sm font-bold text-harbor mb-1.5">{t("checkout.courier")}</span>
-                <p className="rounded-xl border border-harbor/15 bg-canvas px-4 py-3 text-sm text-rope">
-                  {courierLabels[store.courier] ?? store.courier}
-                </p>
+                {ownTeamQuote ? (
+                  <div className="rounded-xl border border-brass/40 bg-brass/10 px-4 py-3 text-sm">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="font-bold text-harbor">
+                        {t(ownTeamQuote.level === "SAME_DAY" ? "checkout.sameDayTitle" : "checkout.nextMorningTitle")}
+                      </span>
+                      <span className="font-bold text-harbor">{formatLYD(ownTeamQuote.feeCents, language)}</span>
+                    </div>
+                    <p className="mt-1 text-rope">
+                      {t(ownTeamQuote.level === "SAME_DAY" ? "checkout.promisedToday" : "checkout.promisedTomorrow", { time: promisedTime ?? "" })}
+                      {" · "}
+                      {t("checkout.ownTeamCourier")}
+                    </p>
+                    {ownTeamQuote.level === "NEXT_MORNING" && (
+                      <p className="mt-1 text-xs text-rope/80">
+                        {t("checkout.sameDayHint", { time: language === "en" ? "2:00 PM" : "2:00 ظهرًا" })}
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <p className="rounded-xl border border-harbor/15 bg-canvas px-4 py-3 text-sm text-rope">
+                    {courierLabels[store.courier] ?? store.courier}
+                  </p>
+                )}
               </div>
             )}
 
@@ -559,10 +603,10 @@ export default function CheckoutPage() {
             )}
           </div>
 
-          {usesVanexPricing && (
+          {(usesVanexPricing || ownTeamQuote) && (
             <div className="flex justify-between text-sm mt-3 pt-3 border-t border-harbor/10 text-harbor/90">
               <span>{t("checkout.shipping")}</span>
-              <span>{selectedCity ? formatLYD(shippingCents, language) : t("common.dash")}</span>
+              <span>{selectedCity || ownTeamQuote ? formatLYD(shippingCents, language) : t("common.dash")}</span>
             </div>
           )}
           {discountCents > 0 && (

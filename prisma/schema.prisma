@@ -778,6 +778,16 @@ model Order {
   vanexAreaId String?     @map("vanex_area_id")
   vanexArea   VanexArea?  @relation(fields: [vanexAreaId], references: [id], onDelete: SetNull)
 
+  // Rifqa's own Tripoli delivery team (see src/lib/delivery/own-team.ts).
+  // All null for Vanex orders and for every order placed before this
+  // existed; a non-null deliveryServiceLevel is what marks an order as
+  // own-team.
+  deliveryServiceLevel String?   @map("delivery_service_level") // 'SAME_DAY' | 'NEXT_MORNING'
+  deliveryStatus       String?   @map("delivery_status") // 'PENDING' | 'PICKED_UP' | 'OUT_FOR_DELIVERY' | 'DELIVERED' | 'FAILED'
+  deliveryCourierId    String?   @map("delivery_courier_id") // merchant id of the driver/admin who handled it
+  cashCollectedCents   Int?      @map("cash_collected_cents")
+  cashCollectedAt      DateTime? @map("cash_collected_at")
+
   // Internal record only — no Moamalat refund/void API exists (see
   // docs/moamalat.md), so this does not itself reverse any money. It marks
   // intent/record for the merchant/admin; a wallet refund still requires a

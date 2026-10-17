@@ -6,6 +6,7 @@ import { getSubscriptionState, getCheckoutPaymentMethods } from "@/lib/checkout-
 import { resolveCouponDiscount } from "@/lib/coupons";
 import { isSlotOpen, type WorkingHours } from "@/lib/booking";
 import type { ShipmentOrder, ShipmentResult } from "@/lib/integrations/couriers";
+import { quoteOwnTeamDelivery, resolveDeliveryProvider, type DeliveryServiceLevel } from "@/lib/delivery/own-team";
 
 class OutOfStockError extends Error {
   constructor(productName: string) {
@@ -146,6 +147,9 @@ export type OrdersDeps = {
     merchant: { id: string; email: string | null; name: string },
     product: { id: string; name: string; stockQty: number; storeId: string }
   ) => Promise<void>;
+  // Injectable clock for the Tripoli service-level cutoff (tests); defaults
+  // to the real time.
+  now?: () => Date;
 };
 
 // POST /api/orders — a buyer places an order from the storefront's
@@ -248,11 +252,15 @@ export async function handleCreateOrder(deps: OrdersDeps, req: Request): Promise
     let shippingCents = 0;
     let buyerCity = buyer.city;
     let vanexShipping: { cityId: number; subCityId?: number } | undefined;
+    // The destination city on its own (no area) — what Tripoli routing
+    // below matches against.
+    let routingCity: string = buyer.city;
     if (buyer.vanexAreaId) {
       const area = await db.vanexArea.findUnique({ where: { id: buyer.vanexAreaId }, include: { city: true } });
       if (!area) return NextResponse.json({ error: "المنطقة المختارة غير صالحة" }, { status: 400 });
       shippingCents = area.priceCents;
       buyerCity = `${area.city.name} - ${area.name}`;
+      routingCity = area.city.name;
       vanexShipping = { cityId: area.city.vanexId, subCityId: area.vanexId };
     } else if (buyer.vanexCityId) {
       // No specific area picked — price at the city's own flat Vanex rate
@@ -262,7 +270,21 @@ export async function handleCreateOrder(deps: OrdersDeps, req: Request): Promise
       if (!city) return NextResponse.json({ error: "المدينة المختارة غير صالحة" }, { status: 400 });
       shippingCents = city.priceCents;
       buyerCity = city.name;
+      routingCity = city.name;
       vanexShipping = { cityId: city.vanexId };
+    }
+
+    // Greater Tripoli is delivered by Rifqa's own team, never Vanex — see
+    // lib/delivery/own-team.ts. Only for orders that actually ship (the
+    // same store types the shipment step below runs for). The own-team fee
+    // replaces the Vanex price; non-Tripoli orders are untouched.
+    const shipsByCourier = store.type !== "digital" && store.type !== "rental" && store.type !== "booking";
+    const deliveryProvider = shipsByCourier ? resolveDeliveryProvider({ city: routingCity }) : "VANEX";
+    let deliveryServiceLevel: DeliveryServiceLevel | null = null;
+    if (deliveryProvider === "OWN_TEAM") {
+      const quote = quoteOwnTeamDelivery(deps.now ? deps.now() : new Date());
+      shippingCents = quote.feeCents;
+      deliveryServiceLevel = quote.level;
     }
 
     // Populated inside the transaction's stock-decrement loop below, read
@@ -424,6 +446,8 @@ export async function handleCreateOrder(deps: OrdersDeps, req: Request): Promise
               totalCents,
               shippingCents,
               vanexAreaId: buyer.vanexAreaId || null,
+              deliveryServiceLevel,
+              deliveryStatus: deliveryServiceLevel ? "PENDING" : null,
               scheduledStartAt,
               scheduledEndAt,
               scheduledKind,
@@ -568,6 +592,27 @@ export async function handleCreateOrder(deps: OrdersDeps, req: Request): Promise
       await deps.notifyMerchantNewOrder(store.merchant, { id: order.id, buyerName: order.buyerName, totalCents, storeId: store.id });
 
       return NextResponse.json({ orderId: order.id, totalCents, shippingCents, discountCents, paymentStatus: "pending" }, { status: 201 });
+    }
+
+    // Own-team (Tripoli) orders never reach Vanex — confirmed here and
+    // handed to the driver view (/driver) instead of a courier API.
+    if (deliveryProvider === "OWN_TEAM") {
+      await db.order.update({ where: { id: order.id }, data: { status: "confirmed" } });
+
+      await deps.sendOrderConfirmationEmail({
+        id: order.id,
+        buyerName: order.buyerName,
+        buyerEmail: order.buyerEmail,
+        totalCents,
+        storeSlug: store.slug,
+      });
+      await deps.sendNewOrderSms(store.merchant.phone, order.id, order.buyerName);
+      await deps.notifyMerchantNewOrder(store.merchant, { id: order.id, buyerName: order.buyerName, totalCents, storeId: store.id });
+
+      return NextResponse.json(
+        { orderId: order.id, totalCents, shippingCents, discountCents, courier: "own_team", deliveryServiceLevel, paymentStatus: "pending" },
+        { status: 201 }
+      );
     }
 
     const shipment = await deps.createShipment(store.courier, {
