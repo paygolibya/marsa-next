@@ -3,6 +3,7 @@ import * as Sentry from "@sentry/nextjs";
 import { getAuthMerchantId } from "@/lib/auth";
 import { COURIER_STATUS_FOR_DELIVERY_STATUS, type DeliveryStatus } from "@/lib/delivery/own-team";
 import { amountToCollectCents } from "../../handler";
+import { MalformedJsonError, malformedJsonResponse, readJsonBody } from "@/lib/http/read-json";
 
 type OrderRow = {
   id: string;
@@ -47,8 +48,9 @@ export async function handleUpdateDriverStatus(deps: DriverStatusDeps, req: Requ
 
   let body: { status?: unknown; cashCollectedCents?: unknown };
   try {
-    body = await req.json();
-  } catch {
+    body = await readJsonBody(req);
+  } catch (caughtError) {
+    if (caughtError instanceof MalformedJsonError) return malformedJsonResponse();
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
@@ -103,6 +105,7 @@ export async function handleUpdateDriverStatus(deps: DriverStatusDeps, req: Requ
       try {
         await deps.calculateCommissionForOrder(order.id);
       } catch (error) {
+        if (error instanceof MalformedJsonError) return malformedJsonResponse();
         console.error(`Driver status: commission calculation failed for order ${order.id}:`, error);
         Sentry.captureException(error);
       }
@@ -110,6 +113,7 @@ export async function handleUpdateDriverStatus(deps: DriverStatusDeps, req: Requ
 
     return NextResponse.json({ success: true, deliveryStatus: status });
   } catch (error) {
+    if (error instanceof MalformedJsonError) return malformedJsonResponse();
     console.error("Error updating driver status:", error);
     Sentry.captureException(error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

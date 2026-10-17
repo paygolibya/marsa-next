@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import { getAuthMerchantId } from "@/lib/auth";
 import { createNavMenuItemSchema } from "@/lib/validation";
+import { MalformedJsonError, malformedJsonResponse, readJsonBody } from "@/lib/http/read-json";
 
 type NavMenuItemRow = { id: string; storeId: string; label: string; url: string; position: number };
 
@@ -22,7 +23,7 @@ export async function handleCreateNavMenuItem(db: NavMenuItemsDb, req: Request):
   if (!merchantId) return NextResponse.json({ error: "Missing or invalid token" }, { status: 401 });
 
   try {
-    const body = await req.json();
+    const body = await readJsonBody(req);
     const parsed = createNavMenuItemSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "بيانات غير صالحة" }, { status: 400 });
@@ -36,6 +37,7 @@ export async function handleCreateNavMenuItem(db: NavMenuItemsDb, req: Request):
     const item = await db.navMenuItem.create({ data: { storeId, label, url, position } });
     return NextResponse.json(item, { status: 201 });
   } catch (err) {
+    if (err instanceof MalformedJsonError) return malformedJsonResponse();
     console.error(err);
     Sentry.captureException(err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

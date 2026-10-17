@@ -3,6 +3,7 @@ import * as Sentry from "@sentry/nextjs";
 import { getAuthMerchantId } from "@/lib/auth";
 import { setCustomDomainSchema } from "@/lib/validation";
 import type { AddDomainResult } from "@/lib/domains/vercel-client";
+import { MalformedJsonError, malformedJsonResponse, readJsonBody } from "@/lib/http/read-json";
 
 const ROOT_DOMAIN = process.env.ROOT_DOMAIN ?? "rifqa.ly";
 
@@ -67,7 +68,7 @@ export async function handleSetDomain(deps: MerchantDomainDeps, req: Request): P
   if (!merchantId) return NextResponse.json({ error: "Missing or invalid token" }, { status: 401 });
 
   try {
-    const body = await req.json().catch(() => ({}));
+    const body = await readJsonBody(req).catch(() => ({}));
     const parsed = setCustomDomainSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "بيانات غير صالحة" }, { status: 400 });
@@ -106,6 +107,7 @@ export async function handleSetDomain(deps: MerchantDomainDeps, req: Request): P
       records: result.verified ? [] : result.records,
     });
   } catch (err) {
+    if (err instanceof MalformedJsonError) return malformedJsonResponse();
     console.error(err);
     Sentry.captureException(err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

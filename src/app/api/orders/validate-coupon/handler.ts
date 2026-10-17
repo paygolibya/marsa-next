@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import { resolveCouponDiscount, type CouponLike } from "@/lib/coupons";
+import { MalformedJsonError, malformedJsonResponse, readJsonBody } from "@/lib/http/read-json";
 
 export type ValidateCouponDb = {
   store: { findUnique: (args: { where: { slug: string } }) => Promise<{ id: string } | null> };
@@ -16,7 +17,7 @@ export type ValidateCouponDb = {
 // response shaping, so only `db` needs to be injectable here.
 export async function handleValidateCoupon(db: ValidateCouponDb, req: Request): Promise<Response> {
   try {
-    const { storeSlug, code, subtotalCents } = await req.json();
+    const { storeSlug, code, subtotalCents } = await readJsonBody(req);
     if (!storeSlug || !code || typeof subtotalCents !== "number") {
       return NextResponse.json({ valid: false, discountCents: 0, message: "بيانات غير صالحة" }, { status: 400 });
     }
@@ -34,6 +35,7 @@ export async function handleValidateCoupon(db: ValidateCouponDb, req: Request): 
     const result = resolveCouponDiscount(coupon, subtotalCents);
     return NextResponse.json(result);
   } catch (err) {
+    if (err instanceof MalformedJsonError) return malformedJsonResponse();
     console.error(err);
     Sentry.captureException(err);
     return NextResponse.json({ valid: false, discountCents: 0, message: "حدث خطأ" }, { status: 500 });

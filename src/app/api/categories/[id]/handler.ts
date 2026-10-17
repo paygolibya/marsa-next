@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import { getAuthMerchantId } from "@/lib/auth";
 import { updateCategorySchema } from "@/lib/validation";
+import { MalformedJsonError, malformedJsonResponse, readJsonBody } from "@/lib/http/read-json";
 
 type CategoryRow = { id: string; storeId: string };
 
@@ -34,7 +35,7 @@ export async function handleUpdateCategory(db: CategoryByIdDb, req: Request, id:
       return NextResponse.json({ error: "Not found or not yours" }, { status: 403 });
     }
 
-    const body = await req.json();
+    const body = await readJsonBody(req);
     const parsed = updateCategorySchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "بيانات غير صالحة" }, { status: 400 });
@@ -43,6 +44,7 @@ export async function handleUpdateCategory(db: CategoryByIdDb, req: Request, id:
     const category = await db.category.update({ where: { id }, data: parsed.data });
     return NextResponse.json(category);
   } catch (err) {
+    if (err instanceof MalformedJsonError) return malformedJsonResponse();
     console.error(err);
     Sentry.captureException(err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
@@ -62,6 +64,7 @@ export async function handleDeleteCategory(db: CategoryByIdDb, req: Request, id:
     await db.category.delete({ where: { id } });
     return NextResponse.json({ ok: true });
   } catch (err) {
+    if (err instanceof MalformedJsonError) return malformedJsonResponse();
     console.error(err);
     Sentry.captureException(err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

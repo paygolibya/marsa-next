@@ -3,6 +3,7 @@ import * as Sentry from "@sentry/nextjs";
 import { Prisma } from "@prisma/client";
 import { getAuthMerchantId } from "@/lib/auth";
 import { createProductSchema } from "@/lib/validation";
+import { MalformedJsonError, malformedJsonResponse, readJsonBody } from "@/lib/http/read-json";
 
 type ProductRow = { id: string; storeId: string; name: string; description: string | null; priceCents: number; images: string[]; imageUrl: string | null };
 
@@ -34,7 +35,7 @@ export async function handleCreateProduct(db: CreateProductDb, req: Request): Pr
   if (!merchantId) return NextResponse.json({ error: "Missing or invalid token" }, { status: 401 });
 
   try {
-    const body = await req.json();
+    const body = await readJsonBody(req);
     const parsed = createProductSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "بيانات غير صالحة" }, { status: 400 });
@@ -74,6 +75,7 @@ export async function handleCreateProduct(db: CreateProductDb, req: Request): Pr
     // undefined).
     return NextResponse.json({ ...product, variants: [] }, { status: 201 });
   } catch (err) {
+    if (err instanceof MalformedJsonError) return malformedJsonResponse();
     console.error(err);
     Sentry.captureException(err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

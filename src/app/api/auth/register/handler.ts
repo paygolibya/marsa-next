@@ -6,6 +6,7 @@ import { registerSchema } from "@/lib/validation";
 import type { RequestOtpResult } from "@/lib/integrations/sms";
 import { getClientIp } from "@/lib/request-ip";
 import { getPlanFeatureFlags } from "@/lib/checkout-features";
+import { MalformedJsonError, malformedJsonResponse, readJsonBody } from "@/lib/http/read-json";
 
 const OTP_EXPIRY_MS = 10 * 60 * 1000;
 const MAX_REGISTRATIONS_PER_IP_PER_HOUR = 3;
@@ -56,7 +57,7 @@ export type RegisterDeps = {
 // billable SMS send on every call.
 export async function handleRegister(deps: RegisterDeps, req: Request): Promise<Response> {
   try {
-    const body = await req.json();
+    const body = await readJsonBody(req);
     const parsed = registerSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "بيانات غير صالحة" }, { status: 400 });
@@ -121,6 +122,7 @@ export async function handleRegister(deps: RegisterDeps, req: Request): Promise<
       { status: 201 }
     );
   } catch (err) {
+    if (err instanceof MalformedJsonError) return malformedJsonResponse();
     console.error(err);
     Sentry.captureException(err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

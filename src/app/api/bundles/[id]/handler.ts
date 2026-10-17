@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import { getAuthMerchantId } from "@/lib/auth";
 import { updateBundleSchema } from "@/lib/validation";
+import { MalformedJsonError, malformedJsonResponse, readJsonBody } from "@/lib/http/read-json";
 
 type BundleRow = { id: string; storeId: string };
 type BundleItemRow = { id: string; productId: string; quantity: number; product: { name: string; priceCents: number; imageUrl: string | null } };
@@ -52,7 +53,7 @@ export async function handleUpdateBundle(db: BundleByIdDb, req: Request, id: str
       return NextResponse.json({ error: "Not found or not yours" }, { status: 403 });
     }
 
-    const body = await req.json();
+    const body = await readJsonBody(req);
     const parsed = updateBundleSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "بيانات غير صالحة" }, { status: 400 });
@@ -75,6 +76,7 @@ export async function handleUpdateBundle(db: BundleByIdDb, req: Request, id: str
     });
     return NextResponse.json(bundle);
   } catch (err) {
+    if (err instanceof MalformedJsonError) return malformedJsonResponse();
     console.error(err);
     Sentry.captureException(err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
@@ -94,6 +96,7 @@ export async function handleDeleteBundle(db: BundleByIdDb, req: Request, id: str
     await db.bundle.delete({ where: { id } });
     return NextResponse.json({ ok: true });
   } catch (err) {
+    if (err instanceof MalformedJsonError) return malformedJsonResponse();
     console.error(err);
     Sentry.captureException(err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

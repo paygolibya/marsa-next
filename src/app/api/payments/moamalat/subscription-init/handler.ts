@@ -3,6 +3,7 @@ import * as Sentry from "@sentry/nextjs";
 import { getAuthMerchantId } from "@/lib/auth";
 import { subscriptionChargeLYD, subscriptionPeriods, type SubscriptionPeriod } from "@/lib/checkout-features";
 import { buildLightboxConfig, getLightboxScriptUrl, isMoamalatConfigured, makeSubscriptionReference } from "@/lib/payment/moamalat-client";
+import { readJsonBody } from "@/lib/http/read-json";
 
 export type SubscriptionInitDb = {
   payment: {
@@ -33,7 +34,7 @@ export async function handleSubscriptionInit(db: SubscriptionInitDb, req: Reques
   }
 
   try {
-    const body = await req.json().catch(() => ({}));
+    const body = await readJsonBody(req).catch(() => ({}));
     const period = body?.period;
     if (period !== "1m" && period !== "3m" && period !== "12m") {
       return NextResponse.json({ error: "مدة اشتراك غير صالحة" }, { status: 400 });

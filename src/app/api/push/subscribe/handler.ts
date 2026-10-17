@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import { getAuthMerchantId } from "@/lib/auth";
 import { pushSubscribeSchema } from "@/lib/validation";
+import { MalformedJsonError, malformedJsonResponse, readJsonBody } from "@/lib/http/read-json";
 
 export type PushSubscribeDb = {
   pushSubscription: {
@@ -24,7 +25,7 @@ export async function handlePushSubscribe(db: PushSubscribeDb, req: Request): Pr
   if (!merchantId) return NextResponse.json({ error: "Missing or invalid token" }, { status: 401 });
 
   try {
-    const body = await req.json();
+    const body = await readJsonBody(req);
     const parsed = pushSubscribeSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "بيانات غير صالحة" }, { status: 400 });
@@ -39,6 +40,7 @@ export async function handlePushSubscribe(db: PushSubscribeDb, req: Request): Pr
 
     return NextResponse.json({ ok: true });
   } catch (err) {
+    if (err instanceof MalformedJsonError) return malformedJsonResponse();
     console.error(err);
     Sentry.captureException(err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

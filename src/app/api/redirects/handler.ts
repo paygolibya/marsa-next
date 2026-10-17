@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import { getAuthMerchantId } from "@/lib/auth";
 import { createRedirectSchema } from "@/lib/validation";
+import { MalformedJsonError, malformedJsonResponse, readJsonBody } from "@/lib/http/read-json";
 
 type RedirectRow = { id: string; storeId: string; fromPath: string; toPath: string };
 
@@ -20,7 +21,7 @@ export async function handleCreateRedirect(db: RedirectsDb, req: Request): Promi
   if (!merchantId) return NextResponse.json({ error: "Missing or invalid token" }, { status: 401 });
 
   try {
-    const body = await req.json();
+    const body = await readJsonBody(req);
     const parsed = createRedirectSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "بيانات غير صالحة" }, { status: 400 });
@@ -34,6 +35,7 @@ export async function handleCreateRedirect(db: RedirectsDb, req: Request): Promi
       const redirect = await db.redirect.create({ data: { storeId, fromPath, toPath } });
       return NextResponse.json(redirect, { status: 201 });
     } catch (err) {
+      if (err instanceof MalformedJsonError) return malformedJsonResponse();
       // Unique constraint on (storeId, fromPath) — this exact source path
       // already has a redirect configured.
       if (typeof err === "object" && err !== null && "code" in err && err.code === "P2002") {
@@ -42,6 +44,7 @@ export async function handleCreateRedirect(db: RedirectsDb, req: Request): Promi
       throw err;
     }
   } catch (err) {
+    if (err instanceof MalformedJsonError) return malformedJsonResponse();
     console.error(err);
     Sentry.captureException(err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import { getAuthMerchantId, isAdminMerchantId } from "@/lib/auth";
+import { MalformedJsonError, malformedJsonResponse, readJsonBody } from "@/lib/http/read-json";
 
 export type SuspendMerchantDb = {
   merchant: { update: (args: { where: { id: string }; data: { subscriptionStatus: string } }) => Promise<unknown> };
@@ -13,7 +14,7 @@ export async function handleSuspendMerchant(db: SuspendMerchantDb, req: Request)
   }
 
   try {
-    const { merchantId: targetMerchantId } = await req.json();
+    const { merchantId: targetMerchantId } = await readJsonBody(req);
 
     await db.merchant.update({
       where: { id: targetMerchantId },
@@ -22,6 +23,7 @@ export async function handleSuspendMerchant(db: SuspendMerchantDb, req: Request)
 
     return NextResponse.json({ success: true });
   } catch (error) {
+    if (error instanceof MalformedJsonError) return malformedJsonResponse();
     console.error("Error suspending merchant:", error);
     Sentry.captureException(error);
     return NextResponse.json({ error: "Failed to suspend merchant" }, { status: 500 });

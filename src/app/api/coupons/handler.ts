@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import { getAuthMerchantId } from "@/lib/auth";
 import { createCouponSchema } from "@/lib/validation";
+import { MalformedJsonError, malformedJsonResponse, readJsonBody } from "@/lib/http/read-json";
 
 type CouponRow = { id: string; storeId: string; code: string };
 
@@ -30,7 +31,7 @@ export async function handleCreateCoupon(db: CouponsDb, req: Request): Promise<R
   if (!merchantId) return NextResponse.json({ error: "Missing or invalid token" }, { status: 401 });
 
   try {
-    const body = await req.json();
+    const body = await readJsonBody(req);
     const parsed = createCouponSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "بيانات غير صالحة" }, { status: 400 });
@@ -63,6 +64,7 @@ export async function handleCreateCoupon(db: CouponsDb, req: Request): Promise<R
 
     return NextResponse.json(coupon, { status: 201 });
   } catch (err) {
+    if (err instanceof MalformedJsonError) return malformedJsonResponse();
     console.error(err);
     Sentry.captureException(err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

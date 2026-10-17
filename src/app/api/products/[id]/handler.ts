@@ -3,6 +3,7 @@ import * as Sentry from "@sentry/nextjs";
 import { Prisma } from "@prisma/client";
 import { getAuthMerchantId } from "@/lib/auth";
 import { updateProductSchema } from "@/lib/validation";
+import { MalformedJsonError, malformedJsonResponse, readJsonBody } from "@/lib/http/read-json";
 
 type ProductRow = { id: string; storeId: string };
 
@@ -33,7 +34,7 @@ export async function handleUpdateProduct(db: ProductByIdDb, req: Request, id: s
       return NextResponse.json({ error: "Not found or not yours" }, { status: 403 });
     }
 
-    const body = await req.json();
+    const body = await readJsonBody(req);
     const parsed = updateProductSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "بيانات غير صالحة" }, { status: 400 });
@@ -59,6 +60,7 @@ export async function handleUpdateProduct(db: ProductByIdDb, req: Request, id: s
     });
     return NextResponse.json(product);
   } catch (err) {
+    if (err instanceof MalformedJsonError) return malformedJsonResponse();
     console.error(err);
     Sentry.captureException(err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
@@ -80,6 +82,7 @@ export async function handleDeleteProduct(db: ProductByIdDb, req: Request, id: s
     await db.product.update({ where: { id }, data: { active: false, deletedAt: new Date() } });
     return NextResponse.json({ ok: true });
   } catch (err) {
+    if (err instanceof MalformedJsonError) return malformedJsonResponse();
     console.error(err);
     Sentry.captureException(err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

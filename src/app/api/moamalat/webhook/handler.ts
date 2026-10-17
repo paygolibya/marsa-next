@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import { verifyMoamalatResponseHash, moamalatAmountToCents } from "@/lib/payment/moamalat-client";
+import { readJsonBody } from "@/lib/http/read-json";
 
 // See docs.moamalat.net/notification.html for the field list — the hash
 // covers exactly DateTimeLocalTrxn, MerchantId, TerminalId, Amount,
@@ -45,7 +46,7 @@ export type MoamalatWebhookDeps = {
 export async function handleMoamalatWebhook(deps: MoamalatWebhookDeps, req: Request): Promise<Response> {
   let body: MoamalatNotification;
   try {
-    body = await req.json();
+    body = await readJsonBody(req);
   } catch {
     return NextResponse.json({ Message: "Invalid JSON", Success: false }, { status: 400 });
   }

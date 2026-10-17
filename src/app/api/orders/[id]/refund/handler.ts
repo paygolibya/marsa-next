@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAuthMerchantId } from "@/lib/auth";
 import { sendOrderStatusEmail } from "@/lib/integrations/email";
+import { readJsonBody } from "@/lib/http/read-json";
 
 // The exact slice of the Prisma client this route touches — injected so
 // tests can supply a fake and verify the route calls it correctly (right
@@ -55,7 +56,7 @@ export async function handleRefund(db: RefundDb, req: Request, orderId: string):
   const merchantId = getAuthMerchantId(req);
   if (!merchantId) return NextResponse.json({ error: "Missing or invalid token" }, { status: 401 });
 
-  const body = await req.json().catch(() => ({}));
+  const body = await readJsonBody(req).catch(() => ({}));
   const reason: string | undefined = typeof body?.reason === "string" ? body.reason.slice(0, 500) : undefined;
 
   const order = await db.order.findFirst({

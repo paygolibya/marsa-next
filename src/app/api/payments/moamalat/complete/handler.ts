@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { verifyMoamalatResponseHash, moamalatAmountToCents } from "@/lib/payment/moamalat-client";
+import { readJsonBody } from "@/lib/http/read-json";
 
 export type MoamalatCompleteDeps = {
   db: {
@@ -36,7 +37,7 @@ export type MoamalatCompleteDeps = {
 export async function handleMoamalatComplete(deps: MoamalatCompleteDeps, req: Request): Promise<Response> {
   let body: Record<string, unknown>;
   try {
-    body = await req.json();
+    body = await readJsonBody(req);
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }

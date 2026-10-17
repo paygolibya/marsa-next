@@ -3,6 +3,7 @@ import * as Sentry from "@sentry/nextjs";
 import { signMerchantToken, toMerchantDTO } from "@/lib/auth";
 import { loginSchema } from "@/lib/validation";
 import { getClientIp } from "@/lib/request-ip";
+import { MalformedJsonError, malformedJsonResponse, readJsonBody } from "@/lib/http/read-json";
 
 type Merchant = {
   id: string;
@@ -53,7 +54,7 @@ export type LoginDeps = {
 // what matters for brute-force risk.
 export async function handleLogin(deps: LoginDeps, req: Request): Promise<Response> {
   try {
-    const body = await req.json();
+    const body = await readJsonBody(req);
     const parsed = loginSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: "Phone and password are required" }, { status: 400 });
@@ -84,6 +85,7 @@ export async function handleLogin(deps: LoginDeps, req: Request): Promise<Respon
       merchant: toMerchantDTO(expired ? { ...merchant, subscriptionStatus: "inactive" } : merchant),
     });
   } catch (err) {
+    if (err instanceof MalformedJsonError) return malformedJsonResponse();
     console.error(err);
     Sentry.captureException(err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

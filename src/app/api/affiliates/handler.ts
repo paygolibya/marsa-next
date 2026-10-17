@@ -3,6 +3,7 @@ import * as Sentry from "@sentry/nextjs";
 import { customAlphabet } from "nanoid";
 import { getAuthMerchantId } from "@/lib/auth";
 import { createAffiliateSchema } from "@/lib/validation";
+import { MalformedJsonError, malformedJsonResponse, readJsonBody } from "@/lib/http/read-json";
 
 // Uppercase letters + digits, no ambiguous-looking characters — this code
 // is read aloud/typed by real people sharing a referral link, unlike
@@ -50,7 +51,7 @@ export async function handleCreateAffiliate(db: AffiliatesDb, req: Request): Pro
   if (!merchantId) return NextResponse.json({ error: "Missing or invalid token" }, { status: 401 });
 
   try {
-    const body = await req.json();
+    const body = await readJsonBody(req);
     const parsed = createAffiliateSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "بيانات غير صالحة" }, { status: 400 });
@@ -64,6 +65,7 @@ export async function handleCreateAffiliate(db: AffiliatesDb, req: Request): Pro
     const affiliate = await db.affiliate.create({ data: { storeId, name, phone, code, commissionPercent } });
     return NextResponse.json(affiliate, { status: 201 });
   } catch (err) {
+    if (err instanceof MalformedJsonError) return malformedJsonResponse();
     console.error(err);
     Sentry.captureException(err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

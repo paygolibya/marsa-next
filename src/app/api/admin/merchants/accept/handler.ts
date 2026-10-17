@@ -3,6 +3,7 @@ import * as Sentry from "@sentry/nextjs";
 import { getAuthMerchantId, isAdminMerchantId } from "@/lib/auth";
 import { normalizeSubscriptionTier, getPlanFeatureFlags } from "@/lib/checkout-features";
 import { addMonths } from "@/lib/subscription/period";
+import { MalformedJsonError, malformedJsonResponse, readJsonBody } from "@/lib/http/read-json";
 
 const VALID_PERIOD_MONTHS = [1, 3, 12];
 
@@ -30,7 +31,7 @@ export async function handleAcceptMerchant(db: AcceptMerchantDb, req: Request): 
   }
 
   try {
-    const { merchantId: targetMerchantId, tier, periodMonths } = await req.json();
+    const { merchantId: targetMerchantId, tier, periodMonths } = await readJsonBody(req);
 
     const resolvedPeriodMonths = VALID_PERIOD_MONTHS.includes(periodMonths) ? periodMonths : 1;
 
@@ -62,6 +63,7 @@ export async function handleAcceptMerchant(db: AcceptMerchantDb, req: Request): 
 
     return NextResponse.json({ success: true });
   } catch (error) {
+    if (error instanceof MalformedJsonError) return malformedJsonResponse();
     console.error("Error accepting merchant:", error);
     Sentry.captureException(error);
     return NextResponse.json({ error: "Failed to accept merchant" }, { status: 500 });

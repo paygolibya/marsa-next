@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import { createInquirySchema } from "@/lib/validation";
+import { MalformedJsonError, malformedJsonResponse, readJsonBody } from "@/lib/http/read-json";
 
 export type InquiriesDb = {
   store: {
@@ -30,7 +31,7 @@ export type InquiriesDeps = {
 export async function handleCreateInquiry(deps: InquiriesDeps, req: Request): Promise<Response> {
   const { db } = deps;
   try {
-    const body = await req.json();
+    const body = await readJsonBody(req);
     const parsed = createInquirySchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "بيانات غير صالحة" }, { status: 400 });
@@ -60,6 +61,7 @@ export async function handleCreateInquiry(deps: InquiriesDeps, req: Request): Pr
 
     return NextResponse.json({ id: inquiry.id }, { status: 201 });
   } catch (err) {
+    if (err instanceof MalformedJsonError) return malformedJsonResponse();
     console.error(err);
     Sentry.captureException(err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

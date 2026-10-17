@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import { getAuthMerchantId } from "@/lib/auth";
+import { MalformedJsonError, malformedJsonResponse, readJsonBody } from "@/lib/http/read-json";
 
 type TemplateColors = { primaryColor?: string; secondaryColor?: string };
 
@@ -66,7 +67,7 @@ export async function handleSwitchTemplate(db: SwitchTemplateDb, req: Request, s
   if (!merchantId) return NextResponse.json({ error: "Missing or invalid token" }, { status: 401 });
 
   try {
-    const { storeId } = await req.json();
+    const { storeId } = await readJsonBody(req);
 
     const store = await db.store.findFirst({
       where: { id: storeId, merchantId },
@@ -114,6 +115,7 @@ export async function handleSwitchTemplate(db: SwitchTemplateDb, req: Request, s
 
     return NextResponse.json({ success: true, store: updatedStore });
   } catch (error) {
+    if (error instanceof MalformedJsonError) return malformedJsonResponse();
     console.error("Error switching template:", error);
     Sentry.captureException(error);
     return NextResponse.json({ error: "Failed to switch template" }, { status: 500 });

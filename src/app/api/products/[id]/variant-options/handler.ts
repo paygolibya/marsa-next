@@ -3,6 +3,7 @@ import * as Sentry from "@sentry/nextjs";
 import { Prisma } from "@prisma/client";
 import { getAuthMerchantId } from "@/lib/auth";
 import { setProductVariantOptionsSchema } from "@/lib/validation";
+import { MalformedJsonError, malformedJsonResponse, readJsonBody } from "@/lib/http/read-json";
 
 type VariantRow = { id: string; productId: string; options: unknown };
 
@@ -55,7 +56,7 @@ export async function handleSetVariantOptions(db: VariantOptionsDb, req: Request
     const store = await db.store.findFirst({ where: { id: product.storeId, merchantId } });
     if (!store) return NextResponse.json({ error: "Not found or not yours" }, { status: 403 });
 
-    const body = await req.json();
+    const body = await readJsonBody(req);
     const parsed = setProductVariantOptionsSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "بيانات غير صالحة" }, { status: 400 });
@@ -82,6 +83,7 @@ export async function handleSetVariantOptions(db: VariantOptionsDb, req: Request
     const variants = await db.productVariant.findMany({ where: { productId: id }, orderBy: { id: "asc" } });
     return NextResponse.json({ variantOptions: options, variants });
   } catch (err) {
+    if (err instanceof MalformedJsonError) return malformedJsonResponse();
     console.error(err);
     Sentry.captureException(err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

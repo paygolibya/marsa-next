@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import { getAuthMerchantId, isAdminMerchantId } from "@/lib/auth";
+import { MalformedJsonError, malformedJsonResponse, readJsonBody } from "@/lib/http/read-json";
 
 export type DeleteMerchantDb = {
   store: {
@@ -57,7 +58,7 @@ export async function handleDeleteMerchant(db: DeleteMerchantDb, req: Request): 
   }
 
   try {
-    const { merchantId: targetMerchantId } = await req.json();
+    const { merchantId: targetMerchantId } = await readJsonBody(req);
 
     const merchantStores = await db.store.findMany({
       where: { merchantId: targetMerchantId },
@@ -79,6 +80,7 @@ export async function handleDeleteMerchant(db: DeleteMerchantDb, req: Request): 
     try {
       await db.merchant.delete({ where: { id: targetMerchantId } });
     } catch (error) {
+      if (error instanceof MalformedJsonError) return malformedJsonResponse();
       // The end state a concurrent duplicate request actually wants —
       // "this merchant is gone" — is already true. Treating it as success
       // instead of a 500 means a double-click doesn't surface a false
@@ -88,6 +90,7 @@ export async function handleDeleteMerchant(db: DeleteMerchantDb, req: Request): 
 
     return NextResponse.json({ success: true });
   } catch (error) {
+    if (error instanceof MalformedJsonError) return malformedJsonResponse();
     console.error("Error deleting merchant:", error);
     Sentry.captureException(error);
     return NextResponse.json({ error: "Failed to delete merchant" }, { status: 500 });

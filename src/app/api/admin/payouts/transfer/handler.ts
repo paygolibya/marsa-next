@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import { getAuthMerchantId, isAdminMerchantId } from "@/lib/auth";
 import { transferPayoutSchema } from "@/lib/validation";
+import { MalformedJsonError, malformedJsonResponse, readJsonBody } from "@/lib/http/read-json";
 
 type Payout = { id: string; status: string; transferReference: string | null; note: string | null };
 
@@ -43,7 +44,7 @@ export async function handleTransferPayout(db: TransferPayoutDb, req: Request): 
   }
 
   try {
-    const body = await req.json().catch(() => ({}));
+    const body = await readJsonBody(req).catch(() => ({}));
     const parsed = transferPayoutSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "بيانات غير صالحة" }, { status: 400 });
@@ -74,6 +75,7 @@ export async function handleTransferPayout(db: TransferPayoutDb, req: Request): 
 
     return NextResponse.json(updatedPayout);
   } catch (err) {
+    if (err instanceof MalformedJsonError) return malformedJsonResponse();
     console.error(err);
     Sentry.captureException(err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

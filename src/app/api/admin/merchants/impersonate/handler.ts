@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import { getAuthMerchantId, isAdminMerchantId, signImpersonationToken, toMerchantDTO } from "@/lib/auth";
+import { MalformedJsonError, malformedJsonResponse, readJsonBody } from "@/lib/http/read-json";
 
 type MerchantRow = {
   id: string;
@@ -38,7 +39,7 @@ export async function handleImpersonateMerchant(db: ImpersonateMerchantDb, req: 
   }
 
   try {
-    const { merchantId } = await req.json();
+    const { merchantId } = await readJsonBody(req);
 
     const merchant = await db.merchant.findUnique({
       where: { id: merchantId },
@@ -55,6 +56,7 @@ export async function handleImpersonateMerchant(db: ImpersonateMerchantDb, req: 
     const token = signImpersonationToken(merchantId, adminId!);
     return NextResponse.json({ token, merchant: toMerchantDTO(merchant) });
   } catch (error) {
+    if (error instanceof MalformedJsonError) return malformedJsonResponse();
     console.error("Error starting impersonation:", error);
     Sentry.captureException(error);
     return NextResponse.json({ error: "Failed to start impersonation" }, { status: 500 });

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import { getAuthPayload } from "@/lib/auth";
 import { updateMerchantProfileSchema } from "@/lib/validation";
+import { MalformedJsonError, malformedJsonResponse, readJsonBody } from "@/lib/http/read-json";
 
 export type MerchantProfileDb = {
   merchant: {
@@ -28,7 +29,7 @@ export async function handleUpdateMerchantProfile(db: MerchantProfileDb, req: Re
   const merchantId = payload.merchantId;
 
   try {
-    const body = await req.json();
+    const body = await readJsonBody(req);
     const parsed = updateMerchantProfileSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "بيانات غير صالحة" }, { status: 400 });
@@ -37,6 +38,7 @@ export async function handleUpdateMerchantProfile(db: MerchantProfileDb, req: Re
     const updated = await db.merchant.update({ where: { id: merchantId }, data: { email: parsed.data.email ?? null } });
     return NextResponse.json({ email: updated.email });
   } catch (err) {
+    if (err instanceof MalformedJsonError) return malformedJsonResponse();
     console.error(err);
     Sentry.captureException(err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

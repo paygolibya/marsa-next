@@ -3,6 +3,7 @@ import * as Sentry from "@sentry/nextjs";
 import { createAnalyticsEventSchema } from "@/lib/validation";
 import { getClientIp } from "@/lib/request-ip";
 import { parseDeviceType } from "@/lib/device";
+import { MalformedJsonError, malformedJsonResponse, readJsonBody } from "@/lib/http/read-json";
 
 // Sized for real browsing volume (a buyer firing a pageview per nav plus
 // the odd add_to_cart/checkout_started), not brute-force login-attempt
@@ -43,7 +44,7 @@ export async function handleCreateAnalyticsEvent(deps: AnalyticsEventDeps, req: 
       }
     }
 
-    const body = await req.json();
+    const body = await readJsonBody(req);
     const parsed = createAnalyticsEventSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "invalid" }, { status: 400 });
@@ -69,6 +70,7 @@ export async function handleCreateAnalyticsEvent(deps: AnalyticsEventDeps, req: 
 
     return NextResponse.json({ ok: true }, { status: 201 });
   } catch (err) {
+    if (err instanceof MalformedJsonError) return malformedJsonResponse();
     console.error(err);
     Sentry.captureException(err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

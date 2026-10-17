@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
+import { MalformedJsonError, malformedJsonResponse, readJsonBody } from "@/lib/http/read-json";
 
 export type NewsletterSubscribeDb = {
   store: { findUnique: (args: { where: { slug: string }; select: { id: true } }) => Promise<{ id: string } | null> };
@@ -12,7 +13,7 @@ export type NewsletterSubscribeDb = {
 // rendered nothing on the actual store at all.
 export async function handleNewsletterSubscribe(db: NewsletterSubscribeDb, req: Request): Promise<Response> {
   try {
-    const body = await req.json().catch(() => ({}));
+    const body = await readJsonBody(req).catch(() => ({}));
     const storeSlug = typeof body.storeSlug === "string" ? body.storeSlug : null;
     const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : null;
 
@@ -32,6 +33,7 @@ export async function handleNewsletterSubscribe(db: NewsletterSubscribeDb, req: 
 
     return NextResponse.json({ success: true });
   } catch (error) {
+    if (error instanceof MalformedJsonError) return malformedJsonResponse();
     console.error("Newsletter subscribe error:", error);
     Sentry.captureException(error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

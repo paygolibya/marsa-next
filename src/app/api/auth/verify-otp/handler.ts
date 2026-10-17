@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import bcrypt from "bcryptjs";
 import { getAuthMerchantId, toMerchantDTO } from "@/lib/auth";
+import { MalformedJsonError, malformedJsonResponse, readJsonBody } from "@/lib/http/read-json";
 
 const MAX_ATTEMPTS = 5;
 
@@ -29,7 +30,7 @@ export async function handleVerifyOtp(db: VerifyOtpDb, req: Request): Promise<Re
   if (!merchantId) return NextResponse.json({ error: "Missing or invalid token" }, { status: 401 });
 
   try {
-    const { code } = await req.json();
+    const { code } = await readJsonBody(req);
     if (!code || typeof code !== "string") {
       return NextResponse.json({ error: "الرمز مطلوب" }, { status: 400 });
     }
@@ -65,6 +66,7 @@ export async function handleVerifyOtp(db: VerifyOtpDb, req: Request): Promise<Re
 
     return NextResponse.json({ merchant: toMerchantDTO(updated) });
   } catch (err) {
+    if (err instanceof MalformedJsonError) return malformedJsonResponse();
     console.error(err);
     Sentry.captureException(err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

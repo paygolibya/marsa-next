@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import type { HandleUploadBody } from "@vercel/blob/client";
 import { getAuthMerchantId } from "@/lib/auth";
+import { MalformedJsonError, malformedJsonResponse, readJsonBody } from "@/lib/http/read-json";
 
 // 15MB — a real photo straight off a phone camera easily runs 3-10MB; the
 // old 2MB cap (plus Vercel's separate, unchangeable ~4.5MB request-body
@@ -39,9 +40,8 @@ export async function handleImageUpload(deps: UploadImageDeps, req: Request): Pr
   const merchantId = getAuthMerchantId(req);
   if (!merchantId) return NextResponse.json({ error: "Missing or invalid token" }, { status: 401 });
 
-  const body = (await req.json()) as HandleUploadBody;
-
   try {
+    const body = (await readJsonBody(req)) as HandleUploadBody;
     const jsonResponse = await deps.handleUpload({
       body,
       request: req,
@@ -54,6 +54,7 @@ export async function handleImageUpload(deps: UploadImageDeps, req: Request): Pr
     });
     return NextResponse.json(jsonResponse);
   } catch (error) {
+    if (error instanceof MalformedJsonError) return malformedJsonResponse();
     console.error("Image upload token error:", error);
     Sentry.captureException(error);
     return NextResponse.json({ error: "فشل رفع الصورة" }, { status: 400 });

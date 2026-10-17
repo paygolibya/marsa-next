@@ -21,6 +21,7 @@ const fallbackSlug = customAlphabet("abcdefghijklmnopqrstuvwxyz0123456789", 8);
 import { getAuthMerchantId } from "@/lib/auth";
 import { slugify } from "@/lib/slug";
 import { createStoreSchema } from "@/lib/validation";
+import { MalformedJsonError, malformedJsonResponse, readJsonBody } from "@/lib/http/read-json";
 
 type StoreRow = { id: string; slug: string };
 
@@ -64,7 +65,7 @@ export async function handleCreateStore(db: CreateStoreDb, req: Request): Promis
   if (!merchantId) return NextResponse.json({ error: "Missing or invalid token" }, { status: 401 });
 
   try {
-    const body = await req.json();
+    const body = await readJsonBody(req);
     const parsed = createStoreSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "بيانات غير صالحة" }, { status: 400 });
@@ -115,6 +116,7 @@ export async function handleCreateStore(db: CreateStoreDb, req: Request): Promis
 
     return NextResponse.json(store, { status: 201 });
   } catch (err) {
+    if (err instanceof MalformedJsonError) return malformedJsonResponse();
     console.error(err);
     Sentry.captureException(err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

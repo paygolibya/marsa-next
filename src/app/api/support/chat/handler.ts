@@ -4,6 +4,7 @@ import { getAuthMerchantId } from "@/lib/auth";
 import { runSupportAgent, type ChatMessage } from "@/lib/support/anthropic-client";
 import { SUPPORT_TOOLS, createSupportTools } from "@/lib/support/tools";
 import { SUPPORT_SYSTEM_PROMPT } from "@/lib/support/system-prompt";
+import { MalformedJsonError, malformedJsonResponse, readJsonBody } from "@/lib/http/read-json";
 
 type SupportConversationRow = { id: string; merchantId: string; storeId: string | null };
 type SupportMessageRow = { role: string; content: string };
@@ -33,7 +34,7 @@ export async function handleSupportChat(db: SupportChatDb, req: Request): Promis
   if (!merchantId) return NextResponse.json({ error: "Missing or invalid token" }, { status: 401 });
 
   try {
-    const body = await req.json();
+    const body = await readJsonBody(req);
     const message = typeof body?.message === "string" ? body.message.trim() : "";
     const requestedConversationId = typeof body?.conversationId === "string" ? body.conversationId : null;
     if (!message) return NextResponse.json({ error: "الرسالة فارغة" }, { status: 400 });
@@ -68,6 +69,7 @@ export async function handleSupportChat(db: SupportChatDb, req: Request): Promis
 
     return NextResponse.json({ conversationId: conversation.id, reply });
   } catch (err) {
+    if (err instanceof MalformedJsonError) return malformedJsonResponse();
     console.error("Support chat error:", err);
     Sentry.captureException(err);
     return NextResponse.json({ error: "تعذّر معالجة طلبك حاليًا، حاول لاحقًا" }, { status: 500 });

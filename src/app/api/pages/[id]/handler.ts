@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import { getAuthMerchantId } from "@/lib/auth";
 import { updatePageSchema } from "@/lib/validation";
+import { MalformedJsonError, malformedJsonResponse, readJsonBody } from "@/lib/http/read-json";
 
 type PageRow = { id: string; storeId: string };
 
@@ -33,7 +34,7 @@ export async function handleUpdatePage(db: PageByIdDb, req: Request, id: string)
       return NextResponse.json({ error: "Not found or not yours" }, { status: 403 });
     }
 
-    const body = await req.json();
+    const body = await readJsonBody(req);
     const parsed = updatePageSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "بيانات غير صالحة" }, { status: 400 });
@@ -42,6 +43,7 @@ export async function handleUpdatePage(db: PageByIdDb, req: Request, id: string)
     const page = await db.page.update({ where: { id }, data: parsed.data });
     return NextResponse.json(page);
   } catch (err) {
+    if (err instanceof MalformedJsonError) return malformedJsonResponse();
     console.error(err);
     Sentry.captureException(err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
@@ -60,6 +62,7 @@ export async function handleDeletePage(db: PageByIdDb, req: Request, id: string)
     await db.page.delete({ where: { id } });
     return NextResponse.json({ ok: true });
   } catch (err) {
+    if (err instanceof MalformedJsonError) return malformedJsonResponse();
     console.error(err);
     Sentry.captureException(err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import { getAuthMerchantId } from "@/lib/auth";
 import { updateProductVariantSchema } from "@/lib/validation";
+import { MalformedJsonError, malformedJsonResponse, readJsonBody } from "@/lib/http/read-json";
 
 type VariantRow = { id: string; productId: string };
 
@@ -34,7 +35,7 @@ export async function handleUpdateVariant(db: VariantByIdDb, req: Request, produ
       return NextResponse.json({ error: "Not found or not yours" }, { status: 403 });
     }
 
-    const body = await req.json();
+    const body = await readJsonBody(req);
     const parsed = updateProductVariantSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "بيانات غير صالحة" }, { status: 400 });
@@ -43,6 +44,7 @@ export async function handleUpdateVariant(db: VariantByIdDb, req: Request, produ
     const variant = await db.productVariant.update({ where: { id: variantId }, data: parsed.data });
     return NextResponse.json(variant);
   } catch (err) {
+    if (err instanceof MalformedJsonError) return malformedJsonResponse();
     console.error(err);
     Sentry.captureException(err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
@@ -62,6 +64,7 @@ export async function handleDeleteVariant(db: VariantByIdDb, req: Request, produ
     await db.productVariant.delete({ where: { id: variantId } });
     return NextResponse.json({ ok: true });
   } catch (err) {
+    if (err instanceof MalformedJsonError) return malformedJsonResponse();
     console.error(err);
     Sentry.captureException(err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

@@ -5,6 +5,7 @@ import { normalizeSectionOrder } from "@/components/storefront/templates/types";
 import { parseSectionsPayload } from "@/components/storefront/sections/schemas";
 import { normalizeToSections } from "@/components/storefront/sections/normalize";
 import { validateCustomizationEnums } from "./validate";
+import { MalformedJsonError, malformedJsonResponse, readJsonBody } from "@/lib/http/read-json";
 
 // The exact slice of the Prisma client these two handlers touch — injected
 // so tests can supply a fake and verify the route calls it correctly
@@ -47,7 +48,7 @@ export async function handleCustomizePost(db: CustomizeDb, req: Request, storeId
     const store = await db.store.findFirst({ where: { id: storeId, merchantId } });
     if (!store) return NextResponse.json({ error: "Not found or not yours" }, { status: 403 });
 
-    const body = await req.json();
+    const body = await readJsonBody(req);
     const {
       primaryColor,
       secondaryColor,
@@ -165,6 +166,7 @@ export async function handleCustomizePost(db: CustomizeDb, req: Request, storeId
 
     return NextResponse.json({ success: true, customization, sections: savedSections });
   } catch (error) {
+    if (error instanceof MalformedJsonError) return malformedJsonResponse();
     console.error("Error updating customization:", error);
     Sentry.captureException(error);
     return NextResponse.json({ error: "Failed to update customization" }, { status: 500 });
@@ -192,6 +194,7 @@ export async function handleCustomizeGet(db: CustomizeDb, req: Request, storeId:
 
     return NextResponse.json({ customization, sections });
   } catch (error) {
+    if (error instanceof MalformedJsonError) return malformedJsonResponse();
     console.error("Error fetching customization:", error);
     Sentry.captureException(error);
     return NextResponse.json({ error: "Failed to fetch customization" }, { status: 500 });

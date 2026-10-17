@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import { isValidVanexWebhookKey, resolveVanexCourierStatus } from "@/lib/integrations/vanex-webhook";
+import { MalformedJsonError, malformedJsonResponse, readJsonBody } from "@/lib/http/read-json";
 
 type OrderLike = {
   id: string;
@@ -40,8 +41,9 @@ export async function handleVanexWebhook(deps: VanexWebhookDeps, req: Request): 
 
   let body: { type?: string; packages?: { code: string; non_delivery_reason?: string }[]; ref_number?: string; amount?: number; time_stamp?: string };
   try {
-    body = await req.json();
-  } catch {
+    body = await readJsonBody(req);
+  } catch (caughtError) {
+    if (caughtError instanceof MalformedJsonError) return malformedJsonResponse();
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
@@ -90,12 +92,14 @@ export async function handleVanexWebhook(deps: VanexWebhookDeps, req: Request): 
           try {
             await deps.calculateCommissionForOrder(order.id);
           } catch (error) {
+            if (error instanceof MalformedJsonError) return malformedJsonResponse();
             console.error(`Vanex webhook: commission calculation failed for order ${order.id}:`, error);
             Sentry.captureException(error);
           }
         }
       }
     } catch (error) {
+      if (error instanceof MalformedJsonError) return malformedJsonResponse();
       console.error(`Vanex webhook: failed to process package ${pkg.code}:`, error);
       Sentry.captureException(error);
     }

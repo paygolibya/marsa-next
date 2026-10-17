@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import { getAuthMerchantId } from "@/lib/auth";
 import { updateUpsellSchema } from "@/lib/validation";
+import { MalformedJsonError, malformedJsonResponse, readJsonBody } from "@/lib/http/read-json";
 
 type UpsellRow = { id: string; storeId: string };
 
@@ -33,7 +34,7 @@ export async function handleUpdateUpsell(db: UpsellByIdDb, req: Request, id: str
       return NextResponse.json({ error: "Not found or not yours" }, { status: 403 });
     }
 
-    const body = await req.json();
+    const body = await readJsonBody(req);
     const parsed = updateUpsellSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "بيانات غير صالحة" }, { status: 400 });
@@ -42,6 +43,7 @@ export async function handleUpdateUpsell(db: UpsellByIdDb, req: Request, id: str
     const upsell = await db.upsell.update({ where: { id }, data: parsed.data });
     return NextResponse.json(upsell);
   } catch (err) {
+    if (err instanceof MalformedJsonError) return malformedJsonResponse();
     console.error(err);
     Sentry.captureException(err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
@@ -60,6 +62,7 @@ export async function handleDeleteUpsell(db: UpsellByIdDb, req: Request, id: str
     await db.upsell.delete({ where: { id } });
     return NextResponse.json({ ok: true });
   } catch (err) {
+    if (err instanceof MalformedJsonError) return malformedJsonResponse();
     console.error(err);
     Sentry.captureException(err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

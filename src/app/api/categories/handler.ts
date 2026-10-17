@@ -4,6 +4,7 @@ import { customAlphabet } from "nanoid";
 import { getAuthMerchantId } from "@/lib/auth";
 import { slugify } from "@/lib/slug";
 import { createCategorySchema } from "@/lib/validation";
+import { MalformedJsonError, malformedJsonResponse, readJsonBody } from "@/lib/http/read-json";
 
 // Digits only — same reasoning as the store-slug collision suffix (see
 // src/app/api/stores/handler.ts): an Arabic category slug mixed with a
@@ -29,7 +30,7 @@ export async function handleCreateCategory(db: CategoriesDb, req: Request): Prom
   if (!merchantId) return NextResponse.json({ error: "Missing or invalid token" }, { status: 401 });
 
   try {
-    const body = await req.json();
+    const body = await readJsonBody(req);
     const parsed = createCategorySchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "بيانات غير صالحة" }, { status: 400 });
@@ -46,6 +47,7 @@ export async function handleCreateCategory(db: CategoriesDb, req: Request): Prom
     const category = await db.category.create({ data: { storeId, name, slug, imageUrl: imageUrl || null } });
     return NextResponse.json(category, { status: 201 });
   } catch (err) {
+    if (err instanceof MalformedJsonError) return malformedJsonResponse();
     console.error(err);
     Sentry.captureException(err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

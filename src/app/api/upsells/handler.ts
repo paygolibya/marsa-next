@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import { getAuthMerchantId } from "@/lib/auth";
 import { createUpsellSchema } from "@/lib/validation";
+import { MalformedJsonError, malformedJsonResponse, readJsonBody } from "@/lib/http/read-json";
 
 type UpsellRow = {
   id: string;
@@ -35,7 +36,7 @@ export async function handleCreateUpsell(db: UpsellsDb, req: Request): Promise<R
   if (!merchantId) return NextResponse.json({ error: "Missing or invalid token" }, { status: 401 });
 
   try {
-    const body = await req.json();
+    const body = await readJsonBody(req);
     const parsed = createUpsellSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "بيانات غير صالحة" }, { status: 400 });
@@ -57,6 +58,7 @@ export async function handleCreateUpsell(db: UpsellsDb, req: Request): Promise<R
       });
       return NextResponse.json(upsell, { status: 201 });
     } catch (err) {
+      if (err instanceof MalformedJsonError) return malformedJsonResponse();
       // Unique constraint on (storeId, triggerProductId, offeredProductId) —
       // this exact pair is already configured.
       if (typeof err === "object" && err !== null && "code" in err && err.code === "P2002") {
@@ -65,6 +67,7 @@ export async function handleCreateUpsell(db: UpsellsDb, req: Request): Promise<R
       throw err;
     }
   } catch (err) {
+    if (err instanceof MalformedJsonError) return malformedJsonResponse();
     console.error(err);
     Sentry.captureException(err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

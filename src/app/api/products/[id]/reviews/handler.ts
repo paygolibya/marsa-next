@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import { createReviewSchema } from "@/lib/validation";
+import { MalformedJsonError, malformedJsonResponse, readJsonBody } from "@/lib/http/read-json";
 
 type ReviewRow = { id: string; productId: string; buyerName: string; rating: number; reviewText: string | null; createdAt: Date };
 type BuyerOrder = { items: { productId: string | null }[] };
@@ -40,7 +41,7 @@ export async function handleListReviews(db: ProductReviewsDb, productId: string)
 // purchase.
 export async function handleCreateReview(deps: ProductReviewsDeps, req: Request, productId: string): Promise<Response> {
   try {
-    const body = await req.json();
+    const body = await readJsonBody(req);
     const parsed = createReviewSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "بيانات غير صالحة" }, { status: 400 });
@@ -64,6 +65,7 @@ export async function handleCreateReview(deps: ProductReviewsDeps, req: Request,
       { status: 201 }
     );
   } catch (err: unknown) {
+    if (err instanceof MalformedJsonError) return malformedJsonResponse();
     if (err && typeof err === "object" && "code" in err && err.code === "P2002") {
       return NextResponse.json({ error: "لقد قمت بتقييم هذا المنتج مسبقًا" }, { status: 409 });
     }

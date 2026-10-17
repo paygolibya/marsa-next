@@ -7,6 +7,7 @@ import { resolveCouponDiscount } from "@/lib/coupons";
 import { isSlotOpen, type WorkingHours } from "@/lib/booking";
 import type { ShipmentOrder, ShipmentResult } from "@/lib/integrations/couriers";
 import { quoteOwnTeamDelivery, resolveDeliveryProvider, type DeliveryServiceLevel } from "@/lib/delivery/own-team";
+import { MalformedJsonError, malformedJsonResponse, readJsonBody } from "@/lib/http/read-json";
 
 class OutOfStockError extends Error {
   constructor(productName: string) {
@@ -162,7 +163,7 @@ export type OrdersDeps = {
 export async function handleCreateOrder(deps: OrdersDeps, req: Request): Promise<Response> {
   const { db } = deps;
   try {
-    const body = await req.json();
+    const body = await readJsonBody(req);
     const parsed = createOrderSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "بيانات غير صالحة" }, { status: 400 });
@@ -641,6 +642,7 @@ export async function handleCreateOrder(deps: OrdersDeps, req: Request): Promise
       { status: 201 }
     );
   } catch (err) {
+    if (err instanceof MalformedJsonError) return malformedJsonResponse();
     console.error(err);
     Sentry.captureException(err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

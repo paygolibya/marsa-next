@@ -86,3 +86,12 @@ test("no productId at all creates a general inquiry", async () => {
   assert.equal(res.status, 201);
   assert.equal(calls.inquiryCreate!.data.productId, null);
 });
+
+// Regression: a body that isn't JSON at all used to throw inside the
+// handler's try and come back as a 500 "Internal server error" (and get
+// reported to Sentry) — confirmed live with a single malformed POST.
+test("a body that isn't valid JSON is a 400, not a 500", async () => {
+  const { deps } = makeFakeDeps();
+  const res = await handleCreateInquiry(deps, new Request("http://localhost/api/inquiries", { method: "POST", body: "not-json{" }));
+  assert.equal(res.status, 400);
+});

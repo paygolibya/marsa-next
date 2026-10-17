@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import { getAuthMerchantId } from "@/lib/auth";
 import { updateStoreSettingsSchema } from "@/lib/validation";
+import { MalformedJsonError, malformedJsonResponse, readJsonBody } from "@/lib/http/read-json";
 
 export type StoreByIdDb = {
   store: {
@@ -19,7 +20,7 @@ export async function handleUpdateStore(db: StoreByIdDb, req: Request, id: strin
     const store = await db.store.findFirst({ where: { id, merchantId } });
     if (!store) return NextResponse.json({ error: "Not found or not yours" }, { status: 403 });
 
-    const body = await req.json();
+    const body = await readJsonBody(req);
     const parsed = updateStoreSettingsSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "بيانات غير صالحة" }, { status: 400 });
@@ -28,6 +29,7 @@ export async function handleUpdateStore(db: StoreByIdDb, req: Request, id: strin
     const updated = await db.store.update({ where: { id }, data: parsed.data });
     return NextResponse.json(updated);
   } catch (err) {
+    if (err instanceof MalformedJsonError) return malformedJsonResponse();
     console.error(err);
     Sentry.captureException(err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

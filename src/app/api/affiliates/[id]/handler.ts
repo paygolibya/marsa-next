@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import { getAuthMerchantId } from "@/lib/auth";
 import { updateAffiliateSchema } from "@/lib/validation";
+import { MalformedJsonError, malformedJsonResponse, readJsonBody } from "@/lib/http/read-json";
 
 type AffiliateRow = { id: string; storeId: string };
 
@@ -33,7 +34,7 @@ export async function handleUpdateAffiliate(db: AffiliateByIdDb, req: Request, i
       return NextResponse.json({ error: "Not found or not yours" }, { status: 403 });
     }
 
-    const body = await req.json();
+    const body = await readJsonBody(req);
     const parsed = updateAffiliateSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "بيانات غير صالحة" }, { status: 400 });
@@ -42,6 +43,7 @@ export async function handleUpdateAffiliate(db: AffiliateByIdDb, req: Request, i
     const affiliate = await db.affiliate.update({ where: { id }, data: parsed.data });
     return NextResponse.json(affiliate);
   } catch (err) {
+    if (err instanceof MalformedJsonError) return malformedJsonResponse();
     console.error(err);
     Sentry.captureException(err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
@@ -60,6 +62,7 @@ export async function handleDeleteAffiliate(db: AffiliateByIdDb, req: Request, i
     await db.affiliate.delete({ where: { id } });
     return NextResponse.json({ ok: true });
   } catch (err) {
+    if (err instanceof MalformedJsonError) return malformedJsonResponse();
     console.error(err);
     Sentry.captureException(err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
