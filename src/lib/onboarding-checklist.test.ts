@@ -73,7 +73,7 @@ test("booking stores get an extra working-hours step, done once bookingWorkingHo
   assert.ok(notSet.some((s) => s.id === "set-working-hours"));
   assert.equal(notSet.find((s) => s.id === "set-working-hours")!.done, false);
 
-  const set = resolveChecklistSteps(makeStore({ type: "booking", bookingWorkingHours: { "1": { open: "09:00", close: "17:00" } } }), 0);
+  const set = resolveChecklistSteps(makeStore({ type: "booking", bookingSlotMinutes: 60, bookingWorkingHours: { "1": { open: "09:00", close: "17:00" } } }), 0);
   assert.equal(set.find((s) => s.id === "set-working-hours")!.done, true);
 });
 
@@ -94,4 +94,16 @@ test("the add-product step's copy is tailored per store type", () => {
 test("share-link always points at the store's real subdomain", () => {
   const steps = resolveChecklistSteps(makeStore({ slug: "my-cool-store" }), 0);
   assert.equal(steps.find((s) => s.id === "share-link")!.ctaHref, "https://my-cool-store.rifqa.ly");
+});
+
+// Regression (live merchant report): hours saved as {} — no day open —
+// counted as "done", while checkout had no slots and a disabled button.
+test("empty or all-closed working hours do NOT count as set", () => {
+  const cases: Record<string, { open: string; close: string } | null>[] = [{}, { "1": null }, { "2": { open: "17:00", close: "09:00" } }];
+  for (const hours of cases) {
+    const steps = resolveChecklistSteps(makeStore({ type: "booking", bookingSlotMinutes: 60, bookingWorkingHours: hours }), 0);
+    assert.equal(steps.find((s) => s.id === "set-working-hours")!.done, false, JSON.stringify(hours));
+  }
+  const noLength = resolveChecklistSteps(makeStore({ type: "booking", bookingSlotMinutes: null, bookingWorkingHours: { "1": { open: "09:00", close: "17:00" } } }), 0);
+  assert.equal(noLength.find((s) => s.id === "set-working-hours")!.done, false, "no slot length means no slots");
 });

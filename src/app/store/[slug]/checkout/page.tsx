@@ -13,6 +13,7 @@ import { isSupportedLanguage } from "@/lib/i18n";
 import { useTranslation } from "@/lib/i18n/useTranslation";
 import { StorefrontSkeleton } from "@/components/storefront/StorefrontSkeleton";
 import { quoteOwnTeamDelivery, resolveDeliveryProvider } from "@/lib/delivery/own-team";
+import { hasBookableHours, type WorkingHours } from "@/lib/booking";
 import { useDecodedParams } from "@/lib/use-decoded-params";
 
 const courierLabels: Record<string, string> = {
@@ -168,6 +169,15 @@ export default function CheckoutPage() {
   // number of days for the real total (server recomputes this exact way).
   const effectiveSubtotalCents = isRental ? cart.subtotalCents * rentalDays : cart.subtotalCents;
   const grandTotalCents = effectiveSubtotalCents + shippingCents - discountCents;
+
+  const missingRequirement =
+    isBooking && !selectedSlot
+      ? "checkout.needSlot"
+      : usesVanexPricing && !selectedCity
+        ? "checkout.needCity"
+        : isRental && (!rentalStart || !rentalEnd)
+          ? "checkout.needRentalDates"
+          : null;
 
   async function handleApplyCoupon() {
     if (!couponInput.trim()) return;
@@ -375,7 +385,13 @@ export default function CheckoutPage() {
                 </label>
               </div>
             )}
-            {isBooking && (
+            {isBooking && !hasBookableHours(store.bookingWorkingHours as WorkingHours | null, store.bookingSlotMinutes) && (
+              // No day has any slot (hours never set, or saved empty) —
+              // say so instead of a date picker that only ever finds
+              // "no slots" and a confirm button that never enables.
+              <p className="rounded-xl border border-brass/40 bg-brass/10 px-4 py-3 text-sm font-bold text-harbor">{t("checkout.bookingUnavailable")}</p>
+            )}
+            {isBooking && hasBookableHours(store.bookingWorkingHours as WorkingHours | null, store.bookingSlotMinutes) && (
               <div>
                 <label className="block">
                   <span className="block text-sm font-bold text-harbor mb-1.5">{t("checkout.bookingDate")}</span>
@@ -564,6 +580,13 @@ export default function CheckoutPage() {
             >
               {loading || walletPending ? t("checkout.confirming") : t("checkout.confirmOrder", { total: formatLYD(grandTotalCents, language) })}
             </button>
+            {/* A disabled button with no reason given read as "nothing
+                happens" to buyers (reported on a booking store). */}
+            {!loading && !walletPending && missingRequirement && (
+              <p className="text-center text-sm font-bold text-signal" role="status">
+                {t(missingRequirement)}
+              </p>
+            )}
           </form>
         </div>
 

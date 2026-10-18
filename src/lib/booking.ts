@@ -37,6 +37,18 @@ export function generateDaySlotMinutes(workingHours: WorkingHours | null | undef
   return slots;
 }
 
+// True when at least one weekday yields at least one bookable slot. A
+// store can have bookingWorkingHours saved as {} (or every day closed) —
+// truthy, so the setup checklist used to call it "done", while checkout
+// offered no slots on any date and its confirm button stayed disabled.
+export function hasBookableHours(workingHours: WorkingHours | null | undefined, slotMinutes: number | null | undefined): boolean {
+  const minutes = slotMinutes ?? 0;
+  for (let weekday = 0; weekday < 7; weekday++) {
+    if (generateDaySlotMinutes(workingHours, weekday, minutes).length > 0) return true;
+  }
+  return false;
+}
+
 // All open slot start times (as Date objects) for one calendar date —
 // excludes slots already taken (by storeId, scheduledStartAt match) and,
 // for today, slots that have already passed.

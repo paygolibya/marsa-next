@@ -1,4 +1,5 @@
 import type { Store, StoreType } from "@/lib/api";
+import { hasBookableHours } from "@/lib/booking";
 
 export type ChecklistStep = {
   id: string;
@@ -68,7 +69,8 @@ export function resolveChecklistSteps(store: Store, productCount: number): Check
       description: "حدد الأيام والساعات المتاحة للحجز حتى يرى عملاؤك المواعيد الحقيقية.",
       ctaLabel: "الإعدادات",
       ctaHref: "/dashboard/settings",
-      done: Boolean(store.bookingWorkingHours),
+      // Needs at least one bookable slot — an empty {} used to count.
+      done: hasBookableHours(store.bookingWorkingHours, store.bookingSlotMinutes),
     });
   }
 
