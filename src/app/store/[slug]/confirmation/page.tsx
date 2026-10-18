@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
-import { useSearchParams, useParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { api, formatLYD, type Store } from "@/lib/api";
 import { useCart } from "@/lib/use-cart";
@@ -10,6 +10,7 @@ import { initAdPixels } from "@/lib/ad-pixels";
 import { isSupportedLanguage } from "@/lib/i18n";
 import { useTranslation } from "@/lib/i18n/useTranslation";
 import { Icon } from "@/components/ui/Icon";
+import { useDecodedParams } from "@/lib/use-decoded-params";
 
 const courierLabels: Record<string, string> = {
   vanex: "Vanex",
@@ -25,7 +26,7 @@ export default function ConfirmationPage() {
 }
 
 function ConfirmationPageContent() {
-  const params = useParams<{ slug: string }>();
+  const params = useDecodedParams<{ slug: string }>();
   const search = useSearchParams();
   const [store, setStore] = useState<Store | null>(null);
   const cart = useCart(params.slug);

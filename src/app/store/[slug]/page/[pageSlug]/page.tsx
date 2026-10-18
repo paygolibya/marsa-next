@@ -1,16 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+
 import Link from "next/link";
 import { api, type Store } from "@/lib/api";
 import { SiteFooter } from "@/components/site-footer";
 import { isSupportedLanguage } from "@/lib/i18n";
 import { useTranslation } from "@/lib/i18n/useTranslation";
 import { StorefrontSkeleton } from "@/components/storefront/StorefrontSkeleton";
+import { useDecodedParams } from "@/lib/use-decoded-params";
 
 export default function StorePageDetail() {
-  const params = useParams<{ slug: string; pageSlug: string }>();
+  const params = useDecodedParams<{ slug: string; pageSlug: string }>();
   const slug = params.slug;
   const pageSlug = params.pageSlug;
 

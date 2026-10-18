@@ -1,6 +1,12 @@
 import { z } from "zod";
 import { normalizeLibyanPhone } from "@/lib/integrations/sms";
 import { STORE_INDUSTRY_VALUES } from "@/lib/store-industries";
+import { safeDecode } from "@/lib/safe-decode";
+
+// Older storefront bundles sent Arabic slugs still percent-encoded
+// ("%D8%B9" for "ع"), which never matched a store — decoding here keeps
+// those requests working too. See lib/use-decoded-params.ts.
+const storeSlugSchema = z.string().min(1).transform(safeDecode);
 
 export const registerSchema = z.object({
   name: z.string().min(1, "الاسم مطلوب"),
@@ -176,7 +182,7 @@ export const updateStoreSettingsSchema = z.object({
 
 export const createOrderSchema = z
   .object({
-    storeSlug: z.string().min(1),
+    storeSlug: storeSlugSchema,
     items: z
       .array(
         z
@@ -224,7 +230,7 @@ export const createOrderSchema = z
 // Showcase stores (store.type === "showcase") have no checkout — a buyer
 // interested in a product sends this instead of placing an order.
 export const createInquirySchema = z.object({
-  storeSlug: z.string().min(1),
+  storeSlug: storeSlugSchema,
   productId: z.string().optional(),
   buyerName: z.string().min(1, "الاسم مطلوب"),
   buyerPhone: z.string().min(6, "رقم هاتف غير صالح"),
@@ -316,7 +322,7 @@ export const updateAffiliateSchema = z.object({
 
 export const ANALYTICS_EVENT_TYPES = ["pageview", "add_to_cart", "checkout_started", "order_completed"] as const;
 export const createAnalyticsEventSchema = z.object({
-  storeSlug: z.string().min(1),
+  storeSlug: storeSlugSchema,
   type: z.enum(ANALYTICS_EVENT_TYPES),
   path: z.string().min(1).max(500),
   referrer: z.string().max(500).optional(),

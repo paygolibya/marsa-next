@@ -54,7 +54,7 @@ export default function CookieConsentBanner() {
     // bar intercept clicks on the cart drawer's own checkout button,
     // breaking checkout for any visitor who hasn't yet dismissed it. Still
     // above ordinary page content.
-    <div dir={dir} className="fixed inset-x-0 bottom-0 z-30 bg-harbor text-canvas px-4 py-4 sm:px-6 shadow-[0_-4px_20px_rgba(0,0,0,0.15)]">
+    <div dir={dir} className="fixed inset-x-0 bottom-0 z-30 bg-harbor text-canvas px-4 pt-4 pb-[max(5rem,calc(1rem+env(safe-area-inset-bottom)))] sm:pb-4 sm:px-6 shadow-[0_-4px_20px_rgba(0,0,0,0.15)]">
       <div className="mx-auto flex max-w-4xl flex-col sm:flex-row items-center gap-3 sm:gap-6">
         <p className="text-sm flex-1 text-canvas/90">
           {t.message}{" "}

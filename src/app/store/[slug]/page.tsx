@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+
 import { api, ApiError, type Bundle, type Category, type Product, type Store, type StoreStats, type StoreTestimonial } from "@/lib/api";
 import { useCart } from "@/lib/use-cart";
 import { captureReferralCode } from "@/lib/referral";
@@ -14,9 +14,10 @@ import ModernTemplate from "@/components/storefront/templates/ModernTemplate";
 import { StorefrontLoadError, StorefrontSkeleton } from "@/components/storefront/StorefrontSkeleton";
 import { isSupportedLanguage } from "@/lib/i18n";
 import { useTranslation } from "@/lib/i18n/useTranslation";
+import { useDecodedParams } from "@/lib/use-decoded-params";
 
 export default function StorefrontPage() {
-  const params = useParams<{ slug: string }>();
+  const params = useDecodedParams<{ slug: string }>();
   const slug = params.slug;
 
   const [store, setStore] = useState<Store | null>(null);

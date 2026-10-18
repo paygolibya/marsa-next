@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import { MalformedJsonError, malformedJsonResponse, readJsonBody } from "@/lib/http/read-json";
+import { safeDecode } from "@/lib/safe-decode";
 
 export type NewsletterSubscribeDb = {
   store: { findUnique: (args: { where: { slug: string }; select: { id: true } }) => Promise<{ id: string } | null> };
@@ -14,7 +15,7 @@ export type NewsletterSubscribeDb = {
 export async function handleNewsletterSubscribe(db: NewsletterSubscribeDb, req: Request): Promise<Response> {
   try {
     const body = await readJsonBody(req).catch(() => ({}));
-    const storeSlug = typeof body.storeSlug === "string" ? body.storeSlug : null;
+    const storeSlug = typeof body.storeSlug === "string" ? safeDecode(body.storeSlug) : null;
     const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : null;
 
     if (!storeSlug || !email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {

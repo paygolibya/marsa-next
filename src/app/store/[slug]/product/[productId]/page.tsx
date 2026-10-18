@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+
 import Link from "next/link";
 import { api, ApiError, formatLYD, type Product, type ProductReview, type Store } from "@/lib/api";
 import { useCart } from "@/lib/use-cart";
@@ -16,9 +16,10 @@ import { StorefrontLoadError, StorefrontSkeleton } from "@/components/storefront
 import { Stars } from "@/components/ui/Icon";
 import { isSupportedLanguage, resolveProductTranslation, translate, type Language } from "@/lib/i18n";
 import { useTranslation } from "@/lib/i18n/useTranslation";
+import { useDecodedParams } from "@/lib/use-decoded-params";
 
 export default function ProductDetailPage() {
-  const params = useParams<{ slug: string; productId: string }>();
+  const params = useDecodedParams<{ slug: string; productId: string }>();
   const slug = params.slug;
   const productId = params.productId;
 

@@ -1,12 +1,13 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
-import { useSearchParams, useParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { api, ApiError, formatLYD, type Store } from "@/lib/api";
 import { SiteFooter } from "@/components/site-footer";
 import { isSupportedLanguage } from "@/lib/i18n";
 import { useTranslation } from "@/lib/i18n/useTranslation";
+import { useDecodedParams } from "@/lib/use-decoded-params";
 
 const statusKeys: Record<string, string> = {
   pending: "track.statusPending",
@@ -41,7 +42,7 @@ export default function StoreTrackPage() {
 }
 
 function StoreTrackPageContent() {
-  const params = useParams<{ slug: string }>();
+  const params = useDecodedParams<{ slug: string }>();
   const search = useSearchParams();
   const [store, setStore] = useState<Store | null>(null);
   const [orderId, setOrderId] = useState(search.get("orderId") ?? "");

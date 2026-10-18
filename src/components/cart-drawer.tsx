@@ -151,7 +151,11 @@ export function CartDrawer({
           )}
         </div>
 
-        <div className="border-t border-harbor/10 px-6 py-5 space-y-4">
+        {/* Extra bottom padding on phones: iPhone Safari's floating toolbar
+            covers the last ~80px of the screen, and this drawer is pinned
+            to bottom-0 — the checkout button sat exactly under it, so
+            buyers saw the total but "no checkout button" (reported). */}
+        <div className="border-t border-harbor/10 px-6 pt-5 pb-[max(5rem,calc(1.25rem+env(safe-area-inset-bottom)))] sm:pb-5 space-y-4">
           <div className="flex items-center justify-between font-bold text-harbor">
             <span>{t("common.total")}</span>
             <span>{formatLYD(subtotalCents, language)}</span>

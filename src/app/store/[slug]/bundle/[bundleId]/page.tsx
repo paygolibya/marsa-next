@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+
 import Link from "next/link";
 import { api, formatLYD, type Bundle, type Product, type Store } from "@/lib/api";
 import { useCart } from "@/lib/use-cart";
@@ -14,9 +14,10 @@ import { SiteFooter } from "@/components/site-footer";
 import { isSupportedLanguage } from "@/lib/i18n";
 import { useTranslation } from "@/lib/i18n/useTranslation";
 import { StorefrontSkeleton } from "@/components/storefront/StorefrontSkeleton";
+import { useDecodedParams } from "@/lib/use-decoded-params";
 
 export default function BundleDetailPage() {
-  const params = useParams<{ slug: string; bundleId: string }>();
+  const params = useDecodedParams<{ slug: string; bundleId: string }>();
   const slug = params.slug;
   const bundleId = params.bundleId;
 
