@@ -4,7 +4,26 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useCurrentStore } from "@/lib/use-current-store";
 import { api, ApiError, formatLYD, type Order } from "@/lib/api";
-import { Button, DataTable, type DataTableColumn, EmptyState, Modal, SkeletonRow, useToast } from "@/components/ui";
+import { Badge, type BadgeTone, Button, DataTable, type DataTableColumn, EmptyState, Modal, SkeletonRow, useToast } from "@/components/ui";
+
+// Each status gets its own color — they all used to share the same
+// dashed brass outline, so "pending" and "cancelled" looked identical.
+// Pending pulses: it's the one state waiting on the merchant.
+const statusTones: Record<Order["status"], BadgeTone> = {
+  pending: "warning",
+  confirmed: "info",
+  shipped: "info",
+  delivered: "success",
+  cancelled: "danger",
+  refunded: "neutral",
+};
+
+const courierStatusTones: Record<string, BadgeTone> = {
+  accepted: "info",
+  delivered: "success",
+  failed_delivery: "danger",
+  returned: "warning",
+};
 
 const statusLabels: Record<Order["status"], string> = {
   pending: "قيد الانتظار",
@@ -90,13 +109,13 @@ export default function DashboardOrdersPage() {
   const columns: DataTableColumn<Order>[] = [
     { key: "buyerName", header: "العميل", accessor: (o) => o.buyerName, sortable: true, render: (o) => <span className="font-bold text-harbor">{o.buyerName}</span> },
     { key: "buyerCity", header: "المدينة", accessor: (o) => o.buyerCity },
-    { key: "totalCents", header: "الإجمالي", accessor: (o) => o.totalCents, sortable: true, render: (o) => formatLYD(o.totalCents) },
+    { key: "totalCents", header: "الإجمالي", accessor: (o) => o.totalCents, sortable: true, render: (o) => <span className="whitespace-nowrap font-bold">{formatLYD(o.totalCents)}</span> },
     {
       key: "payment",
       header: "الدفع",
       render: (o) => (o.paymentMethod === "cod" ? "عند الاستلام" : o.paymentStatus === "paid" ? "مدفوع" : "قيد الدفع"),
     },
-    { key: "shipping", header: "الشحن", render: (o) => (o.shippingCents > 0 ? formatLYD(o.shippingCents) : "—") },
+    { key: "shipping", header: "الشحن", render: (o) => <span className="whitespace-nowrap">{o.shippingCents > 0 ? formatLYD(o.shippingCents) : "—"}</span> },
     ...(store.type === "rental"
       ? [
           {
@@ -124,9 +143,22 @@ export default function DashboardOrdersPage() {
     {
       key: "status",
       header: "الحالة",
-      render: (o) => <span className="stamp h-7 px-3 border-brass text-brass text-xs font-bold">{statusLabels[o.status]}</span>,
+      render: (o) => (
+        <Badge tone={statusTones[o.status]} dot pulse={o.status === "pending"}>
+          {statusLabels[o.status]}
+        </Badge>
+      ),
     },
-    { key: "courierStatus", header: "حالة الشحنة", render: (o) => courierStatusLabels[o.courierStatus ?? ""] ?? o.courierStatus ?? "—" },
+    {
+      key: "courierStatus",
+      header: "حالة الشحنة",
+      render: (o) =>
+        o.courierStatus ? (
+          <Badge tone={courierStatusTones[o.courierStatus] ?? "neutral"}>{courierStatusLabels[o.courierStatus] ?? o.courierStatus}</Badge>
+        ) : (
+          "—"
+        ),
+    },
     {
       key: "trackingId",
       header: "رقم التتبع",
@@ -136,7 +168,7 @@ export default function DashboardOrdersPage() {
             فريق رفقة · {o.deliveryServiceLevel === "SAME_DAY" ? "نفس اليوم" : "صباح الغد"}
           </span>
         ) : (
-          <span className="font-mono" dir="ltr">
+          <span className="font-mono text-xs whitespace-nowrap" dir="ltr">
             {o.courierTrackingId ?? "—"}
           </span>
         )

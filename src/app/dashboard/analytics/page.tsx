@@ -87,7 +87,7 @@ export default function DashboardAnalyticsPage() {
         {data === null ? (
           <Skeleton className="h-[280px] w-full" />
         ) : (
-          <div style={{ width: "100%", height: 280 }}>
+          <div dir="ltr" style={{ width: "100%", height: 280 }}>
             <ResponsiveContainer>
               <AreaChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke={CHART_COLORS.canvasDim} />
@@ -106,7 +106,7 @@ export default function DashboardAnalyticsPage() {
         {data === null ? (
           <Skeleton className="h-[280px] w-full" />
         ) : data.topProducts.length ? (
-          <div style={{ width: "100%", height: 280 }}>
+          <div dir="ltr" style={{ width: "100%", height: 280 }}>
             <ResponsiveContainer>
               <BarChart data={data.topProducts.map((p) => ({ ...p, revenue: p.revenueCents / 100 }))} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" stroke={CHART_COLORS.canvasDim} />
@@ -127,7 +127,7 @@ export default function DashboardAnalyticsPage() {
         {eventData === null ? (
           <Skeleton className="h-[280px] w-full" />
         ) : (
-          <div style={{ width: "100%", height: 280 }}>
+          <div dir="ltr" style={{ width: "100%", height: 280 }}>
             <ResponsiveContainer>
               <AreaChart data={eventData.visitsOverTime.map((d) => ({ ...d, label: d.date.slice(5) }))}>
                 <CartesianGrid strokeDasharray="3 3" stroke={CHART_COLORS.canvasDim} />
@@ -147,7 +147,7 @@ export default function DashboardAnalyticsPage() {
           {eventData === null ? (
             <Skeleton className="h-[220px] w-full" />
           ) : (
-            <div style={{ width: "100%", height: 220 }}>
+            <div dir="ltr" style={{ width: "100%", height: 220 }}>
               <ResponsiveContainer>
                 <BarChart
                   data={(Object.keys(FUNNEL_LABELS) as (keyof EventAnalytics["funnel"])[]).map((key) => ({
@@ -172,7 +172,7 @@ export default function DashboardAnalyticsPage() {
           {eventData === null ? (
             <Skeleton className="h-[220px] w-full" />
           ) : eventData.deviceBreakdown.length ? (
-            <div style={{ width: "100%", height: 220 }}>
+            <div dir="ltr" style={{ width: "100%", height: 220 }}>
               <ResponsiveContainer>
                 <BarChart
                   data={eventData.deviceBreakdown.map((d) => ({ device: DEVICE_LABELS[d.device] ?? d.device, count: d.count }))}

@@ -68,13 +68,22 @@ export function GetStartedChecklist({ store, productCount }: { store: Store; pro
         {steps.map((step) => (
           <li key={step.id} className="flex items-center justify-between gap-3 rounded-xl border border-harbor/10 px-4 py-3">
             <div className="flex items-center gap-3 min-w-0">
-              <span
-                className={`shrink-0 flex h-6 w-6 items-center justify-center rounded-full border-2 transition-colors ${
-                  step.done ? "border-signal bg-signal text-white" : "border-harbor/20 text-transparent"
-                }`}
-              >
-                <Icon name="check" size={14} strokeWidth={2.5} />
-              </span>
+              {step.done === undefined ? (
+                // No "done" state (e.g. sharing the link), so it isn't
+                // counted in "X من Y" — an empty tick circle here made the
+                // count look wrong (4 rows, "من 3").
+                <span className="shrink-0 flex h-6 w-6 items-center justify-center rounded-full bg-brass/15 text-brass">
+                  <Icon name="link" size={13} strokeWidth={2.25} />
+                </span>
+              ) : (
+                <span
+                  className={`shrink-0 flex h-6 w-6 items-center justify-center rounded-full border-2 transition-colors ${
+                    step.done ? "border-signal bg-signal text-white" : "border-harbor/20 text-transparent"
+                  }`}
+                >
+                  <Icon name="check" size={14} strokeWidth={2.5} />
+                </span>
+              )}
               <div className="min-w-0">
                 <p className="font-bold text-harbor text-sm truncate">{step.title}</p>
                 <p className="text-xs text-rope mt-0.5">{step.description}</p>

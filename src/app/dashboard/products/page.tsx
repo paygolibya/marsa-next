@@ -6,7 +6,7 @@ import { useCurrentStore } from "@/lib/use-current-store";
 import { api, ApiError, formatLYD, type Category, type Product, type ProductVariant, type ProductVariantOption } from "@/lib/api";
 import ProductGalleryUpload from "@/components/products/ProductGalleryUpload";
 import ProductVariantsManager from "@/components/products/ProductVariantsManager";
-import { Button, Card, EmptyState, Icon, SkeletonCard } from "@/components/ui";
+import { Badge, Button, Card, EmptyState, Icon, SkeletonCard } from "@/components/ui";
 
 export default function DashboardProductsPage() {
   const { token } = useAuth();
@@ -285,24 +285,26 @@ export default function DashboardProductsPage() {
                 // deterministic regardless of content width.
                 <Card key={p.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 sm:px-5 py-3">
                   <div className="flex items-center gap-3 min-w-0">
-                    {p.imageUrl && (
+                    {p.imageUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={p.imageUrl} alt="" className="h-12 w-12 rounded-lg object-cover border border-harbor/10 shrink-0" />
+                      <img src={p.imageUrl} alt="" className="h-14 w-14 rounded-xl object-cover border border-harbor/10 shrink-0" />
+                    ) : (
+                      // Same footprint as a photo so rows stay aligned.
+                      <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border border-dashed border-harbor/20 bg-canvas text-harbor/30">
+                        <Icon name="package" size={22} />
+                      </span>
                     )}
                     <div className="min-w-0">
                       <p className="font-bold text-harbor flex flex-wrap items-center gap-2">
                         <span className="truncate">{p.name}</span>
-                        {p.isBestSeller && (
-                          <span className="rounded-full bg-brass/15 px-2 py-0.5 text-[11px] font-bold text-brass">الأكثر مبيعًا</span>
-                        )}
+                        {!p.active && <Badge tone="neutral">مخفي</Badge>}
+                        {p.isBestSeller && <Badge tone="warning">الأكثر مبيعًا</Badge>}
                         {p.trackInventory && p.stockQty <= p.lowStockThreshold && (
-                          <span className="stamp h-6 px-2 border-signal text-signal text-[11px] font-bold">مخزون منخفض</span>
+                          <Badge tone="danger" dot>
+                            مخزون منخفض
+                          </Badge>
                         )}
-                        {p.variants.length > 0 && (
-                          <span className="rounded-full bg-harbor/10 px-2 py-0.5 text-[11px] font-bold text-harbor">
-                            {p.variants.length} متغير
-                          </span>
-                        )}
+                        {p.variants.length > 0 && <Badge tone="info">{p.variants.length} متغير</Badge>}
                       </p>
                       <p className="text-rope text-sm">
                         {formatLYD(p.priceCents)}
@@ -310,13 +312,13 @@ export default function DashboardProductsPage() {
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 shrink-0">
-                    <button onClick={() => setEditingId(p.id)} className="text-harbor text-sm font-bold hover:underline">
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Button size="sm" variant="secondary" onClick={() => setEditingId(p.id)}>
                       تعديل
-                    </button>
-                    <button onClick={() => handleDelete(p.id)} className="text-signal text-sm font-bold hover:underline">
+                    </Button>
+                    <Button size="sm" variant="ghost" className="text-signal" onClick={() => handleDelete(p.id)}>
                       حذف
-                    </button>
+                    </Button>
                   </div>
                 </Card>
               )
