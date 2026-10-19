@@ -13,22 +13,19 @@ import { Icon } from "@/components/ui/Icon";
 // be a generic color-swatch/feature-list mockup with no relationship to
 // what the template really looks like. Every section a template can
 // render (stats banner, testimonials, newsletter) gets real content here
-// so nothing is hidden behind a default-off toggle; product images are
-// deliberately left empty rather than filled with unrelated stock photos
-// — every template already has a real "لا توجد صورة" placeholder state,
-// and layout/color/typography (not photography) is what a template
-// preview needs to actually show.
-const MOCK_PRODUCTS: Array<{ id: string; name: string; priceCents: number }> = [
-  { id: "p1", name: "قميص قطني كلاسيكي", priceCents: 8500 },
-  { id: "p2", name: "حقيبة يد جلدية", priceCents: 15000 },
-  { id: "p3", name: "ساعة يد أنيقة", priceCents: 22000 },
-  { id: "p4", name: "نظارة شمسية", priceCents: 6000 },
-  { id: "p5", name: "حذاء رياضي", priceCents: 12000 },
-  { id: "p6", name: "عطر فاخر", priceCents: 18000 },
+// so nothing is hidden behind a default-off toggle. Products use Rifqa's
+// own demo photos (public/demo-products, the same ones the public demo
+// store uses) — previews used to be all grey "لا توجد صورة" boxes, which
+// made every template look empty exactly where merchants choose one.
+const MOCK_PRODUCTS: Array<{ id: string; name: string; priceCents: number; imageUrl: string }> = [
+  { id: "p1", name: "حقيبة يد جلدية", priceCents: 15000, imageUrl: "/demo-products/leather-bag.png" },
+  { id: "p2", name: "ساعة يد أنيقة", priceCents: 22000, imageUrl: "/demo-products/mens-watch.png" },
+  { id: "p3", name: "وشاح صوف ناعم", priceCents: 6500, imageUrl: "/demo-products/wool-scarf.png" },
+  { id: "p4", name: "طقم شاي سيراميك", priceCents: 9500, imageUrl: "/demo-products/ceramic-tea-set.png" },
 ];
 
 const MOCK_TESTIMONIALS: StoreTestimonial[] = [
-  { buyerName: "سارة أحمد", rating: 5, reviewText: "جودة ممتازة وتوصيل سريع، تجربة شراء رائعة!", productName: "قميص قطني كلاسيكي" },
+  { buyerName: "سارة أحمد", rating: 5, reviewText: "جودة ممتازة وتوصيل سريع، تجربة شراء رائعة!", productName: "وشاح صوف ناعم" },
   { buyerName: "محمد علي", rating: 4, reviewText: "منتج مطابق للوصف تمامًا، سأطلب مرة أخرى.", productName: "حقيبة يد جلدية" },
   { buyerName: "ليلى سالم", rating: 5, reviewText: "خدمة عملاء ممتازة وسرعة في الاستجابة.", productName: "ساعة يد أنيقة" },
 ];
@@ -65,8 +62,8 @@ export default function TemplatePreviewPage() {
         description: null,
         categoryId: null,
         priceCents: p.priceCents,
-        imageUrl: null,
-        images: [],
+        imageUrl: p.imageUrl,
+        images: [p.imageUrl],
         variantOptions: null,
         variants: [],
         active: true,

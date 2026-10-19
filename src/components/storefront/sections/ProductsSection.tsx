@@ -51,7 +51,7 @@ export function ProductsSection({
         {filtered.length === 0 ? (
           empty
         ) : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-8">
             {filtered.map((product) => (
               <div key={product.id} className="rounded-3xl bg-white overflow-hidden flex flex-col shadow-xl hover:-translate-y-1 transition-transform">
                 <Link href={`/store/${slug}/product/${product.id}`} className="aspect-[4/5] bg-harbor/5 flex items-center justify-center text-rope text-sm overflow-hidden group">
@@ -69,7 +69,7 @@ export function ProductsSection({
                   )}
                 </Link>
                 <div className="p-5 flex flex-col flex-1">
-                  <Link href={`/store/${slug}/product/${product.id}`} className="font-extrabold text-harbor text-lg hover:underline" style={{ color: colors.text }}>
+                  <Link href={`/store/${slug}/product/${product.id}`} className="font-extrabold text-harbor text-lg hover:underline leading-snug line-clamp-2 min-h-[2.5em]" style={{ color: colors.text }}>
                     {productName(product)}
                   </Link>
                   <p className="font-extrabold text-lg mt-2" style={{ color: colors.accent }}>
@@ -208,7 +208,7 @@ export function ProductsSection({
         {filtered.length === 0 ? (
           empty
         ) : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-12">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-x-3 gap-y-6 sm:gap-x-8 sm:gap-y-12">
             {filtered.map((product) => (
               <div key={product.id} className="flex flex-col">
                 <Link href={`/store/${slug}/product/${product.id}`} className="aspect-[3/4] flex items-center justify-center overflow-hidden group bg-[#f6f1ea]">
@@ -226,7 +226,7 @@ export function ProductsSection({
                   )}
                 </Link>
                 <div className="pt-4">
-                  <Link href={`/store/${slug}/product/${product.id}`} className="font-display text-base font-bold text-harbor hover:underline" style={{ color: colors.text }}>
+                  <Link href={`/store/${slug}/product/${product.id}`} className="font-display text-base font-bold text-harbor hover:underline leading-snug line-clamp-2 min-h-[2.5em]" style={{ color: colors.text }}>
                     {productName(product)}
                   </Link>
                   <p className="text-sm mt-1" style={{ color: colors.accent }}>
@@ -286,7 +286,7 @@ export function ProductsSection({
         {filtered.length === 0 ? (
           empty
         ) : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
             {filtered.map((product) => (
               <div
                 key={product.id}
@@ -307,7 +307,7 @@ export function ProductsSection({
                   )}
                 </Link>
                 <div className="p-5 flex flex-col flex-1">
-                  <Link href={`/store/${slug}/product/${product.id}`} className="font-display font-extrabold text-harbor hover:underline" style={{ color: colors.text }}>
+                  <Link href={`/store/${slug}/product/${product.id}`} className="font-display font-extrabold text-harbor hover:underline leading-snug line-clamp-2 min-h-[2.5em]" style={{ color: colors.text }}>
                     {productName(product)}
                   </Link>
                   <p className="font-extrabold text-lg mt-1" style={{ color: colors.accent }}>
@@ -367,7 +367,7 @@ export function ProductsSection({
         {filtered.length === 0 ? (
           empty
         ) : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
             {filtered.map((product) => (
               <div
                 key={product.id}
@@ -392,7 +392,7 @@ export function ProductsSection({
                   <span className="text-[11px] font-bold tracking-wide mb-1" style={{ color: colors.accent }}>
                     {t("artisan.handmadeBadge")}
                   </span>
-                  <Link href={`/store/${slug}/product/${product.id}`} className="font-display font-bold text-harbor hover:underline" style={{ color: colors.text }}>
+                  <Link href={`/store/${slug}/product/${product.id}`} className="font-display font-bold text-harbor hover:underline leading-snug line-clamp-2 min-h-[2.5em]" style={{ color: colors.text }}>
                     {productName(product)}
                   </Link>
                   <p className="font-bold text-sm mt-1" style={{ color: colors.primary }}>
@@ -452,7 +452,7 @@ export function ProductsSection({
         {filtered.length === 0 ? (
           empty
         ) : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
             {filtered.map((product) => (
               <div key={product.id} className="rounded-xl border bg-white overflow-hidden flex flex-col transition-shadow hover:shadow-md" style={{ borderColor: "#cbe3f5" }}>
                 <Link href={`/store/${slug}/product/${product.id}`} className="aspect-square flex items-center justify-center overflow-hidden group" style={{ backgroundColor: "#f0f9ff" }}>
@@ -470,7 +470,7 @@ export function ProductsSection({
                   )}
                 </Link>
                 <div className="p-5 flex flex-col flex-1">
-                  <Link href={`/store/${slug}/product/${product.id}`} className="font-bold text-harbor hover:underline" style={{ color: colors.text }}>
+                  <Link href={`/store/${slug}/product/${product.id}`} className="font-bold text-harbor hover:underline leading-snug line-clamp-2 min-h-[2.5em]" style={{ color: colors.text }}>
                     {productName(product)}
                   </Link>
                   <p className="font-extrabold text-lg mt-1" style={{ color: colors.primary }}>
@@ -525,7 +525,7 @@ export function ProductsSection({
         {filtered.length === 0 ? (
           empty
         ) : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5">
             {filtered.map((product) => (
               <div key={product.id} className="rounded-lg overflow-hidden flex flex-col bg-harbor border border-harbor transition-colors hover:border-white/20">
                 <Link href={`/store/${slug}/product/${product.id}`} className="aspect-square flex items-center justify-center overflow-hidden group bg-white/5">
@@ -543,10 +543,12 @@ export function ProductsSection({
                   )}
                 </Link>
                 <div className="p-4 flex flex-col flex-1">
-                  <Link href={`/store/${slug}/product/${product.id}`} className="font-bold text-white hover:underline" style={{ color: colors.text }}>
+                  <Link href={`/store/${slug}/product/${product.id}`} className="font-bold text-white hover:underline leading-snug line-clamp-2 min-h-[2.5em]" style={{ color: colors.text }}>
                     {productName(product)}
                   </Link>
-                  <p className="font-mono font-extrabold text-lg mt-1.5" style={{ color: colors.accent }}>
+                  {/* Always white: the card is navy (bg-harbor) and Tech's default
+                      accent is #0f172a, so prices were near-invisible. */}
+                  <p className="font-mono font-extrabold text-lg mt-1.5 text-white">
                     {formatLYD(product.priceCents, language)}
                   </p>
                   {isShowcase ? (
@@ -604,7 +606,7 @@ export function ProductsSection({
         {filtered.length === 0 ? (
           empty
         ) : (
-          <div className="grid sm:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-10">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-3 gap-y-6 sm:gap-x-6 sm:gap-y-10">
             {filtered.map((product) => (
               <div key={product.id} className="flex flex-col">
                 <Link href={`/store/${slug}/product/${product.id}`} className="aspect-[2/3] flex items-center justify-center overflow-hidden group shadow-md" style={{ backgroundColor: "#f0e4cc" }}>
@@ -622,7 +624,7 @@ export function ProductsSection({
                   )}
                 </Link>
                 <div className="pt-3">
-                  <Link href={`/store/${slug}/product/${product.id}`} className="font-display text-sm font-bold text-harbor hover:underline" style={{ color: colors.text }}>
+                  <Link href={`/store/${slug}/product/${product.id}`} className="font-display text-sm font-bold text-harbor hover:underline leading-snug line-clamp-2 min-h-[2.5em]" style={{ color: colors.text }}>
                     {productName(product)}
                   </Link>
                   <p className="text-sm mt-1 font-bold" style={{ color: colors.primary }}>
@@ -663,7 +665,7 @@ export function ProductsSection({
         {filtered.length === 0 ? (
           empty
         ) : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
             {filtered.map((product) => (
               <div
                 key={product.id}
@@ -685,7 +687,7 @@ export function ProductsSection({
                   )}
                 </Link>
                 <div className="p-5 flex flex-col flex-1">
-                  <Link href={`/store/${slug}/product/${product.id}`} className="font-black uppercase tracking-tight text-harbor text-base hover:underline" style={{ color: colors.text }}>
+                  <Link href={`/store/${slug}/product/${product.id}`} className="font-black uppercase tracking-tight text-harbor text-base hover:underline leading-snug line-clamp-2 min-h-[2.5em]" style={{ color: colors.text }}>
                     {productName(product)}
                   </Link>
                   <p className="font-black text-xl mt-2 italic" style={{ color: colors.primary }}>
@@ -831,7 +833,7 @@ export function ProductsSection({
                   )}
                 </Link>
                 <div className="p-4 flex flex-col flex-1">
-                  <Link href={`/store/${slug}/product/${product.id}`} className="font-bold text-harbor hover:underline" style={{ color: colors.text }}>
+                  <Link href={`/store/${slug}/product/${product.id}`} className="font-bold text-harbor hover:underline leading-snug line-clamp-2 min-h-[2.5em]" style={{ color: colors.text }}>
                     {productName(product)}
                   </Link>
                   <p className="font-bold text-sm mt-1" style={{ color: colors.primary }}>
@@ -881,7 +883,7 @@ export function ProductsSection({
                   )}
                 </Link>
                 <div className="p-5 flex flex-col flex-1">
-                  <Link href={`/store/${slug}/product/${product.id}`} className="font-extrabold text-harbor text-lg hover:underline" style={{ color: colors.text }}>
+                  <Link href={`/store/${slug}/product/${product.id}`} className="font-extrabold text-harbor text-lg hover:underline leading-snug line-clamp-2 min-h-[2.5em]" style={{ color: colors.text }}>
                     {productName(product)}
                   </Link>
                   <p className="font-extrabold text-lg mt-2" style={{ color: colors.accent }}>
@@ -931,7 +933,7 @@ export function ProductsSection({
                   )}
                 </Link>
                 <div className="p-4 flex flex-col flex-1">
-                  <Link href={`/store/${slug}/product/${product.id}`} className="font-bold text-harbor hover:underline" style={{ color: colors.text }}>
+                  <Link href={`/store/${slug}/product/${product.id}`} className="font-bold text-harbor hover:underline leading-snug line-clamp-2 min-h-[2.5em]" style={{ color: colors.text }}>
                     {productName(product)}
                   </Link>
                   <button
@@ -959,7 +961,7 @@ export function ProductsSection({
       {filtered.length === 0 ? (
         empty
       ) : (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
           {filtered.map((product) => (
             <div
               key={product.id}
@@ -979,18 +981,21 @@ export function ProductsSection({
                   <ProductImagePlaceholder label={t("common.noImage")} />
                 )}
               </Link>
-              <div className="p-4 flex flex-col flex-1">
-                <Link href={`/store/${slug}/product/${product.id}`} className="font-bold text-harbor hover:underline" style={{ color: colors.text }}>
+              <div className="p-3 sm:p-4 flex flex-col flex-1">
+                {/* Two-line clamp + min height and an mt-auto button keep
+                    cards in the same row aligned now that phones show two
+                    per row (pattern from 21st.dev's Product Card). */}
+                <Link href={`/store/${slug}/product/${product.id}`} className="font-bold text-sm sm:text-base leading-snug text-harbor hover:underline line-clamp-2 min-h-[2.5em]" style={{ color: colors.text }}>
                   {productName(product)}
                 </Link>
-                <p className="font-bold text-sm mt-1" style={{ color: colors.primary }}>
+                <p className="font-bold text-sm mt-1 mb-3" style={{ color: colors.primary }}>
                   {formatLYD(product.priceCents, language)}{store.type === "rental" && t("common.perDay")}
                 </p>
                 {isShowcase ? (
                   <button
                     onClick={() => setInquiryProduct(product)}
                     style={{ backgroundColor: colors.primary }}
-                    className="mt-4 rounded-full text-white py-2 font-bold text-sm hover:opacity-90 transition-opacity"
+                    className="mt-auto rounded-full text-white py-2 font-bold text-xs sm:text-sm hover:opacity-90 transition-opacity"
                   >
                     {t("common.inquire")}
                   </button>
@@ -998,7 +1003,7 @@ export function ProductsSection({
                   <Link
                     href={`/store/${slug}/product/${product.id}`}
                     style={{ backgroundColor: colors.primary }}
-                    className="mt-4 rounded-full text-white py-2 font-bold text-sm text-center hover:opacity-90 transition-opacity"
+                    className="mt-auto rounded-full text-white py-2 font-bold text-xs sm:text-sm text-center hover:opacity-90 transition-opacity"
                   >
                     {t("common.chooseOptions")}
                   </Link>
@@ -1006,7 +1011,7 @@ export function ProductsSection({
                   <button
                     onClick={() => onAddToCart(product)}
                     style={{ backgroundColor: colors.primary }}
-                    className="mt-4 rounded-full text-white py-2 font-bold text-sm hover:opacity-90 transition-opacity"
+                    className="mt-auto rounded-full text-white py-2 font-bold text-xs sm:text-sm hover:opacity-90 transition-opacity"
                   >
                     {t("common.addToCart")}
                   </button>
