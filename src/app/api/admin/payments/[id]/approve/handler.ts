@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import { getAuthMerchantId, isAdminMerchantId } from "@/lib/auth";
 import { getPlanFeatureFlags } from "@/lib/checkout-features";
-import { addMonths } from "@/lib/subscription/period";
+import { paidPeriodEnd } from "@/lib/subscription/period";
 
 export type ApprovePaymentDb = {
   payment: {
@@ -11,7 +11,10 @@ export type ApprovePaymentDb = {
       data: { status: string; approvedAt: Date; approvedBy: string };
     }) => Promise<{ id: string; merchantId: string; tier: string; periodMonths: number }>;
   };
-  merchant: { update: (args: { where: { id: string }; data: Record<string, unknown> }) => Promise<unknown> };
+  merchant: {
+    findUnique: (args: { where: { id: string }; select: { subscriptionEndDate: true } }) => Promise<{ subscriptionEndDate: Date | null } | null>;
+    update: (args: { where: { id: string }; data: Record<string, unknown> }) => Promise<unknown>;
+  };
 };
 
 // POST /api/admin/payments/:id/approve — a real bug was found and fixed
@@ -35,6 +38,7 @@ export async function handleApprovePayment(db: ApprovePaymentDb, req: Request, p
       data: { status: "approved", approvedAt: new Date(), approvedBy: merchantId! },
     });
 
+    const current = await db.merchant.findUnique({ where: { id: payment.merchantId }, select: { subscriptionEndDate: true } });
     await db.merchant.update({
       where: { id: payment.merchantId },
       data: {
@@ -42,7 +46,7 @@ export async function handleApprovePayment(db: ApprovePaymentDb, req: Request, p
         subscriptionPeriodMonths: payment.periodMonths,
         subscriptionStatus: "active",
         subscriptionStartDate: new Date(),
-        subscriptionEndDate: addMonths(new Date(), payment.periodMonths),
+        subscriptionEndDate: paidPeriodEnd(current?.subscriptionEndDate, payment.periodMonths),
         ...getPlanFeatureFlags(payment.tier),
       },
     });

@@ -128,3 +128,11 @@ export async function sendBugReportEmail(report: { id: string; merchantName: str
   const lines = [`تاجر: ${report.merchantName}`, `الملخص: ${report.summary}`, "", report.details, "", "عرض في لوحة الإدارة: /admin/escalations"];
   await sendEmail(to, `🚨 مشكلة مُصعّدة: ${report.summary}`, lines.join("\n"));
 }
+
+// Trial/subscription-end reminder (see lib/subscription/reminders.ts).
+export async function sendMerchantSubscriptionReminderEmail(merchant: { email: string | null; name: string }, reminder: { title: string; body: string }): Promise<void> {
+  if (!merchant.email) return;
+  const appUrl = process.env.APP_URL ?? "https://rifqa.ly";
+  const lines = [`مرحبًا ${merchant.name}،`, reminder.body, `اشترك من هنا: ${appUrl}/subscription`];
+  await sendEmail(merchant.email, reminder.title, lines.join("\n"));
+}

@@ -11,7 +11,7 @@ import { trackEvent } from "@/lib/track-event";
 import { initAdPixels } from "@/lib/ad-pixels";
 import { isSupportedLanguage } from "@/lib/i18n";
 import { useTranslation } from "@/lib/i18n/useTranslation";
-import { StorefrontSkeleton } from "@/components/storefront/StorefrontSkeleton";
+import { StorefrontSkeleton, StorePausedNotice } from "@/components/storefront/StorefrontSkeleton";
 import { quoteOwnTeamDelivery, resolveDeliveryProvider } from "@/lib/delivery/own-team";
 import { hasBookableHours, type WorkingHours } from "@/lib/booking";
 import { useDecodedParams } from "@/lib/use-decoded-params";
@@ -50,6 +50,7 @@ export default function CheckoutPage() {
   // (re-checked, not just a single 404) — renders a dedicated blocking
   // message instead of leaving the buyer staring at a raw inline error.
   const [storeGone, setStoreGone] = useState(false);
+  const [paused, setPaused] = useState(false);
   // True while the Moamalat widget is open / being finalized — keeps the
   // submit button disabled without reusing `loading` (which also covers
   // the initial /api/orders call).
@@ -103,6 +104,8 @@ export default function CheckoutPage() {
       setStore(store);
       const walletAvailable = Boolean(store.walletProvider && store.dpayAvailable);
       setPaymentMethod(store.codEnabled ? "cod" : walletAvailable ? "wallet" : "cod");
+    }).catch((err) => {
+      if (err instanceof ApiError && err.status === 423) setPaused(true);
     });
   }, [slug]);
 
@@ -298,6 +301,7 @@ export default function CheckoutPage() {
     }
   }
 
+  if (paused) return <StorePausedNotice heading={t("store.pausedHeading")} subtext={t("store.pausedSubtext")} />;
   if (!store) return <StorefrontSkeleton variant="product" label={t("common.loading")} />;
 
   const secondary = store.customization?.secondaryColor || "#f0f0f0";

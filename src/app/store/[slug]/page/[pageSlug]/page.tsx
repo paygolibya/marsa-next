@@ -3,11 +3,11 @@
 import { useEffect, useState } from "react";
 
 import Link from "next/link";
-import { api, type Store } from "@/lib/api";
+import { api, ApiError, type Store } from "@/lib/api";
 import { SiteFooter } from "@/components/site-footer";
 import { isSupportedLanguage } from "@/lib/i18n";
 import { useTranslation } from "@/lib/i18n/useTranslation";
-import { StorefrontSkeleton } from "@/components/storefront/StorefrontSkeleton";
+import { StorefrontSkeleton, StorePausedNotice } from "@/components/storefront/StorefrontSkeleton";
 import { useDecodedParams } from "@/lib/use-decoded-params";
 
 export default function StorePageDetail() {
@@ -18,6 +18,7 @@ export default function StorePageDetail() {
   const [store, setStore] = useState<Store | null>(null);
   const [page, setPage] = useState<{ title: string; content: string } | null>(null);
   const [notFound, setNotFound] = useState(false);
+  const [paused, setPaused] = useState(false);
   const language = store && isSupportedLanguage(store.language) ? store.language : "ar";
   const { t } = useTranslation(language);
 
@@ -27,8 +28,10 @@ export default function StorePageDetail() {
         setStore(store);
         setPage(page);
       })
-      .catch(() => setNotFound(true));
+      .catch((err) => (err instanceof ApiError && err.status === 423 ? setPaused(true) : setNotFound(true)));
   }, [slug, pageSlug]);
+
+  if (paused) return <StorePausedNotice heading={t("store.pausedHeading")} subtext={t("store.pausedSubtext")} />;
 
   if (notFound) {
     return (

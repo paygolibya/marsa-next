@@ -1,7 +1,7 @@
 import * as Sentry from "@sentry/nextjs";
 import { prisma } from "@/lib/prisma";
 import { getPlanFeatureFlags } from "@/lib/checkout-features";
-import { addMonths } from "@/lib/subscription/period";
+import { paidPeriodEnd } from "@/lib/subscription/period";
 
 export type FinalizeSubscriptionPaymentResult = { updated: boolean };
 
@@ -48,6 +48,7 @@ export async function finalizeSubscriptionPayment(paymentId: string, outcome: "p
 
   const payment = await prisma.payment.findUnique({ where: { id: paymentId } });
   if (!payment) return { updated: true };
+  const current = await prisma.merchant.findUnique({ where: { id: payment.merchantId }, select: { subscriptionEndDate: true } });
 
   await prisma.merchant.update({
     where: { id: payment.merchantId },
@@ -56,7 +57,7 @@ export async function finalizeSubscriptionPayment(paymentId: string, outcome: "p
       subscriptionPeriodMonths: payment.periodMonths,
       subscriptionStatus: "active",
       subscriptionStartDate: new Date(),
-      subscriptionEndDate: addMonths(new Date(), payment.periodMonths),
+      subscriptionEndDate: paidPeriodEnd(current?.subscriptionEndDate, payment.periodMonths),
       ...getPlanFeatureFlags(payment.tier),
     },
   });

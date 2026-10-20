@@ -7,6 +7,7 @@ import { resolveCouponDiscount } from "@/lib/coupons";
 import { isSlotOpen, type WorkingHours } from "@/lib/booking";
 import type { ShipmentOrder, ShipmentResult } from "@/lib/integrations/couriers";
 import { quoteOwnTeamDelivery, resolveDeliveryProvider, type DeliveryServiceLevel } from "@/lib/delivery/own-team";
+import { isSubscriptionLive, STORE_LOCKED_STATUS } from "@/lib/subscription/access";
 import { MalformedJsonError, malformedJsonResponse, readJsonBody } from "@/lib/http/read-json";
 
 class OutOfStockError extends Error {
@@ -179,6 +180,12 @@ export async function handleCreateOrder(deps: OrdersDeps, req: Request): Promise
       // instead of only a generic 404 in access logs.
       Sentry.captureMessage("Order creation: store not found for slug", { level: "warning", extra: { storeSlug } });
       return NextResponse.json({ error: "Store not found" }, { status: 404 });
+    }
+
+    // A paused store (trial/paid period ended, not renewed) takes no
+    // orders — enforced here, not only by hiding the storefront.
+    if (!isSubscriptionLive(store.merchant as { subscriptionStatus?: string; subscriptionEndDate?: Date | null })) {
+      return NextResponse.json({ error: "هذا المتجر متوقف مؤقتًا ولا يستقبل طلبات حاليًا" }, { status: STORE_LOCKED_STATUS });
     }
 
     // Showcase stores have no checkout at all — catalog + inquiry only

@@ -153,7 +153,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   if (merchant && merchant.subscriptionStatus !== "active" && !impersonation) {
-    const copy = STATUS_COPY[merchant.subscriptionStatus] ?? STATUS_COPY.pending;
+    // An "inactive" merchant who had a period (trial or paid) that ran out
+    // is locked out of the dashboard AND their storefront is paused (see
+    // lib/subscription/access.ts) — say that plainly, instead of the old
+    // "not activated yet" wording meant for brand-new signups.
+    const lapsed = merchant.subscriptionStatus === "inactive" && Boolean(merchant.subscriptionEndDate);
+    const trialLapsed = lapsed && Boolean(merchant.trialEndsAt) && merchant.trialEndsAt === merchant.subscriptionEndDate;
+    const copy = trialLapsed
+      ? {
+          title: "انتهت الفترة التجريبية",
+          body: "متجرك متوقف الآن ولا يستقبل طلبات. اشترك لإعادة تشغيله فورًا — أول شهر مدفوع بـ 75 د.ل بدل 150 د.ل.",
+        }
+      : lapsed
+        ? { title: "انتهى اشتراكك", body: "متجرك متوقف الآن ولا يستقبل طلبات. جدّد اشتراكك لإعادة تشغيله فورًا." }
+        : (STATUS_COPY[merchant.subscriptionStatus] ?? STATUS_COPY.pending);
     return (
       <div className="min-h-screen flex items-center justify-center px-6">
         <div className="max-w-md text-center rounded-3xl bg-white elevation-raised p-8 animate-rise-in">

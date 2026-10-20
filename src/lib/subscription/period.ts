@@ -14,3 +14,15 @@ export function addMonths(date: Date, months: number): Date {
   result.setMonth(result.getMonth() + months);
   return result;
 }
+
+// End date of a newly paid period. Paying before the current period
+// (trial or paid) ends now stacks on top of it instead of restarting from
+// today — before this, a merchant who paid 10 days before their trial
+// ended silently lost those 10 days, which punished exactly the early
+// payment the trial-end reminders ask for. A lapsed merchant starts from
+// today.
+export function paidPeriodEnd(currentEnd: Date | string | null | undefined, months: number, now: Date = new Date()): Date {
+  const end = currentEnd ? new Date(currentEnd) : null;
+  const base = end && end.getTime() > now.getTime() ? end : now;
+  return addMonths(base, months);
+}

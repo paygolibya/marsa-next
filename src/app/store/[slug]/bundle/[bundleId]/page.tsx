@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 
 import Link from "next/link";
-import { api, formatLYD, type Bundle, type Product, type Store } from "@/lib/api";
+import { api, ApiError, formatLYD, type Bundle, type Product, type Store } from "@/lib/api";
 import { useCart } from "@/lib/use-cart";
 import { captureReferralCode } from "@/lib/referral";
 import { trackEvent } from "@/lib/track-event";
@@ -13,7 +13,7 @@ import { CartDrawer } from "@/components/cart-drawer";
 import { SiteFooter } from "@/components/site-footer";
 import { isSupportedLanguage } from "@/lib/i18n";
 import { useTranslation } from "@/lib/i18n/useTranslation";
-import { StorefrontSkeleton } from "@/components/storefront/StorefrontSkeleton";
+import { StorefrontSkeleton, StorePausedNotice } from "@/components/storefront/StorefrontSkeleton";
 import { useDecodedParams } from "@/lib/use-decoded-params";
 
 export default function BundleDetailPage() {
@@ -26,6 +26,7 @@ export default function BundleDetailPage() {
   const [upsells, setUpsells] = useState<{ triggerProductId: string; offeredProductId: string }[]>([]);
   const [bundle, setBundle] = useState<Bundle | null>(null);
   const [notFound, setNotFound] = useState(false);
+  const [paused, setPaused] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
 
   const cart = useCart(slug);
@@ -50,8 +51,10 @@ export default function BundleDetailPage() {
         }
         setBundle(found);
       })
-      .catch(() => setNotFound(true));
+      .catch((err) => (err instanceof ApiError && err.status === 423 ? setPaused(true) : setNotFound(true)));
   }, [slug, bundleId]);
+
+  if (paused) return <StorePausedNotice heading={t("store.pausedHeading")} subtext={t("store.pausedSubtext")} />;
 
   if (notFound) {
     return (

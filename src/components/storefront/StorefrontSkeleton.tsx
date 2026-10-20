@@ -65,3 +65,20 @@ export function StorefrontLoadError({ heading, subtext, retryLabel, onRetry }: {
     </main>
   );
 }
+
+// Shown when the merchant's trial/paid period has ended unpaid (the public
+// store API answers 423 — see lib/subscription/access.ts). Neutral wording
+// for shoppers; nothing about the merchant's subscription is exposed.
+export function StorePausedNotice({ heading, subtext }: { heading: string; subtext: string }) {
+  return (
+    <main className="mx-auto max-w-md px-6 py-24 text-center animate-rise-in">
+      <div className="rounded-3xl bg-white p-8 shadow-xl">
+      <span className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-harbor/10 text-harbor" aria-hidden>
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><rect x="6" y="5" width="4" height="14" rx="1" /><rect x="14" y="5" width="4" height="14" rx="1" /></svg>
+      </span>
+      <h1 className="font-display text-2xl font-bold text-harbor">{heading}</h1>
+      <p className="mt-2 leading-relaxed text-harbor/70">{subtext}</p>
+      </div>
+    </main>
+  );
+}

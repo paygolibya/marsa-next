@@ -35,6 +35,7 @@ function makeFakeDb(payment: { id: string; merchantId: string; tier: string; per
       },
     },
     merchant: {
+      findUnique: async () => ({ subscriptionEndDate: null }),
       update: async (args) => {
         calls.merchantUpdate = args;
         return {};

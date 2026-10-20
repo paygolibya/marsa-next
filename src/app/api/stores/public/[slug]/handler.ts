@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import { getSubscriptionState, getCheckoutPaymentMethods } from "@/lib/checkout-features";
+import { isSubscriptionLive, STORE_LOCKED_STATUS } from "@/lib/subscription/access";
 import { normalizeToSections } from "@/components/storefront/sections/normalize";
 import { rankBestSellers, type SoldCount } from "@/lib/best-sellers";
 import { safeParseSettings, bestSellersSettingsSchema } from "@/components/storefront/sections/schemas";
@@ -27,6 +28,7 @@ type StoreRow = {
     apiAccessEnabled?: boolean | null;
     selectedPaymentMethod?: string | null;
     subscriptionEndDate?: Date | string | null;
+    subscriptionStatus?: string | null;
   };
   sections: StoredSection[];
   [key: string]: unknown;
@@ -122,6 +124,11 @@ export async function handleGetPublicStore(db: PublicStoreDb, slug: string): Pro
       include: { customization: { include: { template: true } }, merchant: true, sections: true },
     });
     if (!store) return NextResponse.json({ error: "Store not found" }, { status: 404 });
+    // Trial/paid period over and not renewed: the storefront is paused
+    // until the merchant pays (see lib/subscription/access.ts).
+    if (!isSubscriptionLive(store.merchant)) {
+      return NextResponse.json({ error: "store_paused", storeName: store.name }, { status: STORE_LOCKED_STATUS });
+    }
 
     const sections = normalizeToSections(store.sections, {
       sectionOrder: store.customization?.sectionOrder as string[] | undefined,

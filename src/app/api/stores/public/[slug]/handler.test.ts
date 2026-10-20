@@ -220,3 +220,15 @@ test("returns the store's nav menu items in position order", async () => {
   const body = await res.json();
   assert.deepEqual(body.navMenuItems, navMenuItems);
 });
+
+// Trial/paid period over and unpaid → storefront paused (423), and none of
+// the store's products or merchant details are returned.
+test("a store whose trial has ended is paused: 423 with only the store name", async () => {
+  const { db } = makeFakeDb({ store: { ...baseStore(), merchant: { ...fullMerchant, subscriptionEndDate: new Date(Date.now() - 60_000) } } as any });
+  const res = await handleGetPublicStore(db, "test-store");
+  assert.equal(res.status, 423);
+  const body = await res.json();
+  assert.equal(body.error, "store_paused");
+  assert.equal(body.products, undefined);
+  assert.equal(body.phone, undefined);
+});

@@ -26,7 +26,15 @@ const STORE: {
   type: "physical",
   bookingSlotMinutes: null,
   bookingWorkingHours: null,
-  merchant: { id: "merchant-1", phone: "0900000000", email: null, name: "Test Merchant", subscriptionTier: "advanced" },
+  merchant: {
+    id: "merchant-1",
+    phone: "0900000000",
+    email: null,
+    name: "Test Merchant",
+    subscriptionTier: "advanced",
+    subscriptionStatus: "active",
+    subscriptionEndDate: new Date(Date.now() + 30 * 86400000),
+  },
 };
 
 const PRODUCT = { id: "p1", name: "Test Product", priceCents: 5000, stockQty: 10, trackInventory: true, lowStockThreshold: 5 };
@@ -729,4 +737,22 @@ test("a digital store in Tripoli gets no own-team service level or fee", async (
   await handleCreateOrder(deps, req(baseBody({ buyer: { ...baseBody().buyer, city: "طرابلس" } })));
   assert.equal(calls.orderCreate.data.deliveryServiceLevel, null);
   assert.equal(calls.orderCreate.data.shippingCents, 0);
+});
+
+// Trial/paid period ended and not renewed → the store is paused and must
+// not take orders (lib/subscription/access.ts).
+test("a store whose trial has ended is locked: 423, no order created", async () => {
+  const { deps, calls } = makeFakeDeps({
+    store: { ...STORE, merchant: { ...STORE.merchant, subscriptionEndDate: new Date(Date.now() - 60_000) } },
+  });
+  const res = await handleCreateOrder(deps, req(baseBody()));
+  assert.equal(res.status, 423);
+  assert.equal(calls.orderCreate, undefined);
+});
+
+test("an inactive merchant's store takes no orders either", async () => {
+  const { deps, calls } = makeFakeDeps({ store: { ...STORE, merchant: { ...STORE.merchant, subscriptionStatus: "inactive" } } });
+  const res = await handleCreateOrder(deps, req(baseBody()));
+  assert.equal(res.status, 423);
+  assert.equal(calls.orderCreate, undefined);
 });

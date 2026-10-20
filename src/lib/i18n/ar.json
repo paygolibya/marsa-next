@@ -125,6 +125,8 @@
   "inquiry.submit": "إرسال الاستفسار",
 
   "store.notFoundHeading": "هذا المتجر غير موجود",
+  "store.pausedHeading": "هذا المتجر متوقف مؤقتًا",
+  "store.pausedSubtext": "المتجر لا يستقبل طلبات حاليًا. حاول لاحقًا أو تواصل مع صاحب المتجر.",
   "store.notFoundSubtext": "تأكد من الرابط وحاول مجددًا.",
 
   "product.notFoundHeading": "هذا المنتج غير موجود",

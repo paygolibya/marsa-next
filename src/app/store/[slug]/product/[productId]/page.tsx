@@ -12,7 +12,7 @@ import { initAdPixels } from "@/lib/ad-pixels";
 import { CartDrawer } from "@/components/cart-drawer";
 import { SiteFooter } from "@/components/site-footer";
 import { InquiryModal } from "@/components/storefront/InquiryModal";
-import { StorefrontLoadError, StorefrontSkeleton } from "@/components/storefront/StorefrontSkeleton";
+import { StorefrontLoadError, StorefrontSkeleton, StorePausedNotice } from "@/components/storefront/StorefrontSkeleton";
 import { Stars } from "@/components/ui/Icon";
 import { isSupportedLanguage, resolveProductTranslation, translate, type Language } from "@/lib/i18n";
 import { useTranslation } from "@/lib/i18n/useTranslation";
@@ -29,6 +29,7 @@ export default function ProductDetailPage() {
   const [product, setProduct] = useState<Product | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [loadError, setLoadError] = useState(false);
+  const [paused, setPaused] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const [cartOpen, setCartOpen] = useState(false);
   const [reviews, setReviews] = useState<ProductReview[]>([]);
@@ -66,7 +67,11 @@ export default function ProductDetailPage() {
           setSelectedOptions(Object.fromEntries(found.variantOptions.map((o) => [o.name, o.values[0]])));
         }
       })
-      .catch((err) => (err instanceof ApiError && err.status === 404 ? setNotFound(true) : setLoadError(true)));
+      .catch((err) => {
+        if (err instanceof ApiError && err.status === 423) setPaused(true);
+        else if (err instanceof ApiError && err.status === 404) setNotFound(true);
+        else setLoadError(true);
+      });
   }, [slug, productId, attempt]);
 
   // The variant matching whatever the buyer has currently picked — null
@@ -98,6 +103,8 @@ export default function ProductDetailPage() {
   }
 
   useEffect(refreshReviews, [productId]);
+
+  if (paused) return <StorePausedNotice heading={t("store.pausedHeading")} subtext={t("store.pausedSubtext")} />;
 
   if (notFound) {
     return (
