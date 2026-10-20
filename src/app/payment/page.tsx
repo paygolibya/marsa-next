@@ -64,7 +64,9 @@ function PaymentPageContent() {
   const amountDueLYD = periodInfo.totalPriceLYD - discountLYD;
 
   useEffect(() => {
-    if (ready && !token) router.replace("/login");
+    // Keep the chosen period through login, so a payment link sent to a
+    // merchant (rifqa.ly/payment?period=1m) lands back here, not on the dashboard.
+    if (ready && !token) router.replace(`/login?next=${encodeURIComponent(`/payment?period=${period}`)}`);
   }, [ready, token, router]);
 
   useEffect(() => {

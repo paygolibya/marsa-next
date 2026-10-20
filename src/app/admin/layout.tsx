@@ -16,6 +16,7 @@ const navItems: { href: string; label: string; icon: IconName }[] = [
   { href: "/admin/payouts", label: "مستحقات التجار", icon: "bank" },
   { href: "/admin/cron-logs", label: "سجل المهام التلقائية", icon: "clock" },
   { href: "/admin/merchants", label: "التجار", icon: "users" },
+  { href: "/admin/conversion", label: "متابعة الاشتراكات", icon: "chart" },
   { href: "/admin/orders", label: "الطلبات", icon: "package" },
   { href: "/admin/vanex", label: "الشحن (Vanex)", icon: "truck" },
   { href: "/admin/settings", label: "الإعدادات", icon: "settings" },

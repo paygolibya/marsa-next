@@ -160,6 +160,22 @@ export type Affiliate = {
 };
 export type AffiliatePayout = { id: string; affiliateId: string; amountCents: number; status: string; createdAt: string };
 
+// One merchant's row in the admin trial → paid conversion view.
+export type AdminConversionRow = {
+  id: string;
+  name: string;
+  phone: string;
+  joined: string;
+  store: string | null;
+  products: number;
+  orders: number;
+  stage: "not_verified" | "no_store" | "no_products" | "booking_no_hours" | "no_orders" | "selling" | "paid";
+  subscriptionStatus: string;
+  endsAt: string | null;
+  daysLeft: number | null;
+  whatsappUrl: string;
+};
+
 // An own-team (Tripoli) order as the /driver view sees it.
 export type DriverOrder = {
   id: string;
@@ -814,6 +830,9 @@ export const api = {
       headers: authHeaders(token),
       body: JSON.stringify({ status, cashCollectedCents }),
     }),
+
+  adminConversion: (token: string) =>
+    request<{ total: number; byStage: Record<string, number>; rows: AdminConversionRow[] }>("/api/admin/conversion", { headers: authHeaders(token) }),
 
   adminPayouts: (token: string, status?: string) =>
     request<{ stats: PlatformStats; payouts: Payout[] }>(`/api/admin/payouts/ready${status ? `?status=${status}` : ""}`, {

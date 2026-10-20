@@ -7,6 +7,7 @@ import { SiteNav } from "@/components/site-nav";
 import { useAuth } from "@/lib/auth-context";
 import { isAdminMerchant } from "@/lib/is-admin";
 import { api, ApiError } from "@/lib/api";
+import { safeNextPath } from "@/lib/safe-next";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -23,7 +24,9 @@ export default function LoginPage() {
     try {
       const { token, merchant } = await api.login({ phone, password });
       login(token, merchant);
-      router.push(isAdminMerchant(merchant) ? "/admin" : "/dashboard");
+      // Back to the page that sent them here (e.g. a payment link), else home.
+      const next = safeNextPath(new URLSearchParams(window.location.search).get("next"));
+      router.push(next ?? (isAdminMerchant(merchant) ? "/admin" : "/dashboard"));
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "تعذّر تسجيل الدخول، حاول مجددًا");
     } finally {
