@@ -13,7 +13,7 @@ import { CartDrawer } from "@/components/cart-drawer";
 import { SiteFooter } from "@/components/site-footer";
 import { InquiryModal } from "@/components/storefront/InquiryModal";
 import { StorefrontLoadError, StorefrontSkeleton, StorePausedNotice } from "@/components/storefront/StorefrontSkeleton";
-import { Stars } from "@/components/ui/Icon";
+import { Icon, Stars, type IconName } from "@/components/ui/Icon";
 import { isSupportedLanguage, resolveProductTranslation, translate, type Language } from "@/lib/i18n";
 import { useTranslation } from "@/lib/i18n/useTranslation";
 import { useDecodedParams } from "@/lib/use-decoded-params";
@@ -135,6 +135,15 @@ export default function ProductDetailPage() {
   const activeImageUrl = gallery[activeImage] ?? gallery[0];
   const resolved = resolveProductTranslation(product, language);
 
+  const cartCount = cart.lines.reduce((sum, l) => sum + l.quantity, 0);
+  const trustChips: { icon: IconName; label: string }[] = [];
+  if (store.codEnabled) trustChips.push({ icon: "wallet", label: t("product.trustCod") });
+  if (store.walletProvider && store.dpayAvailable) trustChips.push({ icon: "card", label: t("product.trustCard") });
+  if (store.type === "physical") {
+    trustChips.push({ icon: "truck", label: t("product.trustDelivery") });
+    trustChips.push({ icon: "clock", label: t("product.trustTripoli") });
+  }
+
   function handleAddToCart() {
     if (!product || outOfStock) return;
     cart.add(
@@ -155,10 +164,35 @@ export default function ProductDetailPage() {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: secondary }}>
-      <main className="mx-auto max-w-4xl px-6 py-12">
-        <Link href={`/store/${slug}`} className="text-sm text-rope hover:text-harbor">
-          {t("common.backToStoreLink")}
-        </Link>
+      {/* pb-28 on phones leaves room for the sticky buy bar below. */}
+      <main className="mx-auto max-w-4xl px-4 sm:px-6 pt-6 pb-28 md:py-12">
+        {/* Store › product breadcrumb + cart (structure from 21st.dev's
+            Product Detail Page) — the page used to have only a bare
+            "back to store" link and no way to reach the cart. */}
+        <div className="flex items-center justify-between gap-3">
+          <nav aria-label="breadcrumb" className="flex min-w-0 items-center gap-1.5 text-sm text-rope">
+            <Link href={`/store/${slug}`} className="shrink-0 font-bold text-harbor hover:underline">
+              {store.name}
+            </Link>
+            <span aria-hidden>›</span>
+            <span className="truncate">{resolved.name}</span>
+          </nav>
+          {store.type !== "showcase" && (
+            <button
+              type="button"
+              onClick={() => setCartOpen(true)}
+              className="relative flex h-11 shrink-0 items-center gap-2 rounded-full border border-harbor/15 bg-white px-4 text-sm font-bold text-harbor hover:bg-harbor/5 transition-colors"
+            >
+              <Icon name="cart" size={18} />
+              {t("cart.titleShort")}
+              {cartCount > 0 && (
+                <span className="flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] text-white" style={{ backgroundColor: primary }}>
+                  {cartCount}
+                </span>
+              )}
+            </button>
+          )}
+        </div>
 
         <div className="mt-6 grid md:grid-cols-2 gap-10">
           <div>
@@ -194,12 +228,10 @@ export default function ProductDetailPage() {
                 {t("stats.reviewsSuffix", { count: reviews.length })}
               </p>
             )}
-            <p className="font-bold text-xl mt-4" style={{ color: primary }}>
+            <p className="font-display font-extrabold text-3xl mt-3" style={{ color: primary }}>
               {formatLYD(effectivePriceCents, language)}
               {store?.type === "rental" && <span className="text-base font-normal text-rope">{t("common.perDay")}</span>}
             </p>
-
-            {resolved.description && <p className="text-sm text-rope mt-4 whitespace-pre-line leading-relaxed">{resolved.description}</p>}
 
             {product.variantOptions?.map((option) => (
               <div key={option.name} className="mt-5">
@@ -247,11 +279,73 @@ export default function ProductDetailPage() {
             {hasVariants && selectedVariant && !outOfStock && selectedVariant.stockQty <= 5 && (
               <p className="mt-2 text-xs text-signal">{t("products.lowStock")}</p>
             )}
+
+            {/* Reassurance right where the buyer decides — only what is
+                actually true for this store (payment methods it accepts;
+                delivery only for stores that ship). */}
+            {trustChips.length > 0 && (
+              <ul className="mt-5 flex flex-wrap gap-2">
+                {trustChips.map((chip) => (
+                  <li key={chip.label} className="flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs font-bold text-harbor shadow-sm">
+                    <Icon name={chip.icon} size={14} />
+                    {chip.label}
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {resolved.description && <p className="text-sm text-rope mt-6 whitespace-pre-line leading-relaxed">{resolved.description}</p>}
+
+            <Link
+              href={`/store/${slug}`}
+              className="mt-8 flex items-center justify-between gap-3 rounded-2xl border border-harbor/10 bg-white p-4 hover:shadow-md transition-shadow"
+            >
+              <span className="flex min-w-0 items-center gap-3">
+                {store.customization?.logo ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={store.customization.logo} alt="" className="h-10 w-10 shrink-0 rounded-full object-cover" />
+                ) : (
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-harbor/10 text-harbor">
+                    <Icon name="store" size={18} />
+                  </span>
+                )}
+                <span className="truncate font-bold text-harbor">{store.name}</span>
+              </span>
+              <span className="shrink-0 text-sm font-bold" style={{ color: primary }}>
+                {t("product.allProducts")} ←
+              </span>
+            </Link>
           </div>
         </div>
 
         <ReviewsSection productId={productId} reviews={reviews} onSubmitted={refreshReviews} language={language} />
       </main>
+
+      {/* Phones: price + the main action always on screen (the button
+          used to sit below the description, past the first screen). Extra
+          bottom padding clears iPhone Safari's floating toolbar. */}
+      {store.type !== "showcase" && (
+        <div className="md:hidden fixed inset-x-0 bottom-0 z-30 border-t border-harbor/10 bg-white/95 backdrop-blur px-4 pt-3 pb-[max(1.5rem,calc(0.75rem+env(safe-area-inset-bottom)))] shadow-[0_-8px_24px_rgba(0,0,0,0.08)]">
+          <div className="flex items-center gap-3">
+            <span className="shrink-0 font-display text-lg font-extrabold" style={{ color: primary }}>
+              {formatLYD(effectivePriceCents, language)}
+            </span>
+            {outOfStock ? (
+              <span className="flex-1 text-center text-sm font-bold text-signal">
+                {hasVariants && !selectedVariant ? t("products.optionUnavailable") : t("products.outOfStock")}
+              </span>
+            ) : (
+              <button
+                onClick={handleAddToCart}
+                style={{ backgroundColor: primary }}
+                className="flex-1 min-h-[48px] rounded-full font-bold text-white active:scale-[0.98] transition-transform"
+              >
+                {t("common.addToCart")}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       <SiteFooter
         store={

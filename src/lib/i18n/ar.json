@@ -130,6 +130,11 @@
   "store.notFoundSubtext": "تأكد من الرابط وحاول مجددًا.",
 
   "product.notFoundHeading": "هذا المنتج غير موجود",
+  "product.trustCod": "الدفع عند الاستلام",
+  "product.trustCard": "الدفع بالبطاقة",
+  "product.trustDelivery": "توصيل لكل ليبيا",
+  "product.trustTripoli": "نفس اليوم في طرابلس",
+  "product.allProducts": "كل المنتجات",
   "product.reviewsHeading": "التقييمات",
   "product.addReview": "أضف تقييمًا",
   "product.reviewSubmitted": "✓ شكرًا لك، تم إرسال تقييمك",

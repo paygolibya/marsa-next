@@ -130,6 +130,11 @@
   "store.notFoundSubtext": "Check the link and try again.",
 
   "product.notFoundHeading": "This product doesn't exist",
+  "product.trustCod": "Cash on delivery",
+  "product.trustCard": "Card payment",
+  "product.trustDelivery": "Delivery across Libya",
+  "product.trustTripoli": "Same day in Tripoli",
+  "product.allProducts": "All products",
   "product.reviewsHeading": "Reviews",
   "product.addReview": "Add a review",
   "product.reviewSubmitted": "✓ Thank you, your review was submitted",
