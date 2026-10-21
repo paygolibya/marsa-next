@@ -10,6 +10,7 @@ import { useCurrentStore } from "@/lib/use-current-store";
 import { getImpersonationFlag, exitImpersonation } from "@/lib/impersonation";
 import ThemeToggle from "@/components/layout/ThemeToggle";
 import NotificationBell from "@/components/dashboard/NotificationBell";
+import { DeleteAccountSection } from "@/components/dashboard/DeleteAccountSection";
 import { Icon, ToastProvider, type IconName } from "@/components/ui";
 import { SupportChatWidget } from "@/components/support/SupportChatWidget";
 import { useEscapeKey } from "@/lib/use-escape-key";
@@ -194,6 +195,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               تسجيل الخروج
             </button>
           </div>
+          {/* A locked-out merchant can't reach settings, but must still be
+              able to delete their account (App Store 5.1.1(v)). */}
+          <details className="mt-6 text-right">
+            <summary className="cursor-pointer text-center text-xs text-rope hover:text-harbor">حذف الحساب</summary>
+            <DeleteAccountSection />
+          </details>
         </div>
       </div>
     );

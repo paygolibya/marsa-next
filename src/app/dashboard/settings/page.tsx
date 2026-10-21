@@ -5,6 +5,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useCurrentStore } from "@/lib/use-current-store";
 import { api, ApiError, type StoreType, type Template } from "@/lib/api";
 import DomainSettings from "@/components/store/DomainSettings";
+import { DeleteAccountSection } from "@/components/dashboard/DeleteAccountSection";
 import TemplateSwitcher from "@/components/store/TemplateSwitcher";
 import { Button, Icon } from "@/components/ui";
 import { STORE_INDUSTRIES } from "@/lib/store-industries";
@@ -371,6 +372,8 @@ export default function DashboardSettingsPage() {
       </form>
 
       <DomainSettings storeId={store.id} />
+
+      <DeleteAccountSection />
     </div>
   );
 }

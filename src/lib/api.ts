@@ -831,6 +831,13 @@ export const api = {
       body: JSON.stringify({ status, cashCollectedCents }),
     }),
 
+  deleteAccount: (token: string, password: string) =>
+    request<{ deleted: true; storesDeleted: number }>("/api/merchant/account/delete", {
+      method: "POST",
+      headers: authHeaders(token),
+      body: JSON.stringify({ password }),
+    }),
+
   adminConversion: (token: string) =>
     request<{ total: number; byStage: Record<string, number>; rows: AdminConversionRow[] }>("/api/admin/conversion", { headers: authHeaders(token) }),
 
