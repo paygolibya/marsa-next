@@ -97,7 +97,16 @@ export function CartDrawer({
           {lines.length === 0 && <p className="text-rope text-sm py-10 text-center">{t("cart.empty")}</p>}
           {lines.map((line) => (
             <div key={`${line.productId ?? line.bundleId}:${line.variantId ?? ""}`} className="flex items-center justify-between gap-3 border-b border-harbor/10 pb-4">
-              <div className="flex-1">
+              {/* Thumbnail so the buyer can tell lines apart at a glance —
+                  the cart used to be names only. */}
+              {(() => {
+                const img = line.productId ? products?.find((p) => p.id === line.productId)?.imageUrl : null;
+                return img ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={img} alt="" className="h-14 w-14 shrink-0 rounded-xl object-cover border border-harbor/10" />
+                ) : null;
+              })()}
+              <div className="flex-1 min-w-0">
                 <p className="font-bold text-harbor text-sm">
                   {line.name}
                   {line.bundleId && <span className="mr-1.5 rounded-full bg-harbor/10 px-2 py-0.5 text-[11px] font-bold text-harbor">{t("cart.bundleTag")}</span>}
@@ -109,7 +118,7 @@ export function CartDrawer({
                 <button
                   onClick={() => setQuantity(line.productId, line.quantity - 1, line.variantId, line.bundleId)}
                   style={accent ? { borderColor: `${accent}80`, color: accent } : undefined}
-                  className={`h-7 w-7 rounded-full border ${accent ? "hover:bg-black/5" : "border-harbor/20 text-harbor hover:bg-harbor/5"}`}
+                  className={`h-9 w-9 rounded-full border text-base ${accent ? "hover:bg-black/5" : "border-harbor/20 text-harbor hover:bg-harbor/5"}`}
                   aria-label={t("cart.decrease")}
                 >
                   −
@@ -118,7 +127,7 @@ export function CartDrawer({
                 <button
                   onClick={() => setQuantity(line.productId, line.quantity + 1, line.variantId, line.bundleId)}
                   style={accent ? { borderColor: `${accent}80`, color: accent } : undefined}
-                  className={`h-7 w-7 rounded-full border ${accent ? "hover:bg-black/5" : "border-harbor/20 text-harbor hover:bg-harbor/5"}`}
+                  className={`h-9 w-9 rounded-full border text-base ${accent ? "hover:bg-black/5" : "border-harbor/20 text-harbor hover:bg-harbor/5"}`}
                   aria-label={t("cart.increase")}
                 >
                   +
@@ -160,6 +169,7 @@ export function CartDrawer({
             <span>{t("common.total")}</span>
             <span>{formatLYD(subtotalCents, language)}</span>
           </div>
+          {lines.length > 0 && <p className="-mt-2 text-xs text-rope">{t("cart.shippingNote")}</p>}
           <Link
             href={`/store/${storeSlug}/checkout`}
             style={lines.length > 0 && accent ? { backgroundColor: accent } : undefined}

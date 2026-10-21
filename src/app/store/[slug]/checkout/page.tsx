@@ -336,22 +336,31 @@ export default function CheckoutPage() {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: secondary }}>
-      <main className="mx-auto max-w-4xl px-6 py-16 grid md:grid-cols-[1.2fr_1fr] gap-8 items-start">
-        <div className="rounded-2xl bg-white shadow-xl p-8">
+      {/* Which store this is + a way back — the checkout used to open
+          straight on the form with neither. */}
+      <div className="mx-auto max-w-4xl px-4 sm:px-6 pt-6">
+        <Link href={`/store/${slug}`} className="inline-flex items-center gap-1.5 text-sm font-bold text-harbor hover:underline">
+          → {t("checkout.backToStore", { store: store.name })}
+        </Link>
+      </div>
+      <main className="mx-auto max-w-4xl px-4 sm:px-6 pt-4 pb-16 grid md:grid-cols-[1.2fr_1fr] gap-6 sm:gap-8 items-start">
+        <div className="rounded-2xl bg-white shadow-xl p-5 sm:p-8">
           <h1 className="font-display text-2xl font-extrabold text-harbor mb-6">{t("checkout.heading")}</h1>
           <form onSubmit={handleSubmit} className="space-y-4">
             <label className="block">
               <span className="block text-sm font-bold text-harbor mb-1.5">{t("checkout.fullName")}</span>
-              <input required value={name} onChange={(e) => setName(e.target.value)} className="input" />
+              <input required autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} className="input" />
             </label>
             <label className="block">
               <span className="block text-sm font-bold text-harbor mb-1.5">{t("checkout.phone")}</span>
-              <input required dir="ltr" value={phone} onChange={(e) => setPhone(e.target.value)} className="input" />
+              {/* type=tel + inputMode: phones open the number pad, autofill offers the buyer's own number. */}
+              <input required type="tel" inputMode="tel" autoComplete="tel" dir="ltr" placeholder="09XXXXXXXX" value={phone} onChange={(e) => setPhone(e.target.value)} className="input" />
             </label>
             <label className="block">
               <span className="block text-sm font-bold text-harbor mb-1.5">{t("checkout.email")}</span>
               <input
                 type="email"
+                autoComplete="email"
                 dir="ltr"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -484,6 +493,7 @@ export default function CheckoutPage() {
               <span className="block text-sm font-bold text-harbor mb-1.5">{t("checkout.address")}</span>
               <textarea
                 required
+                autoComplete="street-address"
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
                 className="input"
@@ -539,6 +549,12 @@ export default function CheckoutPage() {
                     />
                     <span className="font-bold text-harbor text-sm">{t("checkout.cod")}</span>
                   </label>
+                )}
+                {store.codEnabled && paymentMethod === "cod" && (
+                  <p className="flex items-center gap-2 rounded-xl bg-green-50 px-4 py-2.5 text-xs font-bold text-green-800">
+                    <span aria-hidden>✓</span>
+                    {t("checkout.codNote")}
+                  </p>
                 )}
                 {walletAvailable && (
                   <label
